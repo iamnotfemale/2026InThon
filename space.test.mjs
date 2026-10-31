@@ -124,7 +124,7 @@ test('real 취향공간 items render through the desktop design: filter tab, sid
 test('the design shows the 취향공간 detail without a menu section, and the demo has a sample on desktop and mobile', () => {
   const main = readFileSync('frontend/design/Main.dc.html', 'utf8');
   const block = main.slice(main.indexOf('<!-- SPACE'), main.indexOf('<!-- CONTEST -->'));
-  assert.match(block, /d\.isSpace/); assert.match(block, /운영 시간/); assert.doesNotMatch(block, /메뉴|priceRange/);
+  assert.match(block, /d\.isSpace/); assert.doesNotMatch(block, /메뉴|priceRange|운영 시간|휴무일|예약|대기|주차|전화/);
   assert.match(main, /dot t-space"><\/span>취향공간/, 'home examples list the new type');
   const desktop = designModel('frontend/design/Main.dc.html');
   Object.assign(desktop.state, { view: 'detail', detailId: 'sp1' });
