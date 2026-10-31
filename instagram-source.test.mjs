@@ -36,3 +36,10 @@ test('100/33, unavailable lookup and caption-only URLs request source instead of
 test('multiple distinct source URLs do not silently choose the wrong post', async () => {
   assert.equal((await createSourceResolver()({ text: `${original} https://www.instagram.com/p/Other/` })).status, 'ambiguous');
 });
+
+test('a legacy share plus its ig_post metadata do not turn one canonical source into two posts', async () => {
+  assert.equal((await createSourceResolver()({ attachments: [
+    { type: 'share', payload: { url: original } },
+    { type: 'ig_post', payload: { url: 'https://lookaside.fbsbx.com/image', ig_post_media_id: '123' } },
+  ] })).url, original);
+});

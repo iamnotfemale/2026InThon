@@ -1,11 +1,42 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { get, list, del } from '@vercel/blob';
 import { createSourceResolver, canonicalInstagramUrl } from './instagram-source.mjs';
+import { safeFetch } from './factcheck.mjs';
 
 const failed = (reason, text) => ({ status: 'no_input', media: { status: reason }, messages: [text] });
 
-export function createMediaFactChecker({ check, resolveSource, prepare, onCleanupError = () => console.warn('Media cleanup deferred') }) {
+const metaCdn = value => {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && !u.username && !u.password && (!u.port || u.port === '443')
+      && ['.cdninstagram.com', '.fbcdn.net', '.fbsbx.com'].some(suffix => u.hostname.endsWith(suffix));
+  } catch { return false; }
+};
+
+export function createMediaFactChecker({ check, resolveSource, prepare,
+  fetchSharedVideo = url => safeFetch(url, { maxBytes: 20 * 1024 * 1024, timeout: 20000 }),
+  onCleanupError = () => console.warn('Media cleanup deferred') }) {
   return async message => {
+    const attachment = message.attachments?.length === 1 ? message.attachments[0] : null;
+    const sharedUrl = attachment?.payload?.url;
+    if (['ig_reel', 'reel'].includes(attachment?.type) && metaCdn(sharedUrl)) {
+      let video;
+      try {
+        const media = await fetchSharedVideo(sharedUrl);
+        if (media.body.length <= 20 * 1024 * 1024 && media.body.subarray(4, 8).toString() === 'ftyp'
+          && metaCdn(media.url)) video = media;
+      } catch {} // A CDN cover or failed download still needs the source resolver.
+      if (video) {
+        try {
+          const result = await check(message, { requireAllMedia: true, signal: AbortSignal.timeout(150000),
+            fetchMedia: async url => {
+              if (url !== sharedUrl) throw new Error('Unexpected video URL');
+              return { ...video, contentType: 'video/mp4' };
+            } });
+          return { ...result, media: { status: 'downloaded', sourceVia: 'webhook_video', totalItems: 1, images: 0, videos: 1 } };
+        } finally { video.body.fill(0); }
+      }
+    }
     const source = await resolveSource(message);
     if (source.status === 'not_needed') return check(message);
     if (source.status === 'ambiguous') return failed('ambiguous', '게시물 링크를 한 번에 하나씩 보내주세요.');

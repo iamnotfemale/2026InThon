@@ -171,7 +171,7 @@ export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch
 }
 
 export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000 }) {
-  return async ({ system, content, maxTokens = 8192, signal }) => {
+  return async ({ system, content, maxTokens = 8192, signal, history = [], json = true }) => {
     const parts = content.map(item => {
       if (item.type === 'text') return { text: item.text };
       if (item.type === 'image' && item.source?.type === 'base64') {
@@ -182,8 +182,8 @@ export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImp
     const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }],
-        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: maxTokens } }) });
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [...history, { role: 'user', parts }],
+        generationConfig: { ...(json ? { responseMimeType: 'application/json' } : {}), maxOutputTokens: maxTokens } }) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(`Gemini 호출 실패 (HTTP ${response.status})`);
     const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought).map(p => p.text ?? '').join('').trim();
@@ -392,7 +392,7 @@ export function composeMessages({ claim, verdict, reason, cited, scope, unclear,
   return messages;
 }
 
-function splitBytes(text) {
+export function splitBytes(text) {
   if (bytes(text) <= MESSAGE_BYTES) return [text];
   const parts = []; let current = '';
   for (const line of text.split('\n')) {
@@ -403,6 +403,7 @@ function splitBytes(text) {
     while (bytes(current) > MESSAGE_BYTES) {
       let cut = current.length;
       while (bytes(current.slice(0, cut)) > MESSAGE_BYTES) cut--;
+      if (/[\uD800-\uDBFF]$/.test(current.slice(0, cut))) cut--;
       parts.push(current.slice(0, cut)); current = current.slice(cut);
     }
   }

@@ -5,7 +5,7 @@ import { createHmac } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, appendFileSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED, LINK_FAILED, linkMessage } from './server.mjs';
+import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED, CHAT_FAILED, LINK_FAILED, linkMessage } from './server.mjs';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 
 async function fixture(t, options = {}) {
@@ -389,4 +389,35 @@ test('fact-check results are saved per sender, including outages, and save failu
   await eventually(() => failing.stats.replies === 1);
   assert.deepEqual(saved, [['123456789', 'done', 'refuted'], ['123456789', 'failed', undefined]]);
   assert.deepEqual(sent, [FACTCHECK_ACK, '결과', FACTCHECK_ACK, FACTCHECK_FAILED]);
+});
+
+test('assistant routes chat without fact-check ACK or history rows, while content keeps its ACK and sender context', async t => {
+  const sent = []; const saved = []; const contexts = [];
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    respondToMessage: async (message, context) => { contexts.push(context); return { status: 'done', messages: [message.attachments ? '콘텐츠 처리' : '일반 대화'] }; },
+    saveFactCheck: async (sender, result) => saved.push([sender, result.status]),
+    apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); } });
+  await deliver(f, [incoming({ message: { mid: 'chat-a', text: '안녕' } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(sent, ['일반 대화']); assert.deepEqual(saved, []);
+  await deliver(f, [incoming({ message: { mid: 'media-a', attachments: [{ type: 'ig_reel', payload: { url: 'https://www.instagram.com/reel/Example/' } }] } })]);
+  await eventually(() => f.stats.replies === 2);
+  assert.deepEqual(sent, ['일반 대화', FACTCHECK_ACK, '콘텐츠 처리']);
+  assert.deepEqual(saved, [['123456789', 'done']]);
+  assert.deepEqual(contexts, [{ senderId: '123456789' }, { senderId: '123456789' }]);
+});
+
+test('chat outages get a chat error and the existing linking command still takes priority', async t => {
+  const sent = []; let calls = 0;
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    respondToMessage: async () => { calls++; throw new Error('private provider error'); },
+    issueLinkToken: async () => 'b'.repeat(64), apiFetch: async (url, options) => {
+      if (url.includes('fields=username')) return json({ username: 'tester' });
+      sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' });
+    } });
+  await deliver(f, [incoming({ message: { mid: 'chat-error', text: '안녕' } })]);
+  await eventually(() => f.stats.replies === 1); assert.deepEqual(sent, [CHAT_FAILED]);
+  await deliver(f, [incoming({ message: { mid: 'link-assistant', text: '연결' } })]);
+  await eventually(() => f.stats.replies === 2);
+  assert.equal(calls, 1); assert.match(sent.at(-1), /구글로 로그인/);
 });

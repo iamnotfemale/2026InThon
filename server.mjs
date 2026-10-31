@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join, dirname } from 'node:path';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 import { createLoginTicket } from './oauth-state.mjs';
+import { isContentMessage } from './instagram-source.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
 export const APP_ID = '2418018855613539';
@@ -49,6 +50,7 @@ export function readReplyKeys(file) {
 
 export const FACTCHECK_ACK = '받았어요. 핵심 주장과 근거를 확인한 뒤 답장할게요.';
 export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어요. 잠시 후 다시 보내주세요.';
+export const CHAT_FAILED = '지금은 답장을 만들지 못했어요. 잠시 후 다시 보내주세요.';
 // DMs that ask for a web login link instead of a fact-check.
 export const LINK_COMMANDS = new Set(['연결', '로그인', '대시보드']);
 export const LINK_FAILED = '지금은 연결 링크를 만들지 못했어요. 잠시 후 다시 "연결"이라고 보내주세요.';
@@ -57,7 +59,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, respondToMessage }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -128,13 +130,14 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           try { text = linkMessage(`${config.publicUrl}/link#token=${await issueLinkToken({ igsid: sender, username })}`); }
           catch { stats.lastError = '연결 링크 생성 실패'; text = LINK_FAILED; }
           await send(text);
-        } else if (factCheck) {
-          await send(FACTCHECK_ACK);
+        } else if (respondToMessage || factCheck) {
+          const content = !respondToMessage || isContentMessage(m.message);
+          if (content) await send(FACTCHECK_ACK);
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
-          try { result = await factCheck(m.message); }
-          catch { stats.lastError = '팩트체크 처리 실패'; result = { status: 'failed', messages: [FACTCHECK_FAILED] }; }
-          if (saveFactCheck) await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
+          try { result = await (respondToMessage ?? factCheck)(m.message, { senderId: sender }); }
+          catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
+          if (content && saveFactCheck) await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
           for (const text of result.messages) await send(text);
         } else await send('안녕?');
         stats.replies++;

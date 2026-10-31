@@ -6,6 +6,7 @@ import { handleCloudAuth, loadAccessToken } from '../cloud-auth.mjs';
 import { factCheckerFromEnv } from '../factcheck.mjs';
 import { mediaProbeFromEnv } from '../media-probe.mjs';
 import { mediaFactCheckerFromEnv } from '../media-pipeline.mjs';
+import { dmAssistantFromEnv } from '../dm-assistant.mjs';
 
 // DM receipts and reply reservations go to Supabase once both variables are set; until then Blob keeps working.
 // Blob stays required either way: cloud OAuth tickets and the renewed access token are stored there.
@@ -37,9 +38,10 @@ export default function handler(req, res) {
       webhookSecret: process.env.META_APP_SECRET, accessToken: process.env.META_ACCESS_TOKEN,
       verifyToken: process.env.META_VERIFY_TOKEN, userId: '17841414630453998' },
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
-    // Gemini 또는 Continuum 키가 있으면 고정 인사 대신 팩트체크 답장을 보낸다.
+    // Gemini 일반 대화와 콘텐츠 처리를 분기하며, Continuum-only 구성도 유지한다.
     ...stateStore(), loadAccessToken, background: task => waitUntil(task),
-    factCheck: mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
+    respondToMessage: dmAssistantFromEnv({ loadAccessToken }),
+    factCheck: process.env.GEMINI_API_KEY ? undefined : mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
     observeMessages: mediaProbeFromEnv(),
   }).publicServer.listeners('request')[0];
   return publicHandler(req, res);

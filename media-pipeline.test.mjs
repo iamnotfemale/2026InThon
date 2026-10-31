@@ -15,6 +15,29 @@ test('missing original asks for copied URL without invoking AI or downloading a 
   assert.equal(result.needsSourceUrl, true);
   assert.match(result.messages[0], /링크 복사/);
 });
+
+test('a complete shared reel MP4 is read without needing a permalink, then its input buffer is cleared', async () => {
+  const url = 'https://scontent.example.cdninstagram.com/video.mp4';
+  const body = Buffer.concat([Buffer.alloc(4), Buffer.from('ftyp'), Buffer.alloc(16)]);
+  const check = createMediaFactChecker({ resolveSource: () => assert.fail('no permalink lookup'), prepare: () => assert.fail('no source download'),
+    fetchSharedVideo: async () => ({ url, body }), check: async (message, options) => {
+      assert.equal(options.requireAllMedia, true);
+      const media = await options.fetchMedia(message.attachments[0].payload.url);
+      assert.equal(media.contentType, 'video/mp4'); assert.equal(media.body.subarray(4, 8).toString(), 'ftyp');
+      return { status: 'done', messages: ['영상 분석'] };
+    } });
+  assert.equal((await check({ attachments: [{ type: 'ig_reel', payload: { url } }] })).media.sourceVia, 'webhook_video');
+  assert.ok(body.every(byte => byte === 0));
+});
+
+test('a reel cover never masquerades as the complete video or bypasses source lookup', async () => {
+  let lookedUp = false;
+  const check = createMediaFactChecker({ resolveSource: async () => { lookedUp = true; return { status: 'needs_source_url' }; },
+    fetchSharedVideo: async () => ({ url: 'https://lookaside.fbsbx.com/cover', body: Buffer.from([255, 216, 255]) }),
+    check: () => assert.fail('no partial AI') });
+  assert.equal((await check({ attachments: [{ type: 'ig_reel', payload: { url: 'https://lookaside.fbsbx.com/cover' } }] })).needsSourceUrl, true);
+  assert.equal(lookedUp, true);
+});
 test('all ordered media remain available through extraction and judgment; cleanup is awaited after success or failure', async () => {
   for (const fail of [false, true]) {
     const events = [];
