@@ -39,6 +39,7 @@
 - `DM_TIMING`: `token_ms`, `first_response_ms`(Meta가 첫 답장 수락), `analysis_ms`, `preference_ms`, `save_ms`(임베딩 포함), `result_sent_ms`(전체 결과 전송 확인), `total_ms`.
 - `MEDIA_TIMING`: `shared_video_ms`, `resolve_ms`, `prepare_ms`, `analysis_ms`, `cleanup_ms`, `total_ms`. 수행한 단계만 기록한다.
 - `AI_TIMING`: 모델·chat/structured·성공 여부·`model_ms`. 실제 모델 요청마다 한 건.
+- Python `MEDIA_PREP_TIMING`: `sdk_ms`, `metadata_ms`, `transfer_ms`, `lease_ms`, `download_ms`, `stage_ms`, `purge_ms`, `handler_ms`. 다운로드는 3개씩, 저장 작업도 3개씩 겹쳐 수행하며 JPEG 변환 메모리는 한 장으로 제한한다. 오래된 작업 복구는 새 작업과 겹쳐 실행한다. 모든 파일·원본 품질·AI 완료 후 삭제 계약을 유지한다.
 
 본문·발신자 ID·메시지 ID·미디어/원본 URL·키는 이 로그에 넣지 않는다. DM의 시간 기준은 토큰을 읽은 뒤 유효한 메시지 처리를 시작한 시점이다. Meta에서 우리 서버까지의 전달 지연, 웹훅 수신 기록 저장, 사용자 기기의 표시 지연은 포함하지 않으며 `token_ms`는 별도 값이다. `analysis_ms`는 선택 티켓과 미디어 전처리까지 포함하므로 `MEDIA_TIMING`/`AI_TIMING`을 다시 더하지 않는다. 서로 다른 요청의 로그가 섞일 수 있으므로 현 단계의 집계는 단계별 분포를 확인하는 용도다.
 
