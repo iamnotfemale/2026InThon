@@ -94,7 +94,7 @@ export function createCalendarDashboard(app, storage, now = koreaNow) {
   return {
     model: calendar,
     close: () => calendar.setState({ modal: null, viewItem: null, viewEv: null }),
-    values() {
+    values(mobile = false) {
       sync();
       const v = calendar.renderVals();
       v.noContentOptions = !v.contentOpts.length;
@@ -114,6 +114,17 @@ export function createCalendarDashboard(app, storage, now = koreaNow) {
         v.upcoming = events.slice(0, 5).map(e => ({ title: constants.CONTENT[e.item].title, at: e.date.slice(5).replace('-', '/') + ' ' + (e.time || '종일'),
           kind: constants.KSHORT[e.kind], dot: 'dot t-' + constants.CONTENT[e.item].type, aria: e.date + ' 일정으로 이동',
           pick: () => calendar.setState({ sel: e.date, cursor: e.date.slice(0, 7) + '-01' }) }));
+      }
+      if (mobile) {
+        if (v.isWeek) v.title = v.title.replace(/(\d+)월 (\d+)일/g, '$1.$2');
+        v.cells = v.cells.map(c => ({ ...c, cls: c.cls.replace(/^mc/, 'mday') + (c.numCls.includes('sun') ? ' sun' : ''),
+          dots: c.evs.map(e => ({ cls: e.dot })) }));
+        v.weekCols = v.weekCols.map((w, i) => ({ ...w, cls: w.cls.replace(/^wc/, 'wday') + (i === 0 ? ' sun' : ''),
+          pressed: String(w.cls.includes('sel')), dots: w.evs.slice(0, 3).map(e => ({ cls: e.dot })) }));
+        v.filters = v.filters.map(f => ({ ...f, cls: 'chip' + (f.pressed === 'true' ? ' on' : '') }));
+        v.selEvents = v.selEvents.map(e => ({ ...e, orb: 'orb o-' + e.type }));
+        v.selCount = v.selEvents.length ? '일정 ' + v.selEvents.length + '개' : '';
+        v.cvEvents = v.cvEvents.map(e => ({ ...e, cls: e.cls.replace('cv-ev', 'cvev') }));
       }
       return v;
     },

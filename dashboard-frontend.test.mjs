@@ -15,7 +15,7 @@ test('all supplied sample records and initial derived views still render using t
     model.state.view = view;
     const values = model.renderVals();
     assert.equal(values.rootCls, 'app');
-    assert.equal(values.totalCount, 13); // includes the 맛집 demo item m1 and the 취향공간 demo item sp1
+    assert.equal(values.totalCount, sample.ITEMS.length);
   }
   for (const item of sample.ITEMS) {
     model.state.view = 'detail'; model.state.detailId = item.id;

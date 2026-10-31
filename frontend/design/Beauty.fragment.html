@@ -1,0 +1,42 @@
+<!-- BEAUTY -->
+          <sc-if value="{{d.isBeauty}}" hint-placeholder-val="{{ false }}">
+            <section class="card beauty-card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+              
+              <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
+              <div class="beauty-facts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+                <sc-for list="{{d.bFacts}}" as="bf" hint-placeholder-count="4">
+                  <div class="field" style="box-shadow: -1px 0 0 var(--border)"><span class="k">{{bf.k}}</span><span class="{{bf.cls}}">{{bf.v}}</span></div>
+                </sc-for>
+              </div>
+            </section>
+            <section class="card beauty-card" style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
+              <h2 class="h2">게시물에서 말한 포인트</h2>
+              <ul class="bpts">
+                <sc-for list="{{d.points}}" as="pt" hint-placeholder-count="3">
+                  <li><span class="n">{{pt.n}}</span><span>{{pt.t}}</span></li>
+                </sc-for>
+              </ul>
+              <div class="callout info">
+                <svg class="ico ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+                <span>{{d.caution}}</span>
+              </div>
+            </section>
+            <section class="card beauty-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+              <h2 class="h2">{{d.bSectionTitle}}</h2>
+              <sc-if value="{{d.hasPlace}}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <p style="font-size: 15px; font-weight: 500">{{d.place}}</p>
+                  <p class="muted" style="font-size: 13.5px">{{d.address}}</p>
+                  <p class="muted" style="font-size: 13.5px">{{d.hours}}</p>
+                </div>
+              </sc-if>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <sc-for list="{{d.bLinks}}" as="bl" hint-placeholder-count="2">
+                  <a class="{{bl.cls}}" href="{{bl.url}}" target="_blank" rel="noopener noreferrer">{{bl.label}}
+                    <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></svg>
+                  </a>
+                </sc-for>
+              </div>
+              <p class="muted" style="font-size: 12px">{{d.linkNote}}</p>
+            </section>
+          </sc-if>

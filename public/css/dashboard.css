@@ -364,3 +364,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 @keyframes pinDrop{from{opacity:0;transform:translate(-50%,-160%)}to{opacity:1;transform:translate(-50%,-100%)}}
 @media (max-width:860px){.sidebar{max-width:none !important;border-right:0;border-bottom:1px solid var(--border)}.pad{padding-left:16px !important;padding-right:16px !important}}
 @media (prefers-reduced-motion:reduce){.app *,.app *::before,.app *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+/* 미용(beauty) 유형 전용 CSS — 기존 styles.css(토큰·.orb·.field·.callout·.btn 등) 위에 추가 */
+.t-beauty{background:#EC4899}
+.o-beauty::before{background:radial-gradient(circle at 30% 30%,#FFE4E6 0,transparent 38%),radial-gradient(circle at 70% 62%,#F472B6 0,transparent 42%),radial-gradient(circle at 40% 78%,#FDBA74 0,transparent 40%),conic-gradient(from 140deg,#FBCFE8,#F9A8D4,#FECDD3,#EC4899,#FBCFE8)}
+.o-beauty{animation-duration:9.5s;animation-delay:-5s}.o-beauty::before{animation-duration:12.5s;animation-delay:-3s}
+.bpts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.bpts li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.55}
+.bpts li:first-child{border-top:0;padding-top:4px}
+.bpts .n{font-family:inherit;font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);padding-top:2px}

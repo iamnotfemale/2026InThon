@@ -20,7 +20,10 @@ export function createMobileDashboard(app) {
     const patch = { ...next };
     if ('sortNew' in patch) { patch.sort = patch.sortNew ? 'new' : 'old'; delete patch.sortNew; }
     if ('tab' in patch) { patch.view = patch.tab; patch.detailId = null; delete patch.tab; }
-    if ('settingsOpen' in patch) { patch.view = patch.settingsOpen ? 'settings' : mobile.state.tab; delete patch.settingsOpen; }
+    if ('settingsOpen' in patch) {
+      if (patch.settingsOpen) patch.from = app.state.view;
+      patch.view = patch.settingsOpen ? 'settings' : mobile.state.tab; delete patch.settingsOpen;
+    }
     if ('detailId' in next) {
       patch.view = next.detailId ? 'detail' : (app.state.from || 'library');
       if (next.detailId && app.state.view !== 'detail') patch.from = app.state.view;
@@ -41,7 +44,7 @@ export function createMobileDashboard(app) {
     v.d.hasComparisons = Array.isArray(v.d.cmp) && v.d.cmp.length > 0;
     v.d.showExtraTasteAction = v.d.tasteable && (v.d.isContest || v.d.isRestaurant || v.d.isSpace);
     Object.assign(v, {
-      isLive: live, modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',
+      isLive: live, isDemo: !live, notCalendar: s.view !== 'calendar', modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',
       toggleDataMode: () => live ? app.loadLive() : app.enterLive(),
       profileName: s.name, profileInitial: (s.name || '나').slice(0, 1), profileEmail: live ? s.email + ' · Google' : '데모 계정',
       profileHandle: s.connected ? s.account : 'Instagram 미연결', connectionLabel: s.connected ? '연결됨' : '미연결',

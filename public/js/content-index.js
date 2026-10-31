@@ -26,12 +26,12 @@ export function storedContent(row) {
 
 export function indexFromRow(row) {
   const stored = storedContent(row); const recipe = stored.recipe; const contest = stored.contest; const exhibit = stored.exhibit;
-  const category = ['recipe', 'exhibit', 'contest', 'restaurant', 'space'].includes(row.topic) ? row.topic : 'news';
+  const category = ['recipe', 'exhibit', 'contest', 'restaurant', 'space', 'beauty'].includes(row.topic) ? row.topic : 'news';
   const raw = stored.contentIndex;
   const legacyTags = recipe ? list(recipe.ingredients).filter(i => i?.evidence && !/^(물|소금|설탕|후추|기름|식용유|간장|다진마늘)$/.test(i.name))
     .map(i => ({ label: i.name, evidence: i.evidence })) : [];
   const index = normalizeContentIndex(raw?.tags?.length ? raw : { ...raw, tags: legacyTags }, { category, title: row.claim,
-    description: recipe?.summary || contest?.summary || list(exhibit?.events).map(e => e.intro || e.title).join(' · ') || stored.reason || row.reason,
+    description: recipe?.summary || contest?.summary || stored.beauty?.intro || list(exhibit?.events).map(e => e.intro || e.title).join(' · ') || stored.reason || row.reason,
     entities: recipe ? list(recipe.ingredients).map(i => i?.name) : contest ? [contest.host].filter(Boolean)
       : list(exhibit?.events).flatMap(e => [e?.name, e?.place, e?.area].filter(Boolean)),
     scope: raw?.coverage?.scope, notes: raw?.coverage?.notes });

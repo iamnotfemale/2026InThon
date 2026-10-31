@@ -34,6 +34,7 @@
 | `restaurant` | 맛집 | 맛집 | `visit` |
 | `space` | 전시·공간에 함께 표시 | 취향공간 | `visit` |
 | `news` | 제외 | 제외 | 없음 |
+| `beauty` | 제외 | 제외 | 없음 |
 
 취향은 4개 그룹이고 캘린더는 5개 유형이다. 화면에서 함께 묶는다고 저장된 `space`를 `exhibit`로 바꾸면 안 된다. 즐겨찾기(`state.fav`)와 직접 모은 취향(`state.taste`)도 별도 상태다.
 
@@ -176,6 +177,7 @@
 - `frontend/calendar/Calendar.dc.html`: 제공 캘린더의 화면/기본 동작 원본. `public/js/calendar-model.js`는 생성물이므로 직접 수정하지 않는다.
 - `public/js/dashboard-taste.js`: PC/모바일이 함께 쓰는 궤도·선택·모음 해제. 서버 저장 시 기존 `app.state.taste`와 모음 갱신 경로를 연결한다.
 - `frontend/taste-redesign/Taste.fragment.html`, `public/css/taste.css`: 취향 디자인. `scripts/build-dashboard.py`가 PC/모바일 템플릿에 삽입한다.
+- 모바일 새 화면은 `frontend/mobile/Mobile.dc.html`의 궤도와 `frontend/mobile/MobileCalendar.fragment.html`을 사용한다. 상태·저장은 같은 `dashboard-taste.js`/`dashboard-calendar.js`를 공유한다. 캘린더의 `values(true)`는 날짜 점·일정 카드 등 모바일 표시만 변환한다.
 - 기존 결과 상세의 Google Calendar 링크/방문 날짜 링크는 별도 기능으로 유지했다. 향후 내부 일정 추가로 바꿀지는 백엔드 CRUD 연결 시 결정한다.
 
 ### 반드시 함께 바꿀 동작

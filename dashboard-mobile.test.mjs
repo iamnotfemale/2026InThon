@@ -28,6 +28,7 @@ test('mobile uses the current account and existing routes, never the prototype i
   v = values(); assert.ok(v.hasDetail); v.closeDetail(); assert.equal(app.state.view, 'library');
   v.openSettings(); assert.equal(app.state.view, 'settings');
   assert.equal(values().settingsOpen, true); values().closeSettings(); assert.equal(app.state.view, 'library');
+  app.state.view='calendar'; values().openSettings(); values().closeSettings(); assert.equal(app.state.view,'calendar');
 });
 
 test('mobile recipes use shared ingredients, cooking state and validated timer parsing', () => {
@@ -70,6 +71,17 @@ test('mobile delivery, deletion and login call the real existing actions', () =>
   const v=values(); v.dmModes[1].pick(); v.removeCurrent(); v.logout(); v.sendFromIg(); v.toggleDataMode();
   assert.deepEqual(calls,[['changeDelivery','full'],['removeItem','n1'],['signOut'],['openBotDm'],['loadLive']]);
   app.state.mode='demo'; values().toggleDataMode(); assert.equal(calls.at(-1)[0],'enterLive');
+});
+
+test('mobile filter chips, ordering and reset preserve one shared library state',()=>{
+  const {app,values}=fixture();
+  app.state.view='library';
+  values().typeChips.find(c=>c.label==='미용').pick();assert.equal(values().libCount,2);
+  values().toggleFavOnly();assert.equal(values().libCount,0);
+  values().resetFilters();assert.equal(app.state.favOnly,false);assert.ok(values().libCount>2);
+  values().toggleSort();assert.equal(app.state.sort,'old');
+  values().statusChips.find(c=>c.label==='정리 완료').pick();
+  assert.ok(values().libItems.every(item=>item.status==='done'));
 });
 
 test('mobile markup fills the viewport and binds account labels instead of sample text', () => {

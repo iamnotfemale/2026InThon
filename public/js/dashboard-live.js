@@ -6,6 +6,7 @@ import { validateContest, contestTimeline, calendarLink } from './contest-data.j
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 import { placesFromRows, mapLinks, priceLabel, placeKeyLine } from './restaurant-data.js';
 import { validateSpace, spaceKeyLine } from './space-data.js';
+import { validateBeauty } from './beauty-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -119,6 +120,14 @@ export function factcheckToItem(row, now = new Date()) {
   if (done && row.topic === 'exhibit') return exhibitRowItems(row, now)[0] ?? null;
   if (done && row.topic === 'restaurant') return restaurantRowItems(row, now)[0] ?? null;
   if (done && row.topic === 'space') return spaceRowItems(row, now)[0] ?? null;
+  if (done && row.topic === 'beauty') {
+    try {
+      const beauty = validateBeauty(stored.beauty);
+      return { ...item, ...beauty, type: 'beauty', title: beauty.title,
+        key: (beauty.sub === 'salon' ? '미용실' : '화장품') + ' · ' + beauty.bFacts.map(([, value]) => value).slice(0, 2).join(' · '),
+        phase: beauty.sponsored ? '협찬 표시 있음' : null, phaseCls: 'badge s-warn', origin: instagramOrigin(stored.sourceUrl) };
+    } catch { return null; }
+  }
   return item;
 }
 

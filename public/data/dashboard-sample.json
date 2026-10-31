@@ -811,6 +811,126 @@
       "organized": "",
       "checkedAt": "",
       "thumb": true
+    },
+    {
+      "id": "b1",
+      "type": "beauty",
+      "title": "가상 헤어살롱 — 레이어드 컷",
+      "status": "done",
+      "dm": "sent",
+      "dmAt": "10월 30일 12:31",
+      "received": "10월 30일",
+      "ts": 10301230,
+      "key": "미용실 · 컷 45,000원~",
+      "author": "@sample_salon",
+      "origin": "https://example.com/instagram/p/b1",
+      "organized": "10월 30일 12:31",
+      "checkedAt": "2026.10.30 12:31 KST",
+      "thumb": true,
+      "sub": "salon",
+      "phase": "영업 중",
+      "phaseCls": "badge s-done",
+      "intro": "얼굴선을 따라 층을 내는 레이어드 컷을 소개한 미용실 게시물이에요. (가상 데이터)",
+      "bFacts": [
+        [
+          "종류",
+          "미용실"
+        ],
+        [
+          "시술",
+          "레이어드 컷 · 드라이 포함"
+        ],
+        [
+          "가격",
+          "45,000원~ (기장 추가 요금 있음)"
+        ],
+        [
+          "소요 시간",
+          "약 1시간"
+        ]
+      ],
+      "points": [
+        "상담 때 평소 가르마 방향을 알려주면 층 위치를 맞춰준다고 했어요.",
+        "컷 후 한 달 안 앞머리 다듬기는 무료라고 안내했어요.",
+        "주말은 예약이 빨리 마감된다고 했어요."
+      ],
+      "place": "가상 헤어살롱 2호점",
+      "address": "가상시 미용로 21, 2층",
+      "hours": "화–일 11:00 – 20:00 · 월 휴무",
+      "links": [
+        [
+          "예약 페이지 열기",
+          "https://example.com/salon/booking",
+          1
+        ],
+        [
+          "매장 안내 보기",
+          "https://example.com/salon",
+          0
+        ]
+      ],
+      "linkNote": "예약은 매장 페이지에서 진행돼요. 이 서비스에서 예약이 완료되지 않아요.",
+      "caution": "가격은 게시물 기준이에요. 실제 요금은 기장·모발 상태에 따라 달라질 수 있어요."
+    },
+    {
+      "id": "b2",
+      "type": "beauty",
+      "title": "수분 진정 토너 (가상 브랜드)",
+      "status": "done",
+      "dm": "sent",
+      "dmAt": "10월 27일 15:32",
+      "received": "10월 27일",
+      "ts": 10271530,
+      "key": "화장품 · 200ml 18,000원",
+      "author": "@sample_skin",
+      "origin": "https://example.com/instagram/p/b2",
+      "organized": "10월 27일 15:32",
+      "checkedAt": "2026.10.27 15:32 KST",
+      "thumb": true,
+      "sub": "product",
+      "phase": "협찬 표시 있음",
+      "phaseCls": "badge s-warn",
+      "intro": "세안 후 바로 쓰는 묽은 제형의 토너를 소개한 게시물이에요. 게시물에 유료 광고 표시가 있어요. (가상 데이터)",
+      "bFacts": [
+        [
+          "종류",
+          "화장품 · 토너"
+        ],
+        [
+          "브랜드",
+          "가상 코스메틱"
+        ],
+        [
+          "용량·가격",
+          "200ml · 18,000원"
+        ],
+        [
+          "언급한 피부 타입",
+          "건성·복합성"
+        ]
+      ],
+      "points": [
+        "화장솜보다 손바닥으로 두드려 흡수시키는 방법을 추천했어요.",
+        "아침에는 1번, 저녁에는 2–3번 겹쳐 바른다고 했어요.",
+        "향료가 없다고 소개했어요 — 전성분은 판매처에서 확인해 주세요."
+      ],
+      "place": "",
+      "address": "",
+      "hours": "",
+      "links": [
+        [
+          "판매처 보기",
+          "https://example.com/toner/shop",
+          1
+        ],
+        [
+          "전성분 확인하기",
+          "https://example.com/toner/ingredients",
+          0
+        ]
+      ],
+      "linkNote": "구매는 판매처에서 진행돼요. 가격은 확인 시점 기준이에요.",
+      "caution": "효과·사용감은 게시물 작성자의 설명이에요. 피부 타입에 따라 다를 수 있어요."
     }
   ],
   "R3": {

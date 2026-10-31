@@ -99,3 +99,20 @@ test('storage failures keep the draft and do not report success, corrupt data ne
   assert.ok(messages.some(msg=>msg.includes('저장하지 못했어요'))); assert.ok(!messages.some(msg=>msg.includes('등록했어요')));
   assert.match(createCalendarDashboard(app,null,now).values().storageNote,/못했어요/);
 });
+
+test('the mobile calendar shares stored schedules and actions with desktop and renders date dots and sheets',()=>{
+  const {calendar,messages}=fixture();
+  draft(calendar); calendar.values().save();
+  const mobile=calendar.values(true);
+  const day=mobile.cells.find(c=>c.aria.startsWith('11월 7일'));
+  assert.match(day.cls,/^mday/); assert.deepEqual(day.dots,[{cls:'dot t-recipe'}]);
+  assert.equal(mobile.selCount,'일정 1개');
+  assert.equal(mobile.selEvents[0].orb,'orb o-recipe');
+  mobile.selEvents[0].view();
+  assert.match(calendar.values(true).cvEvents[0].cls,/^cvev/);
+  calendar.values(true).openFullContent(); assert.equal(messages.at(-1),'fc1');
+  calendar.values(true).viewWeek();
+  assert.equal(calendar.values(true).weekCols.filter(c=>c.pressed==='true').length,1);
+  assert.match(calendar.values().cells[0].cls,/^mc/);
+  calendar.values(true).selEvents[0].remove(); assert.equal(calendar.values().filters[0].count,0);
+});

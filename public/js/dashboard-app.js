@@ -29,7 +29,7 @@ const store = {
 const DEMO_KEYS = ['connected', 'account', 'connectedAt', 'name', 'nameDraft', 'email', 'dataset', 'extra', 'over', 'deleted',
   'fav', 'taste', 'shares', 'simState', 'flow', 'conds', 'tasteRemoved'];
 const LINK_DONE = 'Instagram 계정이 연결됐어요. 전에 보낸 콘텐츠도 함께 보여요.';
-const activeOverlay = () => [...document.querySelectorAll('.overlay, .cook, .m .layer')]
+const activeOverlay = () => [...document.querySelectorAll('.overlay, .cook, .m .layer, .m .sheet')]
   .filter(element => element.getClientRects().length).at(-1);
 
 class DashboardApp extends DashboardModel {
@@ -370,8 +370,8 @@ class DashboardApp extends DashboardModel {
   pageValues() {
     const isCalendar = this.state.view === 'calendar';
     const active = isCalendar || (this.state.view === 'detail' && this.state.from === 'calendar');
-    return { isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
-      goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values() : {},
+    return { isCalendar, notCalendar: !isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
+      goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
       ...(active ? { navLib: 'nav-item' } : {}),
       ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}) };
   }

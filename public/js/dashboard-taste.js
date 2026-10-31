@@ -21,7 +21,10 @@ export function applyTasteOrbitValues(v, s, app) {
   const orbit = (group, ring, offset) => group.items.slice(0, 8).map((item, i, list) => ({ ...item,
     aria: item.title + ' 선택', btnCls: 'pl-btn' + (item.isSel ? ' sel' : ''),
     cls: 'pl a' + ((Math.round((offset + i * 360 / list.length) / 15) * 15) % 360) + ' r' + ring }));
+  const selection = groups.flatMap(group => group.items).find(item => item.isSel);
   return Object.assign(v, {
+    tasteSelection: selection || {}, tasteHasSelection: !!selection, tasteNoSelection: !selection,
+    clearTasteSelection: () => app.setState({ tasteSel: null }),
     tasteCount: items.length, tasteHasAny: !!items.length, tasteNone: !items.length, tasteGroups: groups,
     tasteTabs: [['all', '전체', ''], ...CATEGORIES.map(([type,label])=>[type,label,'dot t-'+type])]
       .map(([key, label, dot]) => ({ label, dot, count: key === 'all' ? items.length : items.filter(item => categoryOf(item) === key).length,

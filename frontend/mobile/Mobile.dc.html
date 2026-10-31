@@ -210,10 +210,94 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 @keyframes blob{0%,100%{border-radius:50% 50% 50% 50% / 50% 50% 50% 50%;transform:rotate(0deg) scale(1)}25%{border-radius:58% 42% 47% 53% / 45% 57% 43% 55%;transform:rotate(8deg) scale(1.04,.97)}50%{border-radius:43% 57% 61% 39% / 58% 42% 58% 42%;transform:rotate(-6deg) scale(.97,1.04)}75%{border-radius:55% 45% 40% 60% / 41% 59% 49% 51%;transform:rotate(4deg) scale(1.03,1)}}
 @keyframes swirl{0%{transform:rotate(0deg) translate(0,0) scale(1)}25%{transform:rotate(95deg) translate(7%,-5%) scale(1.12)}50%{transform:rotate(170deg) translate(-4%,6%) scale(.94)}75%{transform:rotate(265deg) translate(-7%,-3%) scale(1.08)}100%{transform:rotate(360deg) translate(0,0) scale(1)}}
 @media (prefers-reduced-motion:reduce){.m *,.m *::before,.m *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+.mobile-taste .mo-stage{position:relative;width:350px;height:350px;margin:4px auto 0}
+.mobile-taste .mo-glow{position:absolute;left:50%;top:50%;width:260px;height:260px;margin:-130px;border-radius:50%;background:radial-gradient(circle,rgba(240,138,28,.16),rgba(240,138,28,0) 62%);pointer-events:none}
+.mobile-taste .os-line{position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid var(--border);pointer-events:none}
+.mobile-taste .os-line.l-a{width:184px;height:184px;margin:-92px}
+.mobile-taste .os-line.l-b{width:290px;height:290px;margin:-145px}
+.mobile-taste .os-line.l-c{width:344px;height:344px;margin:-172px;border-style:dashed;opacity:.7}
+.mobile-taste .os-ring-label{position:absolute;left:50%;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:999px;background:var(--bg);border:1px solid var(--border);font-size:10.5px;font-weight:500;color:var(--muted);transform:translate(-50%,-50%);z-index:1;transition:opacity .3s ease}
+.mobile-taste .os-ring-label .dot{width:6px;height:6px}
+.mobile-taste .os-ring-label.ra{top:calc(50% - 92px)}.os-ring-label.rb{top:calc(50% - 145px)}.os-ring-label.dim{opacity:.3}
+.mobile-taste .mo-orbit{position:absolute;inset:0;pointer-events:none;z-index:2;transition:opacity .35s ease,filter .35s ease}
+.mobile-taste .mo-orbit.dim{opacity:.22;filter:grayscale(.7)}
+.mobile-taste .orbit-A{animation:moSpin 80s linear infinite}
+.mobile-taste .orbit-B{animation:moSpin 120s linear infinite reverse}
+.mobile-taste .orbit-C{animation:moSpin 200s linear infinite;z-index:0}
+.mobile-taste .rA{--r:92px}.rB{--r:145px}.rC{--r:172px}
+.mobile-taste .a0{--a:0deg}.a15{--a:15deg}.a30{--a:30deg}.a45{--a:45deg}.a60{--a:60deg}.a75{--a:75deg}.a90{--a:90deg}.a105{--a:105deg}.a120{--a:120deg}.a135{--a:135deg}.a150{--a:150deg}.a165{--a:165deg}.a180{--a:180deg}.a195{--a:195deg}.a210{--a:210deg}.a225{--a:225deg}.a240{--a:240deg}.a255{--a:255deg}.a270{--a:270deg}.a285{--a:285deg}.a300{--a:300deg}.a315{--a:315deg}.a330{--a:330deg}.a345{--a:345deg}
+.mobile-taste .pl,.mobile-taste .mo-dust{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateX(var(--r))}
+.mobile-taste .mo-up{position:absolute;left:0;top:0;transform:rotate(calc(var(--a) * -1))}
+.mobile-taste .mo-spin{position:absolute;left:0;top:0}
+.mobile-taste .orbit-A .mo-spin{animation:moSpin 80s linear infinite reverse}
+.mobile-taste .orbit-B .mo-spin{animation:moSpin 120s linear infinite}
+.mobile-taste .pl-btn{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:0;border:0;background:transparent;cursor:pointer;transform:translate(-50%,-20px);pointer-events:auto}
+.mobile-taste .mo-orbit.dim .pl-btn{pointer-events:none}
+.mobile-taste .mo-orb{position:relative;display:block;width:40px;height:40px;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.mobile-taste .mo-orb::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--text);opacity:0;transform:scale(.8);transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
+.mobile-taste .pl-btn:active .mo-orb{transform:scale(.92)}
+.mobile-taste .pl-btn.sel .mo-orb{transform:scale(1.2)}
+.mobile-taste .pl-btn.sel .mo-orb::after{opacity:.85;transform:scale(1)}
+.mobile-taste .mo-label{max-width:96px;padding:2px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 8px -4px rgba(0,0,0,.18)}
+.mobile-taste .pl-btn.sel .mo-label{border-color:var(--text)}
+.mobile-taste .mo-dust::before{content:'';position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:var(--muted);opacity:.45}
+.mobile-taste .mo-stage:has(.pl-btn.sel) .mo-orbit,.mobile-taste .mo-stage:has(.pl-btn.sel) .mo-spin{animation-play-state:paused}
+.mobile-taste .mo-core{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px;border-radius:50%;background:var(--surface);border:1px solid var(--border);box-shadow:0 12px 32px -12px rgba(240,138,28,.55);display:grid;place-items:center;z-index:3}
+.mobile-taste .mo-core img{border-radius:0 0 46px 46px}
+.mobile-taste .mo-wave{position:absolute;inset:-1px;border-radius:50%;border:1px solid rgba(240,138,28,.45);animation:moWave 4.8s ease-out infinite;pointer-events:none}
+.mobile-taste .mo-wave.w2{animation-delay:2.4s}
+.mobile-taste .mo-sel{display:flex;flex-direction:column;gap:14px;padding:16px;border:1px solid var(--border);border-radius:20px;background:var(--surface);box-shadow:0 12px 30px -18px rgba(0,0,0,.3);animation:enter .35s cubic-bezier(.16,1,.3,1) both}
+.mobile-taste .mo-sum{font-size:14px;line-height:1.6;color:var(--text-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all}
+.mobile-taste .tl-group{display:flex;flex-direction:column;transition:opacity .3s ease}
+.mobile-taste .tl-group.dim{opacity:.35}
+.mobile-taste .mo-gh{display:flex;align-items:center;gap:8px;padding:0 4px 4px;font-size:12.5px;font-weight:500;color:var(--muted)}
+.mobile-taste .tl-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border:0;border-radius:14px;background:transparent;text-align:left;cursor:pointer;transition:background .15s ease}
+.mobile-taste .tl-row:active{background:var(--surface-2)}
+.mobile-taste .tl-row.sel{background:var(--surface);box-shadow:0 0 0 1px var(--text)}
+@keyframes moSpin{to{transform:rotate(360deg)}}
+@keyframes moWave{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(2.1)}}
+
+.mobile-taste .mo-stage{width:100%;max-width:350px;height:auto;aspect-ratio:1;container-type:inline-size;margin:4px auto 0}
+.mobile-taste .mo-glow{width:74%;height:74%;margin:-37%}
+.mobile-taste .os-line.l-a{width:36%;height:36%;margin:-18%}.mobile-taste .os-line.l-b{width:48%;height:48%;margin:-24%}
+.mobile-taste .os-line.l-c{width:60%;height:60%;margin:-30%;border-style:solid;opacity:1}.mobile-taste .os-line.l-d{width:72%;height:72%;margin:-36%}
+.mobile-taste .os-line.l-outer{width:96%;height:96%;margin:-48%;border-style:dashed;opacity:.7}
+.mobile-taste .os-ring-label.ra{top:32%}.mobile-taste .os-ring-label.rb{top:26%}.mobile-taste .os-ring-label.rc{top:20%}.mobile-taste .os-ring-label.rd{top:14%}
+.mobile-taste .rA{--r:18cqw}.mobile-taste .rB{--r:24cqw}.mobile-taste .rC{--r:30cqw}.mobile-taste .rD{--r:36cqw}
+.mobile-taste .orbit-C{animation:moSpin 160s linear infinite;z-index:2}.mobile-taste .orbit-D{animation:moSpin 200s linear infinite reverse}
+.mobile-taste .orbit-C .mo-spin{animation:moSpin 160s linear infinite reverse}.mobile-taste .orbit-D .mo-spin{animation:moSpin 200s linear infinite}
+.mobile-taste .mo-core{width:20%;height:20%;margin:-10%}.mobile-taste .mo-orb{width:28px;height:28px}.mobile-taste .pl-btn{transform:translate(-50%,-14px)}
+.mobile-taste .mo-label{max-width:68px;padding:2px 5px;font-size:10px}
+.mobile-taste .taste-mobile-tabs{flex-wrap:wrap;gap:2px}.mobile-taste .taste-mobile-tabs button{flex:1 1 auto;padding-inline:7px;font-size:12px}
+
+.mobile-calendar .navbtn{width:36px;height:36px;flex:none;display:grid;place-content:center;border:0;border-radius:10px;background:transparent;color:var(--text);cursor:pointer;transition:background .15s ease,transform .12s ease}.mobile-calendar .navbtn:active{background:var(--surface-2);transform:scale(.92)}.mobile-calendar .vseg{display:inline-flex;padding:3px;border-radius:11px;background:var(--surface-2);border:1px solid var(--border)}.mobile-calendar .vseg button{height:30px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease}.mobile-calendar .vseg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}.mobile-calendar .today-btn{height:32px;padding:0 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer}.mobile-calendar .today-btn:active{background:var(--surface-2)}.mobile-calendar .mgrid-head{display:grid;grid-template-columns:repeat(7,1fr);padding:0 12px;font-size:12px;color:var(--muted);text-align:center}.mobile-calendar .mgrid-head .sun{color:#DC2626}.mobile-calendar .mgrid{display:grid;grid-template-columns:repeat(7,1fr);padding:4px 12px 0;animation:enter .35s cubic-bezier(.16,1,.3,1) both}.mobile-calendar .mday{display:flex;flex-direction:column;align-items:center;gap:4px;height:52px;padding-top:4px;border:0;background:transparent;cursor:pointer;border-radius:12px;transition:background .15s ease}.mobile-calendar .mday:active{background:var(--surface-2)}.mobile-calendar .mday .n{display:grid;place-content:center;width:32px;height:32px;border-radius:50%;font-family:'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;font-weight:500;color:var(--text);transition:background .2s ease,color .2s ease,transform .25s cubic-bezier(.34,1.56,.64,1)}.mobile-calendar .mday.sun .n{color:#DC2626}.mobile-calendar .mday.out .n{color:var(--border-strong)}.mobile-calendar .mday.past:not(.out) .n{color:var(--muted)}.mobile-calendar .mday.today .n{box-shadow:inset 0 0 0 1.5px var(--text)}.mobile-calendar .mday.sel .n{background:var(--accent);color:var(--accent-fg);box-shadow:none;transform:scale(1.04)}.mobile-calendar .mdots{display:flex;gap:3px;height:6px}.mobile-calendar .mdots .dot{width:5px;height:5px}.mobile-calendar .wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:4px 12px 0;animation:enter .35s cubic-bezier(.16,1,.3,1) both}.mobile-calendar .wday{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0 10px;border:1px solid transparent;border-radius:14px;background:transparent;cursor:pointer;transition:all .2s ease}.mobile-calendar .wday .d{font-size:12px;color:var(--muted)}.mobile-calendar .wday .n{font-family:'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-size:17px;font-weight:600}.mobile-calendar .wday.sun .d{color:#DC2626}.mobile-calendar .wday.today{border-color:var(--border-strong)}.mobile-calendar .wday.sel{background:var(--accent);border-color:var(--accent)}.mobile-calendar .wday.sel .d,.mobile-calendar .wday.sel .n{color:var(--accent-fg)}.mobile-calendar .wday.sel .dot{box-shadow:0 0 0 1.5px var(--accent)}.mobile-calendar .wday .mdots{min-height:6px}.mobile-calendar .agenda-h{display:flex;align-items:baseline;gap:8px}.mobile-calendar .ecard{position:relative;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:18px;background:var(--surface);overflow:hidden;animation:enter .4s cubic-bezier(.16,1,.3,1) both}.mobile-calendar .ecard:nth-child(2){animation-delay:.04s}.mobile-calendar .ecard:nth-child(3){animation-delay:.08s}.mobile-calendar .ec-head{display:flex;gap:12px;align-items:center;width:100%;padding:14px 64px 12px 14px;border:0;background:transparent;text-align:left;cursor:pointer;transition:background .15s ease}.mobile-calendar .ec-head:active{background:var(--surface-2)}.mobile-calendar .ec-title{font-size:15.5px;font-weight:600;letter-spacing:-0.02em;line-height:1.4}.mobile-calendar .ec-meta{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}.mobile-calendar .ec-meta .k{font-weight:600;color:var(--text-2)}.mobile-calendar .switch.ec-sw{position:absolute;top:18px;right:14px;z-index:2}.mobile-calendar .ec-rems{display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-top:1px solid var(--border)}.mobile-calendar .rem{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}.mobile-calendar .ec-foot{display:flex;justify-content:flex-end;gap:2px;padding:4px 8px 8px}.mobile-calendar .ec-foot .btn{height:32px;padding:0 12px;font-size:13px;border-radius:9px}.mobile-calendar .btn-danger{color:#DC2626}.mobile-calendar .switch{position:relative;width:44px;height:26px;flex:none;border:0;border-radius:999px;background:var(--surface-3);cursor:pointer;padding:0;transition:background .2s ease}.mobile-calendar .switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}.mobile-calendar .switch.on{background:#16A34A}.mobile-calendar .switch.on::after{transform:translateX(18px)}.mobile-calendar .up{display:flex;align-items:center;gap:10px;width:100%;padding:13px 0;border:0;border-bottom:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;transition:background .15s ease}.mobile-calendar .up:last-child{border-bottom:0}.mobile-calendar .up:active{background:var(--surface-2)}.mobile-calendar .up .at{width:104px;flex:none;font-size:13px;color:var(--text-2);white-space:nowrap}.mobile-calendar .up .tt{flex:1;min-width:0;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mobile-calendar .up .k{font-size:12px;color:var(--muted)}.mobile-calendar .fab{position:absolute;right:18px;bottom:100px;z-index:15;width:56px;height:56px;display:grid;place-content:center;border:0;border-radius:18px;background:var(--accent);color:var(--accent-fg);box-shadow:0 14px 30px -10px rgba(0,0,0,.45);cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}.mobile-calendar .fab:active{transform:scale(.9)}.mobile-calendar .fab svg{width:24px;height:24px}.mobile-calendar .sheet.tall{height:92%;max-height:92%}.mobile-calendar .step{display:flex;flex-direction:column;gap:10px}.mobile-calendar .step-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text-2)}.mobile-calendar .step-h .no{width:20px;height:20px;display:grid;place-content:center;border-radius:50%;background:var(--surface-3);font-size:11.5px;font-weight:600}.mobile-calendar .opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--surface);text-align:left;cursor:pointer;transition:all .18s ease}.mobile-calendar .opt:active{transform:scale(.99)}.mobile-calendar .opt.on{border-color:var(--text);box-shadow:0 0 0 3px var(--ring)}.mobile-calendar .opt:disabled{opacity:.42;cursor:not-allowed}.mobile-calendar .opt .t1{font-size:14.5px;font-weight:500}.mobile-calendar .opt .t2{font-size:12.5px;color:var(--muted)}.mobile-calendar .chip.sm{height:34px;font-size:13.5px}.mobile-calendar .chip:disabled{opacity:.4;cursor:not-allowed}.mobile-calendar .mini{border:1px solid var(--border);border-radius:16px;padding:10px 10px 8px}.mobile-calendar .mini-h{display:flex;align-items:center;padding:0 2px 6px}.mobile-calendar .mini-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.mobile-calendar .mini-g .w{font-size:11.5px;color:var(--muted);padding:4px 0}.mobile-calendar .md{height:38px;border:0;border-radius:50%;background:transparent;font-family:'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;cursor:pointer;color:var(--text);transition:background .15s ease}.mobile-calendar .md.out{color:var(--border-strong)}.mobile-calendar .md:disabled{color:var(--border-strong);cursor:not-allowed;text-decoration:line-through;text-decoration-color:var(--border)}.mobile-calendar .md.today{font-weight:700}.mobile-calendar .md.on{background:var(--accent);color:var(--accent-fg);font-weight:600;text-decoration:none}.mobile-calendar .tinput{height:40px;padding:0 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:15px;color:var(--text)}.mobile-calendar .tinput:disabled{opacity:.5}.mobile-calendar .hint{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:12.5px;line-height:1.55;color:var(--text-2)}.mobile-calendar .dmprev{display:flex;gap:10px;align-items:flex-end;padding:12px;border-radius:16px;background:var(--surface-2)}.mobile-calendar .bubble{position:relative;padding:10px 12px;border-radius:16px 16px 16px 4px;background:var(--surface);border:1px solid var(--border);font-size:13.5px;line-height:1.55}.mobile-calendar .sheet-foot{flex:none;display:flex;flex-direction:column;gap:8px;padding:12px 16px 26px;border-top:1px solid var(--border);background:var(--surface)}.mobile-calendar .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;padding:14px;border:1px solid var(--border);border-radius:16px}.mobile-calendar .info-grid .k{font-size:12px;color:var(--muted)}.mobile-calendar .info-grid .v{font-size:14px;font-weight:500;line-height:1.45}.mobile-calendar .lrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14.5px}.mobile-calendar .lrow:last-child{border-bottom:0}.mobile-calendar .lrow .b{margin-left:auto;font-size:13.5px;color:var(--text-2);text-align:right}.mobile-calendar .lrow .b.miss{color:var(--muted)}.mobile-calendar .cvev{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);text-align:left;font-size:14px;cursor:pointer}.mobile-calendar .cvev.cur{border-color:var(--text)}.mobile-calendar .cvev:active{background:var(--surface-2)}
+
+.mobile-calendar .fab{bottom:18px}
+.mobile-calendar .scrim{position:fixed}.mobile-calendar .sheet{position:fixed;max-height:88dvh}.mobile-calendar .sheet.tall{height:92dvh;max-height:92dvh}
+.mobile-calendar .sheet>div:not(.scroll),.mobile-calendar .sheet-foot{flex-shrink:0}.mobile-calendar .sheet-foot{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.mobile-calendar .tinput{font-size:16px}.mobile-calendar .opt>span{min-width:0}.mobile-calendar .opt .t1,.mobile-calendar .info-grid .v{overflow-wrap:anywhere}
+.mobile-calendar .ec-meta{flex-wrap:wrap}.mobile-calendar .switch:disabled{opacity:.4;cursor:not-allowed}
+.mobile-calendar .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mobile-calendar .info-grid>div{min-width:0}
+.mobile-calendar .mgrid,.mobile-calendar .wstrip{grid-template-columns:repeat(7,minmax(0,1fr))}
+.mobile-calendar .mday{width:100%;min-width:0;padding-inline:0}.mobile-calendar .wday{min-width:0}
+.mobile-calendar .calendar-month-toolbar h2{white-space:nowrap;min-width:0;font-size:clamp(15px,4.8vw,19px)!important}
+.mobile-calendar .calendar-month-toolbar .navbtn{width:30px}.mobile-calendar .calendar-month-toolbar .vseg button{padding-inline:9px}
+
+/* 미용(beauty) 유형 전용 CSS — 기존 styles.css(토큰·.orb·.field·.callout·.btn 등) 위에 추가 */
+.t-beauty{background:#EC4899}
+.o-beauty::before{background:radial-gradient(circle at 30% 30%,#FFE4E6 0,transparent 38%),radial-gradient(circle at 70% 62%,#F472B6 0,transparent 42%),radial-gradient(circle at 40% 78%,#FDBA74 0,transparent 40%),conic-gradient(from 140deg,#FBCFE8,#F9A8D4,#FECDD3,#EC4899,#FBCFE8)}
+.o-beauty{animation-duration:9.5s;animation-delay:-5s}.o-beauty::before{animation-duration:12.5s;animation-delay:-3s}
+.bpts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.bpts li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--border);font-size:14px;line-height:1.55}
+.bpts li:first-child{border-top:0;padding-top:4px}
+.bpts .n{font-family:inherit;font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);padding-top:2px}
+
+.m .beauty-card{padding:16px!important;min-width:0}.m .beauty-card .beauty-facts{grid-template-columns:repeat(2,minmax(0,1fr))!important}.m .beauty-card .field{padding:12px;min-width:0}.m .beauty-card .field .v{overflow-wrap:anywhere}.m .beauty-card h2{font-size:16px}.m .beauty-card .callout{display:flex;gap:10px;font-size:13px;line-height:1.6}.m .beauty-card .bpts li{font-size:14px}.m .beauty-card .btn{max-width:100%;white-space:normal;height:auto;min-height:44px;padding-block:10px}
 </style>
 </helmet>
 <div class="{{rootCls}}" style="width: 100%; height: 100dvh; position: relative; overflow: hidden; display: flex; flex-direction: column">
 
+  <sc-if value="{{notCalendar}}">
   <!-- ===== TAB HEADER ===== -->
   <header style="flex: none; display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 12px 0 20px">
     <sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
@@ -225,7 +309,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <sc-if value="{{notHome}}" hint-placeholder-val="{{ false }}">
       <h1 style="font-size: 22px; font-weight: 700; letter-spacing: -0.03em">{{tabTitle}}</h1>
     </sc-if>
-    <button type="button" class="badge" onClick="{{toggleDataMode}}" aria-label="{{modeAction}}">{{modeLabel}}</button>
+    <sc-if value="{{isDemo}}"><button type="button" class="badge" onClick="{{toggleDataMode}}" aria-label="{{modeAction}}">{{modeLabel}}</button></sc-if>
     <button type="button" aria-label="설정 열기" onClick="{{openSettings}}" style="margin-left: auto; width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: linear-gradient(135deg,#C4B5FD,#93C5FD); color: #1E1B4B; font-size: 14px; font-weight: 600">{{profileInitial}}</button>
   </header>
 
@@ -302,7 +386,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <sc-if value="{{isLibrary}}" hint-placeholder-val="{{ false }}">
       <div class="fadein" style="display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 28px">
         <div class="library-search"><button type="button" class="library-search-button" aria-label="검색" onClick="{{searchContents}}"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200"></div>
-        <div class="library-controls" role="group" aria-label="콘텐츠 필터와 정렬"><select class="input" aria-label="상태" value="{{statusF}}" onChange="{{onStatus}}"><option value="all">전체 상태</option><option value="processing">처리 중</option><option value="done">완료</option><option value="check">확인 필요</option><option value="failed">미처리</option></select><select class="input" aria-label="정렬" value="{{sort}}" onChange="{{onSort}}"><option value="new">최신순</option><option value="old">오래된순</option></select><button type="button" class="{{favChipCls}}" aria-pressed="{{favOnlyPressed}}" onClick="{{toggleFavOnly}}">☆ 즐겨찾기</button></div>
         <sc-if value="{{isLive}}"><span class="screen-reader-only" role="status">{{searchStatus}}</span></sc-if>
         <div class="hscroll" role="group" aria-label="유형 필터">
           <sc-for list="{{typeChips}}" as="t" hint-placeholder-count="5">
@@ -311,10 +394,17 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             </button>
           </sc-for>
         </div>
+        <div class="hscroll" role="group" aria-label="상태 필터">
+          <sc-for list="{{statusChips}}" as="c">
+            <button type="button" class="{{c.cls}}" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}" style="height:32px;font-size:13px">{{c.label}}</button>
+          </sc-for>
+        </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; padding-top: 2px">
           <span class="muted"><b class="mono" style="color: var(--text); font-weight: 600">{{libCount}}</b>개</span>
           <sc-if value="{{isFiltered}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn btn-ghost btn-sm" onClick="{{resetFilters}}" style="color: var(--muted); padding: 0 6px">초기화</button></sc-if>
 
+          <button type="button" class="btn btn-ghost btn-sm" onClick="{{toggleSort}}" aria-label="정렬 순서 변경" style="margin-left:auto;color:var(--text-2);padding:0 6px">{{sortLabel}}</button>
+          <button type="button" class="{{favChipCls}}" aria-pressed="{{favOnlyPressed}}" onClick="{{toggleFavOnly}}" style="height:32px;font-size:13px;padding:0 10px">☆ 즐겨찾기</button>
         </div>
         <sc-if value="{{libHasItems}}" hint-placeholder-val="{{ true }}">
           <div>
@@ -345,10 +435,92 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       </div>
     </sc-if>
 
-    <design-include name="taste"></design-include>
-    <sc-if value="{{isCalendar}}"><sc-scope value="{{calendar}}"><design-include name="calendar"></design-include></sc-scope></sc-if>
+        <!-- TASTE -->
+    <sc-if value="{{isTaste}}" hint-placeholder-val="{{ false }}">
+      <div class="fadein mobile-taste" style="display: flex; flex-direction: column; gap: 16px; padding: 4px 20px 28px">
+        <p class="muted" style="font-size: 14.5px">마음에 든 콘텐츠를 나만의 궤도에 모아보세요.</p>
+        <div class="seg taste-mobile-tabs" role="group" aria-label="취향 분야">
+          <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="3">
+            <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><span class="{{t.dot}}"></span>{{t.label}}<span class="mono" style="font-size: 11.5px; opacity: .6">{{t.count}}</span></button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{tasteHasAny}}" hint-placeholder-val="{{ true }}">
+          <div class="mo-stage" role="group" aria-label="내 취향 궤도">
+            <span class="mo-glow" aria-hidden="true"></span>
+            <span class="os-line l-outer" aria-hidden="true"></span>
+            <sc-for list="{{tasteOrbits}}" as="ring">
+              <span class="{{ring.lineCls}}" aria-hidden="true"></span>
+              <span class="{{ring.labelCls}}" aria-hidden="true"><span class="{{ring.dot}}"></span>{{ring.label}}</span>
+              <div class="mo-orbit {{ring.cls}}">
+                <sc-for list="{{ring.planets}}" as="p">
+                  <span class="{{p.cls}}"><span class="mo-up"><span class="mo-spin">
+                    <button type="button" class="{{p.btnCls}}" aria-label="{{p.aria}}" aria-pressed="{{p.selPressed}}" onClick="{{p.select}}">
+                      <span class="mo-orb"><span class="{{p.orbCls}}" style="width:100%;height:100%"></span></span>
+                      <span class="mo-label">{{p.title}}</span>
+                    </button>
+                  </span></span></span>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div class="mo-core">
+              <span class="mo-wave" aria-hidden="true"></span><span class="mo-wave w2" aria-hidden="true"></span>
+              <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width:74%;position:relative;top:4px">
+            </div>
+          </div>
+
+          <sc-if value="{{tasteHasSelection}}" hint-placeholder-val="{{ false }}">
+            <section class="mo-sel">
+              <div style="display: flex; align-items: center; gap: 14px">
+                <span class="{{tasteSelection.orbCls}}" style="width: 56px; height: 56px"></span>
+                <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted)"><span class="{{tasteSelection.dot}}"></span>{{tasteSelection.typeLabel}} · 받은 날 {{tasteSelection.received}}</span>
+                  <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">{{tasteSelection.title}}</span>
+                </div>
+                <button type="button" class="icon-btn" aria-label="선택 해제" onClick="{{clearTasteSelection}}" style="width: 36px; height: 36px; align-self: flex-start"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              </div>
+              <sc-if value="{{tasteSelection.hasSummary}}" hint-placeholder-val="{{ true }}"><p class="mo-sum">{{tasteSelection.summary}}</p></sc-if>
+              <div style="display: flex; gap: 8px">
+                <button type="button" class="btn btn-primary" onClick="{{tasteSelection.open}}" style="flex: 1; height: 46px">콘텐츠 보기</button>
+                <button type="button" class="btn" onClick="{{tasteSelection.remove}}" style="flex: 1; height: 46px; color: var(--muted)">취향에서 빼기</button>
+              </div>
+            </section>
+          </sc-if>
+          <sc-if value="{{tasteNoSelection}}" hint-placeholder-val="{{ true }}">
+            <p class="muted" style="font-size: 13px; text-align: center; margin-top: -4px">궤도 위 콘텐츠를 누르면 자세히 볼 수 있어요</p>
+          </sc-if>
+
+          <section style="display: flex; flex-direction: column; gap: 14px">
+            <sc-for list="{{tasteGroups}}" as="g" hint-placeholder-count="2">
+              <div class="{{g.cls}}">
+                <div class="mo-gh"><span class="{{g.dot}}"></span>{{g.label}}<span class="mono" style="margin-left: auto">{{g.count}}</span></div>
+                <sc-for list="{{g.items}}" as="ti" hint-placeholder-count="2">
+                  <button type="button" class="{{ti.rowCls}}" aria-pressed="{{ti.selPressed}}" onClick="{{ti.select}}">
+                    <span class="{{ti.orbCls}}" style="width: 38px; height: 38px"></span>
+                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="row-title">{{ti.title}}</span><span class="row-sub">{{ti.key}}</span></span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{g.empty}}" hint-placeholder-val="{{ false }}"><span class="muted" style="font-size: 13px; padding: 8px 4px">아직 이 궤도에 모은 콘텐츠가 없어요.</span></sc-if>
+              </div>
+            </sc-for>
+            <p class="muted" style="font-size: 12px; line-height: 1.6">뉴스·정보를 제외하고 직접 모은 콘텐츠가 궤도에 올라가요. 빼도 원래 정리 결과는 그대로예요.</p>
+          </section>
+        </sc-if>
+        <sc-if value="{{tasteNone}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 0; text-align: center">
+            <span class="orb o-unknown" style="width: 44px; height: 44px"></span>
+            <span style="font-weight: 600">아직 모아둔 취향이 없어요.</span>
+            <span class="muted" style="font-size: 13.5px">콘텐츠 상세에서 ‘취향으로 모으기’를 눌러보세요.</span>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
 
   </div>
+
+  </sc-if>
+    <sc-if value="{{isCalendar}}"><sc-scope value="{{calendar}}"><design-include name="mobile-calendar"></design-include></sc-scope></sc-if>
 
   <!-- ===== TAB BAR ===== -->
   <nav class="tabbar" aria-label="주 메뉴">
@@ -507,6 +679,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             </section>
           </sc-if>
 
+          <design-include name="beauty"></design-include>
           <!-- exhibit -->
           <sc-if value="{{d.isExhibit}}" hint-placeholder-val="{{ false }}">
             <p style="font-size: 15.5px; line-height: 1.65; color: var(--text-2)">{{d.intro}}</p>
@@ -955,7 +1128,9 @@ class Component extends DCLogic {
         intro: '그림책과 독립출판물을 모아 둔 작은 서점이에요. 주말에는 그림책 낭독회를 열어요. (가상 데이터)', category: '서점·책방', hours: '화–일 12:00 – 20:00', closed: '월요일 휴무',
         address: '가상시 연남로 3', mapNaver: 'https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', mapKakao: 'https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', reservation: '낭독회는 DM으로 신청', waiting: '대기 정보 미기재', parking: '주차 불가', phone: '전화번호 미기재' },
       { id: 'p1', type: 'unknown', title: '새로 보낸 릴스', status: 'needtype', dm: 'guide', received: '오늘 15:02', ts: 1502, key: '어떤 내용으로 정리할지 선택해 주세요', author: null },
-      { id: 'f1', type: 'unknown', title: '접근할 수 없는 게시물', status: 'insufficient', dm: 'guide', received: '10월 30일', ts: 1009, key: '원본을 확인하지 못했어요', author: null }
+      { id: 'f1', type: 'unknown', title: '접근할 수 없는 게시물', status: 'insufficient', dm: 'guide', received: '10월 30일', ts: 1009, key: '원본을 확인하지 못했어요', author: null },
+      {"id": "b1", "type": "beauty", "title": "가상 헤어살롱 — 레이어드 컷", "status": "done", "dm": "sent", "dmAt": "10월 30일 12:31", "received": "10월 30일", "ts": 10301230, "key": "미용실 · 컷 45,000원~", "author": "@sample_salon", "origin": "https://example.com/instagram/p/b1", "organized": "10월 30일 12:31", "checkedAt": "2026.10.30 12:31 KST", "thumb": true, "sub": "salon", "phase": "영업 중", "phaseCls": "badge s-done", "intro": "얼굴선을 따라 층을 내는 레이어드 컷을 소개한 미용실 게시물이에요. (가상 데이터)", "bFacts": [["종류", "미용실"], ["시술", "레이어드 컷 · 드라이 포함"], ["가격", "45,000원~ (기장 추가 요금 있음)"], ["소요 시간", "약 1시간"]], "points": ["상담 때 평소 가르마 방향을 알려주면 층 위치를 맞춰준다고 했어요.", "컷 후 한 달 안 앞머리 다듬기는 무료라고 안내했어요.", "주말은 예약이 빨리 마감된다고 했어요."], "place": "가상 헤어살롱 2호점", "address": "가상시 미용로 21, 2층", "hours": "화–일 11:00 – 20:00 · 월 휴무", "links": [["예약 페이지 열기", "https://example.com/salon/booking", 1], ["매장 안내 보기", "https://example.com/salon", 0]], "linkNote": "예약은 매장 페이지에서 진행돼요. 이 서비스에서 예약이 완료되지 않아요.", "caution": "가격은 게시물 기준이에요. 실제 요금은 기장·모발 상태에 따라 달라질 수 있어요."},
+      {"id": "b2", "type": "beauty", "title": "수분 진정 토너 (가상 브랜드)", "status": "done", "dm": "sent", "dmAt": "10월 27일 15:32", "received": "10월 27일", "ts": 10271530, "key": "화장품 · 200ml 18,000원", "author": "@sample_skin", "origin": "https://example.com/instagram/p/b2", "organized": "10월 27일 15:32", "checkedAt": "2026.10.27 15:32 KST", "thumb": true, "sub": "product", "phase": "협찬 표시 있음", "phaseCls": "badge s-warn", "intro": "세안 후 바로 쓰는 묽은 제형의 토너를 소개한 게시물이에요. 게시물에 유료 광고 표시가 있어요. (가상 데이터)", "bFacts": [["종류", "화장품 · 토너"], ["브랜드", "가상 코스메틱"], ["용량·가격", "200ml · 18,000원"], ["언급한 피부 타입", "건성·복합성"]], "points": ["화장솜보다 손바닥으로 두드려 흡수시키는 방법을 추천했어요.", "아침에는 1번, 저녁에는 2–3번 겹쳐 바른다고 했어요.", "향료가 없다고 소개했어요 — 전성분은 판매처에서 확인해 주세요."], "place": "", "address": "", "hours": "", "links": [["판매처 보기", "https://example.com/toner/shop", 1], ["전성분 확인하기", "https://example.com/toner/ingredients", 0]], "linkNote": "구매는 판매처에서 진행돼요. 가격은 확인 시점 기준이에요.", "caution": "효과·사용감은 게시물 작성자의 설명이에요. 피부 타입에 따라 다를 수 있어요."}
     ];
     this._data = { ITEMS };
     return this._data;
@@ -984,7 +1159,7 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state; this.data(); const ITEMS = this._data.ITEMS;
-    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', unknown: '유형 미정' };
+    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용', unknown: '유형 미정' };
     const ST = { done: ['정리 완료', 'badge s-done', 'done'], processing: ['처리 중', 'badge s-proc', 'processing'], needtype: ['유형 선택 필요', 'badge s-warn', 'check'], insufficient: ['자료 부족', 'badge s-err', 'failed'] };
     const DM = { sent: ['DM 발송 확인', 'badge s-neutral'], failed: ['DM 전달 실패', 'badge s-err'], unknown: ['DM 전달 미확인', 'badge s-warn'], guide: ['안내 DM 발송', 'badge s-neutral'], waiting: ['DM 대기', 'badge s-neutral'] };
     const deco = (raw) => {
@@ -999,7 +1174,7 @@ class Component extends DCLogic {
       });
     };
     const items = ITEMS.map(deco);
-    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
+    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0, beauty: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
     let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF) && (!s.favOnly || s.fav[i.id]));
     lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
@@ -1015,6 +1190,17 @@ class Component extends DCLogic {
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
+      d.isBeauty = done && raw.type === 'beauty';
+      d.bFacts = []; d.points = []; d.bLinks = [];
+      if (d.isBeauty) {
+        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
+        d.hasPlace = !!raw.place;
+        d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
+        d.bSectionTitle = raw.sub === 'salon' ? '장소·예약' : '구매처';
+        d.shareIncludes = raw.sub === 'salon' ? ['미용실·시술·가격', '운영 시간·위치', '예약 링크와 원본 링크'] : ['제품명·브랜드·용량·가격', '게시물에서 말한 사용법', '판매처 링크와 원본 링크'];
+      }
+
       d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
       d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isSpace = done && raw.type === 'space'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
@@ -1097,11 +1283,11 @@ class Component extends DCLogic {
       sort: s.sortNew ? 'new' : 'old', onSort: e => this.setState({ sortNew: e.target.value === 'new' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value }),
-      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
+      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space], ['beauty', '미용', 'dot t-beauty', counts.beauty]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
       statusChips: [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k }) })),
       libItems: lib, libCount: lib.length, libHasItems: lib.length > 0, libEmpty: lib.length === 0, isFiltered,
       emptyTitle: q ? '검색 결과가 없어요.' : '선택한 조건에 맞는 콘텐츠가 없어요.', emptyDesc: q ? '검색어를 바꾸거나 지워 보세요.' : '필터를 바꾸거나 초기화해 보세요.',
-      resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all' }),
+      resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all', favOnly: false }),
       sortLabel: s.sortNew ? '최근순' : '오래된순', toggleSort: () => this.setState({ sortNew: !s.sortNew }),
       tasteTabs: [['recipe', '레시피', 'dot t-recipe'], ['exhibit', '전시·공간', 'dot t-exhibit']].map(([k, label, dot]) => ({ label, dot, count: tasteAll.filter(i => i.type === k).length, cls: tasteType === k ? 'on' : '', pressed: tasteType === k ? 'true' : 'false', pick: () => this.setState({ tasteTab: k }) })),
       tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteCardLabel: '15분 안팎의 간단한 팬·면 요리', tasteCardDesc: '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
@@ -1111,9 +1297,9 @@ class Component extends DCLogic {
       removeTasteCard: () => { this.setState({ tasteRemoved: true }); this.toast('취향 표현을 삭제했어요. 모은 콘텐츠는 그대로예요.'); },
       hasDetail: !!raw, d, closeDetail: () => { clearInterval(this._ct); this.setState({ detailId: null, cook: null, share: null }); },
       srcOpen: s.srcOpen, srcExpanded: s.srcOpen ? 'true' : 'false', srcChevStyle: s.srcOpen ? 'transform: rotate(180deg); transition: transform .25s ease' : 'transition: transform .25s ease', toggleSrc: () => this.setState({ srcOpen: !s.srcOpen }),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
-      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
+      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       startCook: () => this.cookGo('prep', 0, 'fwd'), closeCook: () => { clearInterval(this._ct); this.setState({ cook: null, timer: null }); },
       cookNext: () => this.cookNext(), cookPrev: () => this.cookPrev(), timerToggle: () => this.timerToggle(),
       timerReset: () => { clearInterval(this._ct); const t = this.state.timer; if (t) this.setState({ timer: Object.assign({}, t, { left: t.total, running: false }) }); },
