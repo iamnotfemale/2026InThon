@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>디미 · 공유 이미지 원본</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
+  <style>
+    body{margin:0;padding:24px;background:#eee;font-family:'Noto Sans KR',sans-serif}
+    canvas{display:block;width:1200px;height:630px;background:#fafafa}
+    nav{display:flex;gap:16px;margin-top:20px}a{color:#111}#icon{display:none}
+  </style>
+</head>
+<body>
+  <canvas id="og" width="1200" height="630" aria-label="당신의 가장 가까운 비서 디미. 파란 구슬 로고와 @dimi_in 핸들"></canvas>
+  <canvas id="icon" width="512" height="512"></canvas>
+  <nav><a id="download-og" hidden download="dimi-og-v1.png">OG 이미지 다운로드</a><a id="download-icon" hidden download="dimi-icon-512.png">파비콘 원본 다운로드</a></nav>
+  <p id="status" role="status">브랜드 이미지 준비 중…</p>
+  <script type="module">
+    await Promise.all([400,500,600,700,800].map(weight=>document.fonts.load(`${weight} 32px "Noto Sans KR"`, '당신의 가장 가까운 비서 디미')));
+    const logo=new Image();logo.src='../../public/assets/dimi-icon.svg';await logo.decode();
+    const canvas=document.querySelector('#og'),ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fafafa';ctx.fillRect(0,0,1200,630);
+    ctx.drawImage(logo,74,67,28,28);
+    ctx.fillStyle='#171717';ctx.font='700 24px "Noto Sans KR"';ctx.fillText('디미',114,92);
+    ctx.font='500 39px "Noto Sans KR"';ctx.fillText('당신의 가장 가까운 비서',72,206);
+    ctx.font='800 142px "Noto Sans KR"';ctx.fillText('디미',65,366);
+    ctx.fillStyle='#737373';ctx.font='400 25px "Noto Sans KR"';
+    ctx.fillText('콘텐츠를 보내세요.',76,437);ctx.fillText('디미가 정리해드릴게요.',76,478);
+    ctx.strokeStyle='#e5e7f0';ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(935,300,195,216,-0.48,0,Math.PI*2);ctx.stroke();
+    ctx.save();ctx.shadowColor='#6366f126';ctx.shadowBlur=46;ctx.shadowOffsetY=24;ctx.drawImage(logo,783,148,304,304);ctx.restore();
+    for(const [x,y,r,color] of [[786,148,12,'#f5a568'],[1115,371,10,'#b698ef'],[839,491,8,'#8bcdb6']]){
+      ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    }
+    ctx.fillStyle='#525252';ctx.font='500 21px "Noto Sans KR"';ctx.fillText('@dimi_in',76,567);
+    ctx.fillStyle='#8a8a8a';ctx.font='400 18px "Noto Sans KR"';ctx.textAlign='right';ctx.fillText('inthon.yeoziphab.com',1125,567);
+    document.querySelector('#icon').getContext('2d').drawImage(logo,0,0,512,512);
+    for(const id of ['og','icon']){
+      const blob=await new Promise(resolve=>document.querySelector('#'+id).toBlob(resolve,'image/png'));
+      const link=document.querySelector('#download-'+id);link.href=URL.createObjectURL(blob);link.hidden=false;
+    }
+    document.querySelector('#status').textContent='1200 × 630 OG 이미지 · 512 × 512 투명 파비콘 원본 준비 완료';
+  </script>
+</body>
+</html>

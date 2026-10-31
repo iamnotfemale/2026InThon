@@ -1,2 +1,12 @@
+# Let link previews read the public page shell; results still require login.
+User-agent: facebookexternalhit
+User-agent: Facebot
+User-agent: Twitterbot
+User-agent: kakaotalk-scrap
+Disallow: /api/
+Disallow: /auth/
+Disallow: /webhooks/
+Allow: /
+
 User-agent: *
 Disallow: /

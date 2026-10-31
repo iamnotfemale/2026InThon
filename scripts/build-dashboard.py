@@ -99,8 +99,29 @@ def compile_page(source_path, name, model_name, output):
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
+  <link rel="icon" href="/assets/dimi-icon-32.png" type="image/png" sizes="32x32">
   <link rel="icon" href="/assets/dimi-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" sizes="180x180">
+  <meta name="theme-color" content="#fafafa">
   <title>__TITLE__</title>
+  <meta name="description" content="Instagram으로 보낸 콘텐츠를 레시피·팩트체크·일정·미용 정보로 정리하고, 나만의 취향으로 모아보세요.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:site_name" content="디미">
+  <meta property="og:title" content="디미 · 당신의 가장 가까운 비서">
+  <meta property="og:description" content="Instagram으로 보낸 콘텐츠를 레시피·팩트체크·일정·미용 정보로 정리하고, 나만의 취향으로 모아보세요.">
+  <meta property="og:url" content="https://inthon.yeoziphab.com__ROUTE__">
+  <meta property="og:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v1.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="당신의 가장 가까운 비서 디미 · 컬러 구슬 로고 · @dimi_in">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="디미 · 당신의 가장 가까운 비서">
+  <meta name="twitter:description" content="Instagram으로 보낸 콘텐츠를 레시피·팩트체크·일정·미용 정보로 정리하고, 나만의 취향으로 모아보세요.">
+  <meta name="twitter:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v1.png">
+  <meta name="twitter:image:alt" content="당신의 가장 가까운 비서 디미 · 컬러 구슬 로고 · @dimi_in">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="__FONTS__">
@@ -113,6 +134,7 @@ def compile_page(source_path, name, model_name, output):
 </html>
 '''
     shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts)
+    shell = shell.replace("__ROUTE__", '/' if name == 'landing' else '/' + name)
     if name == 'dashboard':
         shell = shell.replace('name="referrer" content="no-referrer"', 'name="referrer" content="strict-origin-when-cross-origin"')
         shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n  <link rel="stylesheet" href="/css/taste.css">\n  <link rel="stylesheet" href="/css/calendar.css">\n  <link rel="stylesheet" href="/css/kakao-map.css">\n</head>')
