@@ -1,6 +1,7 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 import { validateRecipe } from './recipe-data.js';
+import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -85,7 +86,39 @@ export function factcheckToItem(row, now = new Date()) {
       };
     } catch { return null; } // A malformed recipe must not appear as a news verdict or crash the library.
   }
+  if (done && row.topic === 'contest') {
+    try {
+      const stored = JSON.parse(row.reason);
+      const contest = validateContest(stored.contest);
+      const t = contestTimeline(contest, now);
+      const orNote = (list, note) => (list.length ? list : [note]);
+      return { ...item, type: 'contest', title: contest.title, key: t.keyLine, summary: contest.summary,
+        phase: t.phase, phaseCls: t.phaseCls,
+        host: contest.host || '주최 미기재',
+        organizer: contest.organizer ? '주관 · ' + contest.organizer : contest.sponsors.length ? '후원 · ' + contest.sponsors.join(', ') : '',
+        // The design shows "마감" when dday is empty, so an unknown deadline must not look closed.
+        dday: t.dday ?? (t.deadlineLabel === '마감일이 원본에 없어요' ? '미확인' : null), deadline: t.deadlineLabel,
+        elig: orNote(contest.eligibility.map(x => x.text), '지원 대상·조건이 원본에 없어요.'),
+        schedule: t.schedule.length ? t.schedule : [{ label: '일정', date: '원본에 날짜가 없어요', st: 'wait' }],
+        submit: orNote(contest.submissions.map(x => x.text), '제출물이 원본에 없어요.'),
+        process: orNote(contest.process.map(x => x.text), '지원 방법이 원본에 없어요.'),
+        benefit: orNote([...contest.benefits.map(x => x.text), contest.fee && '참가 비용: ' + contest.fee].filter(Boolean),
+          '혜택·참가 비용이 원본에 없어요.'),
+        noticeUrl: contest.noticeUrl, applyUrl: contest.applyUrl, checks: contest.checks,
+        origin: instagramOrigin(stored.sourceUrl), contestEvents: t.events };
+    } catch { return null; } // A malformed contest must not appear as a news verdict or crash the library.
+  }
   return item;
+}
+
+/** Only a canonical public Instagram post/reel URL is shown as the "원본 보기" link. */
+function instagramOrigin(value) {
+  try {
+    const source = new URL(value);
+    if (source.protocol === 'https:' && ['www.instagram.com', 'instagram.com'].includes(source.hostname)
+      && /^\/(p|reel|reels)\/[A-Za-z0-9_-]+\/$/.test(source.pathname)) return source.origin + source.pathname;
+  } catch {}
+  return null;
 }
 
 /** Display name for the signed-in Google user. */
@@ -145,6 +178,7 @@ export function applyLiveMode(v, s, app) {
   });
   // Our fact-checks cite sources but have no claim-by-claim comparison table.
   if (v.isDetail && v.d?.isNews) v.d = { ...v.d, cmpSummary: v.d.sourceCount ? '' : '확보한 근거 자료가 없어요' };
+  Object.assign(v, contestLiveValues(v, s, app));
   for (const name of NOT_YET) {
     v[name] = () => {
       app.setState({ modal: null, detailMenu: false, reportOpen: false });
@@ -152,6 +186,40 @@ export function applyLiveMode(v, s, app) {
     };
   }
   return v;
+}
+
+const SCHEDULE_DAYS = 60;
+const EVENT_WHAT = { start: '접수 시작', deadline: '접수 마감', announce: '결과 발표', activity: '활동 시작', event: '행사', other: '일정' };
+
+/**
+ * Home "다가오는 일정" from real 공모전·대외활동 results (the design hard-codes demo items c1/e1),
+ * and "캘린더에 추가" on a contest detail as a Google Calendar link for its deadline.
+ */
+export function contestLiveValues(v, s, app) {
+  const all = (app.allItems?.() ?? []).filter(item => item.type === 'contest');
+  const schedule = all.flatMap(item => (item.contestEvents ?? [])
+    .filter(event => event.days <= SCHEDULE_DAYS)
+    .map(event => ({ item, event })))
+    .sort((a, b) => a.event.date.localeCompare(b.event.date) || (a.event.time ?? '').localeCompare(b.event.time ?? ''))
+    .slice(0, 6)
+    .map(({ item, event }) => ({
+      mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title,
+      what: (event.type === 'other' || event.type === 'event' ? event.label : EVENT_WHAT[event.type]) + (event.time ? ' · ' + event.time + ' KST' : ''),
+      badge: event.days === 0 ? 'D-DAY' : 'D-' + event.days,
+      badgeCls: 'badge nodot ' + (event.type === 'deadline' && event.days <= 7 ? 's-warn' : 's-neutral'),
+      open: () => app.openDetail(item.id),
+    }));
+  const values = { schedule, hasSchedule: schedule.length > 0 };
+  const current = v.isDetail ? all.find(item => item.id === s.detailId) : null;
+  if (current) {
+    const deadline = (current.contestEvents ?? []).find(event => event.type === 'deadline');
+    values.addDeadline = () => {
+      const url = deadline && calendarLink(current.title, { ...deadline, label: '접수 마감' });
+      if (url) app.openExternal(url);
+      else app.toast('다가오는 마감일이 없어 캘린더에 추가할 수 없어요.');
+    };
+  }
+  return values;
 }
 
 /** account_links row (with ig_accounts embedded) → the design's connection fields. */

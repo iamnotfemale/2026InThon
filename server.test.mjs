@@ -446,13 +446,14 @@ test('signed content shares send three quick replies; clicks route the original 
     await deliver(f, [incoming({ message: { mid: 'click-' + action, text: offer.quick_replies[index].title,
       quick_reply: { payload: offer.quick_replies[index].payload } } })]);
     await eventually(() => f.stats.replies === index * 2 + 2);
-    assert.equal(saved.length, Math.min(index + 1, 2));
+    assert.equal(saved.length, index + 1);
   }
-  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck']);
+  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
   assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
-  assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe');
-  assert.deepEqual(marked, ['saved-result', 'saved-result']); assert.equal(blobs.size, 0);
+  assert.equal(sent.filter(m => m.text?.includes('주최, 마감일, 지원 조건')).length, 1, 'schedule has its own acknowledgement');
+  assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe'); assert.equal(saved[2].action, 'schedule');
+  assert.deepEqual(marked, ['saved-result', 'saved-result', 'saved-result']); assert.equal(blobs.size, 0);
 });
 
 test('chat outages get a chat error and the existing linking command still takes priority', async t => {

@@ -284,6 +284,7 @@ class DashboardApp extends DashboardModel {
   }
 
   openBotDm() { open(BOT_DM_URL, '_blank', 'noopener'); }
+  openExternal(url) { open(url, '_blank', 'noopener'); }
 
   /** Real linking happens over DM: "연결" → one-time link → Google sign-in on /link. Settings shows those steps. */
   showLinkGuide() { this.go('settings', { liveGuide: true, modal: null }); }

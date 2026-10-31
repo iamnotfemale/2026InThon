@@ -1,5 +1,6 @@
 import { randomBytes, createHash } from 'node:crypto';
 import { validateRecipe } from './public/js/recipe-data.js';
+import { validateContest } from './public/js/contest-data.js';
 
 export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 const IGSID = /^\d{1,32}$/;
@@ -92,14 +93,17 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       if (result.status !== 'done') return null;
       const status = 'done';
       const recipe = result.action === 'recipe' ? validateRecipe({ ...result.recipe, is_recipe: true }) : null;
-      const verdict = !recipe && VERDICTS.has(result.verdict) ? result.verdict : null;
+      const contest = result.action === 'schedule' ? validateContest(result.contest) : null;
+      const verdict = !recipe && !contest && VERDICTS.has(result.verdict) ? result.verdict : null;
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));
       const rows = await request('POST', '/factchecks?select=id', { igsid, status, verdict, sources,
-        claim: recipe ? recipe.title : clip(result.extracted?.claim, 1000), topic: recipe ? 'recipe' : clip(result.extracted?.topic, 50),
-        // shortcut: keep v1 recipes in the existing RLS-protected result table; move to a typed column when the shared content schema lands.
-        reason: recipe ? JSON.stringify({ recipe, sourceUrl: result.media?.sourceUrl ?? null }) : clip(result.reason, 2000) },
+        claim: recipe ? recipe.title : contest ? contest.title : clip(result.extracted?.claim, 1000),
+        topic: recipe ? 'recipe' : contest ? 'contest' : clip(result.extracted?.topic, 50),
+        // shortcut: keep v1 recipes and contests in the existing RLS-protected result table; move to a typed column when the shared content schema lands.
+        reason: recipe ? JSON.stringify({ recipe, sourceUrl: result.media?.sourceUrl ?? null })
+          : contest ? JSON.stringify({ contest, sourceUrl: result.media?.sourceUrl ?? null }) : clip(result.reason, 2000) },
       undefined, true);
       return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };
     },

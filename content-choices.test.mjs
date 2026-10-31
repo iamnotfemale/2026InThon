@@ -43,7 +43,7 @@ test('wrong sender, malformed payload, expired and replayed tickets never reach 
   assert.equal((await choices.select(clicked(offer, 1), '123', fail)).status, 'expired');
   assert.equal(data.size, 0);
 });
-test('concurrent clicks run once; recipe routes its action and only schedule remains unimplemented', async () => {
+test('concurrent clicks run once; recipe and schedule each route their own action with the original post', async () => {
   const { choices } = fixture(); let calls = 0;
   const offer = await choices.offer({ mid: 'a' }, '123');
   const process = async () => { calls++; return { status: 'done', messages: ['결과'] }; };
@@ -55,12 +55,13 @@ test('concurrent clicks run once; recipe routes its action and only schedule rem
     assert.equal(message.mid, 'recipe-original'); selected = action; return {status:'done',messages:['레시피']};
   }, async action => assert.equal(action, 'recipe'));
   assert.equal(selected, 'recipe'); assert.equal(recipeResult.action, 'recipe'); assert.equal(recipeResult.kind, 'content');
-  for (const index of [2]) {
-    const pending = await choices.offer({ mid: 'b' }, '123');
-    const result = await choices.select(clicked(pending, index), '123', () => assert.fail(), () => assert.fail());
-    assert.equal(result.status, 'not_ready'); assert.equal(result.kind, 'choice');
-    assert.match(result.messages[0], /준비 중/);
-  }
+  // 일정 조회 now runs the 공모전·대외활동 processor (exhibitions are answered as not ready inside it).
+  const schedule = await choices.offer({ mid: 'contest-original' }, '123');
+  let acknowledged;
+  const scheduleResult = await choices.select(clicked(schedule, 2), '123', async (message, action) => {
+    assert.equal(message.mid, 'contest-original'); assert.equal(action, 'schedule'); return { status: 'done', messages: ['공고'] };
+  }, async action => { acknowledged = action; });
+  assert.equal(acknowledged, 'schedule'); assert.equal(scheduleResult.action, 'schedule'); assert.equal(scheduleResult.kind, 'content');
 });
 test('analysis failure cleans up original input and reports failure without allowing a second analysis', async () => {
   const { choices, data } = fixture();

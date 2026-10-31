@@ -7,6 +7,7 @@ import { readSecrets, writeSecrets } from './secrets.mjs';
 import { createLoginTicket } from './oauth-state.mjs';
 import { isContentMessage } from './instagram-source.mjs';
 import { resultLinkMessage } from './result-preferences.mjs';
+import { CONTEST_ACK } from './contest.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
 export const APP_ID = '2418018855613539';
@@ -172,7 +173,8 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, {
             senderId: sender, acknowledge: action => send(action === 'recipe'
-              ? '받았어요. 영상·이미지와 본문에서 재료와 조리 순서를 정리할게요.' : FACTCHECK_ACK),
+              ? '받았어요. 영상·이미지와 본문에서 재료와 조리 순서를 정리할게요.'
+              : action === 'schedule' ? CONTEST_ACK : FACTCHECK_ACK),
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;
