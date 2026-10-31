@@ -26,7 +26,7 @@ node --test
 - 운영: Vercel에 `CONTINUUM_API_KEY`(선택 `CONTINUUM_BASE_URL`, `CONTINUUM_MODEL`, `GEMINI_API_KEY`)를 넣으면 `안녕?` 대신 접수 안내 + 팩트체크 결과를 보냅니다. 키가 없으면 기존 고정 답장 그대로입니다. 함수 제한 시간은 300초로 늘렸습니다.
 - 로컬 실DM 테스트: `node scripts/factcheck-local.mjs .env` (포트 3000, ngrok 연결). 실행 기록은 `factcheck-runs.jsonl`에 남습니다.
 - 사례 묶음 평가: `node scripts/factcheck-eval.mjs cases.json .env`
-- 공유 게시물·릴스는 웹훅에 캡션과 **대표 이미지 1장만** 옵니다(릴스도 영상이 아니라 커버 JPEG). 남의 게시물이라 미디어 ID 조회는 권한 오류(100/33)입니다. 그래서 릴스의 영상·음성은 현재 분석하지 못하며, 답장의 확인 범위에 그렇게 표시합니다. `GEMINI_API_KEY`가 있으면 직접 보낸 영상 파일만 Gemini로 전사합니다.
+- 공유 첨부 형식은 고정되어 있지 않습니다. 실제 테스트에서 `ig_reel`은 캡션·원본 릴스 URL, `ig_post`는 캡션·미디어 ID·JPEG 한 장의 CDN URL을 반환했습니다. [미디어 확보 테스트](docs/instagram-media-input-test.md)에 실제 범위와 제한을 기록했습니다. 로컬 yt-dlp 도구로 릴스 영상과 원본 링크가 있는 게시물 3장 다운로드를 확인했지만, 운영 팩트체크 함수에는 아직 이 다운로드 도구가 연결되지 않았습니다. `GEMINI_API_KEY`가 있으면 직접 보낸 영상 파일을 Gemini로 전사합니다.
 
 ## 연결
 

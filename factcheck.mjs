@@ -211,7 +211,7 @@ async function gatherInput(message, { fetchMedia, readVideo }) {
     catch (error) { notes.push(`${item.type} 첨부를 받지 못함(${error.message})`); continue; }
     if (media.contentType.startsWith('image/') && images.length < MAX_IMAGES && media.body.length <= MAX_IMAGE_BYTES) {
       images.push({ mediaType: media.contentType, data: media.body.toString('base64') });
-      // 공유된 게시물·릴스는 웹훅에 대표(커버) 이미지 하나만 온다. 남의 게시물이라 미디어 ID 조회도 권한 오류(100/33)다.
+      // A JPEG ig_post attachment alone does not establish coverage of all slides or video.
       if (item.type === 'ig_post') notes.push('공유 게시물은 대표 이미지만 받을 수 있어 영상·나머지 장은 확인하지 못함');
     } else if (media.contentType.startsWith('video/')) {
       if (!readVideo) { notes.push('영상은 열었지만 화면·음성 분석 모델이 없어 확인하지 못함'); continue; }
