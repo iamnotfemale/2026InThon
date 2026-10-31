@@ -53,11 +53,16 @@ export function createResultPreferences({ secret, getBlob = get, putBlob = put, 
   };
 }
 
-export function resultLinkMessage(publicUrl, id, result) {
+export function resultUrl(publicUrl, id) {
   if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Invalid content id');
   const url = new URL(publicUrl);
   if (url.protocol !== 'https:') throw new Error('Invalid public URL');
+  return url.origin + '/items/fc' + id;
+}
+
+export function resultLinkMessage(publicUrl, id, result) {
+  const url = resultUrl(publicUrl, id);
   const claim = typeof result.extracted?.claim === 'string' ? result.extracted.claim.replace(/[\r\n]/g, ' ').slice(0, 120) : '';
-  return '정리가 끝났어요.' + (claim ? '\n' + claim : '') + '\n\n자세히 보기: ' + url.origin + '/items/fc' + id
+  return '정리가 끝났어요.' + (claim ? '\n' + claim : '') + '\n\n자세히 보기: ' + url
     + '\n로그인한 본인만 볼 수 있어요.';
 }

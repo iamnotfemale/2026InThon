@@ -597,6 +597,33 @@ test('full results arrive before slow persistence; private links wait for saving
   }
 });
 
+test('a full-DM analysis can later be explained and linked from its own saved row through ordinary chat', async t => {
+  const sent = []; const rows = new Map(); let modelCalls = 0;
+  const respondToMessage = createDmAssistant({ publicUrl: 'https://example.ngrok-free.dev',
+    choices: { select: async () => ({ kind: 'content', status: 'done', action: 'factcheck',
+      extracted: { claim: '직전에 정리한 콘텐츠' }, messages: ['원본에서 확인한 내용이에요.'] }) },
+    history: { read: async () => [], write: async () => {} },
+    recentResults: async sender => rows.get(sender) || [],
+    model: async ({ content }) => {
+      modelCalls++; const saved = JSON.parse(content[0].text.replace(/^<saved_content>\s*|\s*<\/saved_content>$/g, ''));
+      assert.equal(saved[0].analysis.reason, '원본에서 확인한 내용이에요.');
+      return saved[0].result_url;
+    } });
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID }, respondToMessage,
+    saveFactCheck: async (sender, result) => {
+      rows.set(sender, [{ id: 73, status: 'done', created_at: '2026-11-01T00:00:00Z', topic: 'news',
+        claim: result.extracted.claim, reason: result.messages[0] }]); return { id: 73 };
+    },
+    apiFetch: async (_url, init) => { sent.push(JSON.parse(init.body).message.text); return json({ message_id: 'sent' }); },
+  });
+  await deliver(f, [incoming({ message: { mid: 'followup-content', text: '팩트체크', quick_reply: { payload: 'test' } } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(sent, ['원본에서 확인한 내용이에요.']); assert.equal(modelCalls, 0);
+  await deliver(f, [incoming({ message: { mid: 'followup-link', text: '그거 정리한 링크 줘' } })]);
+  await eventually(() => f.stats.replies === 2);
+  assert.equal(sent.at(-1), 'https://example.ngrok-free.dev/items/fc73'); assert.equal(modelCalls, 1);
+});
+
 test('missing handles are backfilled during a fact-check, known handles are not looked up again', async t => {
   const lookups = []; const stored = []; let known = null;
   const options = { config: { accessToken: 'test-token', userId: IG_ID },

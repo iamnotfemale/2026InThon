@@ -52,7 +52,7 @@ export default function handler(req, res) {
     verifyInstagramCode: state.issueLinkToken ? (code, sender) => createInstagramLink({
       secret: process.env.META_APP_SECRET, issueLinkToken: state.issueLinkToken,
     }).verify(code, sender, createSenderHandleLookup({ loadAccessToken, loadProfileToken })) : undefined,
-    respondToMessage: dmAssistantFromEnv({ loadAccessToken }),
+    respondToMessage: dmAssistantFromEnv({ loadAccessToken, recentResults: state.recentResults }),
     factCheck: process.env.GEMINI_API_KEY ? undefined : mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
     observeMessages: mediaProbeFromEnv(),
   }).publicServer.listeners('request')[0];

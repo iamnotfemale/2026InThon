@@ -25,6 +25,24 @@ function fakeSupabase() {
   return { fetchImpl, receipts, replies, calls };
 }
 
+test('recent chat results use the verified sender filter, successful rows and a bounded newest-first query', async () => {
+  const requests = [];
+  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_private', fetchImpl: async (url, init) => {
+    requests.push({ url: new URL(url), init });
+    return Response.json([{ igsid: '123', id: 51, status: 'done', claim: '내 결과' },
+      { igsid: '456', id: 52, status: 'done', claim: '다른 사람 결과' }, { igsid: '123', id: 53, status: 'failed' },
+      { igsid: '123', id: -1, status: 'done' }]);
+  } });
+  assert.deepEqual(await state.recentResults('123'), [{ id: 51, status: 'done', claim: '내 결과' }]);
+  const { url, init } = requests[0];
+  assert.equal(init.method, 'GET'); assert.equal(init.body, undefined);
+  assert.equal(url.searchParams.get('igsid'), 'eq.123'); assert.equal(url.searchParams.get('status'), 'eq.done');
+  assert.equal(url.searchParams.get('limit'), '3'); assert.equal(url.searchParams.get('order'), 'created_at.desc,id.desc');
+  assert.match(url.searchParams.get('select'), /reason.*restaurants.*restaurant_menus/);
+  await assert.rejects(state.recentResults('123&igsid=eq.456'), /Invalid sender/);
+  assert.equal(requests.length, 1);
+});
+
 test('supabase reservation lets exactly one instance reply and stores only hashes and metadata', async () => {
   const db = fakeSupabase();
   const opts = { url: 'https://example.supabase.co/', key: 'sb_secret_test', fetchImpl: db.fetchImpl };

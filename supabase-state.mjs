@@ -5,6 +5,7 @@ import { validateExhibit } from './public/js/exhibit-data.js';
 import { validateRestaurant } from './public/js/restaurant-data.js';
 import { validateSpace } from './public/js/space-data.js';
 import { normalizeBeauty } from './public/js/beauty-data.js';
+import { ROW_SELECT } from './public/js/dashboard-live.js';
 
 export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 const IGSID = /^\d{1,32}$/;
@@ -142,6 +143,13 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
           : contentIndex ? JSON.stringify({ reason: clip(result.reason, 2000), sourceUrl: result.media?.sourceUrl ?? null, ...indexed }) : clip(result.reason, 2000) },
       undefined, true);
       return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };
+    },
+    async recentResults(igsid) {
+      checkSender(igsid);
+      const rows = await request('GET', `/factchecks?igsid=eq.${igsid}&status=eq.done&select=${encodeURIComponent('igsid,' + ROW_SELECT)}&order=created_at.desc,id.desc&limit=3`,
+        undefined, undefined, true);
+      return rows.filter(row => row.igsid === igsid && row.status === 'done' && Number.isSafeInteger(row.id) && row.id > 0)
+        .slice(0, 3).map(({ igsid: _, ...row }) => row);
     },
     async linkedUser(igsid) {
       checkSender(igsid);
