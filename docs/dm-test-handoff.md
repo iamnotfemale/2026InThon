@@ -1,6 +1,6 @@
 # Instagram DM ‘안녕?’ 테스트 인수인계
 
-> 2026-10-31 배포 확인: 고정 도메인 HTTPS, challenge 검증, 잘못된 토큰·서명 거부, 서명된 빈 이벤트 저장을 확인했습니다. 현재 실제 DM 재테스트는 **Meta 계정 연결 복구 중**입니다. 비즈니스 포트폴리오의 Instagram 목록이 비어 있고 기존 토큰의 계정 조회가 오류 100/33을 반환하며, 사용자가 보낸 새 DM은 클라우드에 도착하지 않았습니다. 토큰 자체의 유효성과 메시지 권한은 확인했습니다. 아래 테스트는 계정 재연결·메시지 구독 복구 후 진행하세요.
+> 2026-10-31 17:56 KST 실제 DM 테스트 완료: `gong.zip.hab`에서 `@inthon2team`으로 보낸 새 DM 1건이 클라우드에 도착했고, 17:56:51에 Meta 메시지 API의 전송 성공을 기록했습니다. 사용자가 정확히 `안녕?` 답장을 받은 것도 확인했습니다. 로컬 서버와 ngrok은 종료했습니다. 고정 도메인 HTTPS, challenge 응답, 잘못된 토큰·서명 거부, 비공개 수신·전송 기록도 확인했습니다. 앱은 개발 모드를 유지합니다.
 
 ## 팀원이 바로 테스트하기
 
@@ -23,6 +23,8 @@
 | 고정 주소 | `https://inthon.yeoziphab.com` |
 | 상태 확인 | `GET /health` |
 | Meta 웹훅 | `GET, POST /webhooks/instagram` |
+| 클라우드 로그인 콜백 | `https://inthon.yeoziphab.com/auth/instagram/callback` |
+| DNS 반영 전 사용할 기본 주소 | `https://inthon-pi.vercel.app` (같은 Vercel 프로젝트) |
 | 테스트 대상 | `@inthon2team` / `17841414630453998` |
 | Meta 앱 | `2418018855613539` |
 | 로그인 구성 | `2085773485459248` |
@@ -73,18 +75,29 @@ sequenceDiagram
 | 환경변수 | 용도 |
 | --- | --- |
 | `META_APP_SECRET` | 실제 수신 서명 검증용 앱 시크릿 |
-| `META_ACCESS_TOKEN` | 이미 대상 계정·앱 ID·권한을 확인한 접근 토큰 |
+| `META_ACCESS_TOKEN` | 초기 토큰. 클라우드 재승인 토큰이 저장되면 최신 암호화 토큰을 우선 사용 |
 | `META_VERIFY_TOKEN` | Meta와 서버가 공유하는 웹훅 검증 토큰 |
 | `PUBLIC_URL` | `https://inthon.yeoziphab.com` |
-| `BLOB_READ_WRITE_TOKEN` | 비공개 상태 저장소 접근, Vercel 연결로 생성 (Supabase 미설정 시 사용) |
+| `BLOB_READ_WRITE_TOKEN` | 비공개 상태 저장소 접근, Vercel 연결로 생성. 클라우드 OAuth 티켓·갱신 토큰 저장에 항상 필요하며, Supabase 미설정 시 DM 기록도 저장 |
 | `SUPABASE_URL` | `https://epokaecxlgymchtqnjkn.supabase.co` |
-| `SUPABASE_SECRET_KEY` | Supabase 서버용 secret 키(`sb_secret_...`) 또는 기존 `service_role` 키. 두 값이 모두 있으면 Blob 대신 Supabase에 기록 |
+| `SUPABASE_SECRET_KEY` | Supabase 서버용 secret 키(`sb_secret_...`) 또는 기존 `service_role` 키. 두 값이 모두 있으면 DM 수신·답장 기록을 Blob 대신 Supabase에 저장 |
 
 토큰·시크릿은 GitHub, 브라우저용 환경변수, 이슈, 채팅에 넣지 않습니다. Vercel 환경변수를 변경한 뒤에는 재배포가 필요합니다.
 
-**클라우드 배포 범위는 기존 토큰을 사용하는 웹훅과 자동 답장입니다.** 새 사용자가 자신의 Instagram을 연결하는 로그인 기능과 클라우드 OAuth 콜백은 아직 구현하지 않았습니다. `/auth/instagram/callback`은 현재 Windows 로컬 도구의 기능입니다. 존재하지 않는 클라우드 콜백으로 Meta 리디렉션 URL을 바꾸지 마세요.
+**클라우드 로그인은 운영자가 기존 `@inthon2team`을 다시 연결하는 용도입니다.** 새 사용자가 각자의 Instagram 계정을 등록하는 기능은 아직 없습니다.
 
-토큰 만료·철회 시 운영자가 기존 로컬 도구로 다시 승인받고 Vercel Production의 토큰을 교체합니다. 이때 필요한 로그인 리디렉션은 로컬 ngrok의 현재 주소로 별도 확인해야 합니다. 웹훅의 고정 주소와 혼동하지 마세요.
+운영자 재연결 순서:
+
+1. 기존 앱 시크릿을 보관한 Windows PC에서 `start.ps1`로 로컬 관리 화면을 엽니다.
+2. **운영 서버에서 Instagram 다시 연결하기**를 누릅니다. 로컬 CSRF 검사를 거쳐 10분 동안 유효한 일회용 로그인 티켓을 만듭니다.
+3. `inthon-pi.vercel.app`에서 Meta로 이동합니다. 이 기본 주소는 새 DNS를 아직 찾지 못하는 네트워크에서도 동일 서버로 접속하기 위한 주소입니다.
+4. `@inthon2team`만 선택해 기존 기본·메시지 권한을 승인합니다. Meta의 자산 목록이 비어 있다면 앱 역할 목록과 별도로 비즈니스 포트폴리오의 Instagram 연결을 확인합니다.
+5. 클라우드 콜백은 HMAC 서명된 state·브라우저 쿠키·만료·일회성·콜백 주소를 검증한 뒤 코드를 교환합니다. 대상 계정을 조회하고 `messages`를 구독·조회한 뒤에만 토큰을 저장합니다.
+6. 토큰은 앱 시크릿에서 유도한 키로 AES-256-GCM 암호화해 비공개 Blob에 새 버전으로 저장합니다. 답장 함수는 최신 버전을 읽으므로 토큰 재발급만으로 재배포할 필요가 없습니다. 새 DM으로 실제 응답을 확인합니다.
+
+Meta에는 고정 도메인과 기본 Vercel 주소의 `/auth/instagram/callback` 두 주소를 모두 등록했습니다. 서버는 이 두 호스트만 로그인에 허용하며 로그인 시작 때 선택한 콜백을 state에 묶어 검증합니다. 단순히 Meta가 생성한 정적 로그인 URL을 열면 서버의 state·쿠키가 없으므로 실패합니다. 반드시 운영 도구에서 시작하세요.
+
+기존 로컬 전용 로그인 버튼은 ngrok 콜백을 사용하며 **로컬 DPAPI 토큰만** 바꿉니다. 운영 재연결 버튼과 구분하세요. 앱 시크릿을 교체하면 암호화된 운영 토큰도 새 키로 다시 저장하는 별도 복구가 필요합니다.
 
 ## 기록 확인과 문제 해결
 
@@ -93,8 +106,10 @@ Vercel 프로젝트의 Storage에서 비공개 Blob을 확인할 수 있습니�
 - `dm/receipts/<uuid>.json`: 수신 시각, 메시지 수, entry 수. 에코·샘플 이벤트도 포함됩니다.
 - `dm/replies/<sha256>/sending.json`: 전송 전에 확보한 예약 시각.
 - `dm/replies/<sha256>/sent.json`: Meta가 `message_id`를 반환한 뒤의 확인 시각.
+- `dm/oauth/tickets/`, `dm/oauth/states/`: 로그인 요청 재사용 방지용 임의 nonce·사용 시각.
+- `dm/credentials/<timestamp-random>.json`: 암호화된 운영 토큰 버전. 평문 토큰을 담지 않습니다.
 
-본문·발신자 ID·원문 메시지 ID·릴스 URL·토큰은 기록하지 않습니다. `sending`만 있고 `sent`가 없으면 실패 또는 결과 미확인 상태입니다. 이 파일을 지우거나 이벤트를 수동 재전송해 재시도하지 말고 전송 여부부터 확인하세요. Blob은 현재 테스트의 메타데이터 저장소이며 사용자 기록 조회용 DB가 아닙니다. 자동 정리 기능은 아직 없고 저장소 사용량 제한에 도달하면 수신 저장에 실패할 수 있습니다.
+수신·답장 기록에 본문·발신자 ID·원문 메시지 ID·릴스 URL·토큰을 넣지 않습니다. 토큰은 위의 별도 암호화 영역에만 저장합니다. `sending`만 있고 `sent`가 없으면 실패 또는 결과 미확인 상태입니다. 이 파일을 지우거나 이벤트를 수동 재전송해 재시도하지 말고 전송 여부부터 확인하세요. Blob은 현재 테스트의 메타데이터·운영 인증정보 저장소이며 사용자 기록 조회용 DB가 아닙니다. 자동 정리 기능은 아직 없고 저장소 사용량 제한에 도달하면 수신 저장에 실패할 수 있습니다.
 
 | 증상 | 확인 순서 |
 | --- | --- |
@@ -103,9 +118,12 @@ Vercel 프로젝트의 Storage에서 비공개 Blob을 확인할 수 있습니�
 | 웹훅 검증 실패 | 경로, 검증 토큰 일치, 200 challenge 응답 확인 |
 | 수신 기록 없음 | Meta 콜백 URL, `messages` 필드, 계정별 메시지 구독, 테스트 계정 확인 |
 | 수신은 있지만 답장 없음 | 본인/에코/오래된 이벤트인지, 토큰 유효성, 메시지 권한, 예약·전송 상태 확인 |
+| 토큰은 유효하지만 계정 조회가 오류 100/33 | 해당 토큰의 비즈니스 포트폴리오에 대상 Instagram 계정이 연결되어 있는지 확인. 앱 역할·테스터 목록에 보이는 것만으로 자산 접근이 확인되지는 않음 |
 | 재배포 후 같은 DM에 답장이 안 옴 | 정상 중복 방지 동작. 새 DM으로 테스트 |
 
 Meta 대시보드 샘플 성공과 실제 다른 계정에서 보낸 DM 성공은 구분해서 기록합니다.
+
+이번 복구에서는 사용자가 비즈니스 포트폴리오에 계정을 추가한 뒤, 기존 토큰의 대상 계정 조회와 `messages` 구독 조회가 모두 HTTP 200으로 돌아왔습니다. 토큰을 재발급하거나 권한을 늘리지 않고 실제 클라우드 답장까지 확인했습니다. `assigned_instagram_accounts`는 여전히 빈 목록을 반환했으므로, 이 목록만으로 대상 계정 접근 실패를 판단하지 말고 대상 ID 조회·구독 조회와 실제 DM을 함께 확인합니다. 클라우드 재발급 기능의 시작·state·쿠키 검사는 검증했지만, 이번 복구에서 새 토큰 교환·암호화 저장까지 완료한 것은 아닙니다.
 
 ## 코드 수정과 배포
 
@@ -123,7 +141,8 @@ npm test
 | `server.mjs` | 서명·검증·수신·제외 조건·‘안녕?’ 전송, 로컬 OAuth/관리 화면 |
 | `api/instagram.mjs` | 운영 경로 제한, 환경변수 설정, Vercel `waitUntil` 연결 |
 | `cloud-state.mjs` | 비공개 수신 기록, 함수 인스턴스 사이의 예약·전송 확인 |
-| `vercel.json` | `/health`, `/webhooks/instagram` 경로와 함수 실행 제한 |
+| `cloud-auth.mjs`, `oauth-state.mjs` | 운영 계정 재연결, state·쿠키·재사용 검증, 토큰 암호화·로딩 |
+| `vercel.json` | 상태·웹훅·운영 OAuth 경로와 함수 실행 제한 |
 | `server.test.mjs`, `cloud-state.test.mjs` | 자동 답장·보안·저장 오류·동시 수신 테스트 |
 | `.github/workflows/test.yml` | Windows/Ubuntu 자동 테스트 |
 
