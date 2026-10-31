@@ -19,7 +19,7 @@ function fixture({ judge, search, fetchPage = async () => page(article), extract
   const checker = createFactChecker({ model, fetchPage, fetchMedia: async () => { throw new Error('no media'); },
     now: () => new Date('2026-10-31T00:00:00Z'),
     search: search ?? {
-      bing: async (q, kind) => kind === 'news' ? [{ url: 'https://news.example.com/a', title: '검색 제목', source: '예시일보', via: 'Bing 뉴스' }] : [],
+      bing: async (q, kind) => kind === 'news' ? [{ url: 'https://news.example.com/a', title: '제임스웹 발사 기사', source: '예시일보', via: 'Bing 뉴스' }] : [],
       wikipedia: async () => [], pubmed: async () => [],
     } });
   return { checker, calls };
@@ -39,6 +39,15 @@ test('fact check cites only evidence the server actually opened and drops model-
   assert.match(calls[0].content.at(-1).text, /^<content>[\s\S]*<\/content>$/);
   assert.ok(result.messages.every(m => Buffer.byteLength(m) <= 900));
   assert.ok(result.timings.total >= 0 && 'search' in result.timings);
+});
+
+test('search results whose title and snippet share no words with the claim are dropped before fetching', async () => {
+  const fetched = [];
+  const { checker } = fixture({ fetchPage: async url => { fetched.push(url); return page(article); },
+    search: { bing: async (q, kind) => kind === 'web' ? [{ url: 'https://www.adobe.com/kr/creativecloud.html', title: 'Adobe Creative Cloud', snippet: '디자인 앱' }]
+      : [{ url: 'https://news.example.com/a', title: '제임스웹 발사 성공', source: '예시일보' }], wikipedia: async () => [], pubmed: async () => [] } });
+  await checker({ text: '제임스웹 발사일' });
+  assert.deepEqual(fetched, ['https://news.example.com/a']);
 });
 
 test('decisive verdict without a valid citation is downgraded to 확인 어려움', async () => {

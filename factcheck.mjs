@@ -93,8 +93,10 @@ export function htmlToText(html) {
 }
 
 // 주장과 겹치는 단어가 많은 문장만 모아 모델에 넘길 발췌를 만든다.
+const keywords = text => [...new Set(text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w => w.length >= 2))];
+
 export function excerpt(text, claim, limit = 1200) {
-  const terms = [...new Set(claim.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w => w.length >= 2))];
+  const terms = keywords(claim);
   const sentences = text.split(/(?<=[.!?。])\s+|\n+/).map(s => s.trim()).filter(s => s.length > 20);
   const scored = sentences.map((s, i) => ({ s, i, score: terms.filter(t => s.toLowerCase().includes(t)).length }))
     .filter(x => x.score > 0).sort((a, b) => b.score - a.score || a.i - b.i);
@@ -251,9 +253,13 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     const settled = await Promise.allSettled(tasks);
     const failures = settled.filter(s => s.status === 'rejected').length;
     const seen = new Set(); const candidates = [];
+    // Bing 웹 RSS는 주제와 무관한 결과(예: 광고성 페이지)를 섞어 준다. 제목·요약에 주장 단어가 하나도 없으면 버린다.
+    const terms = keywords(`${extracted.claim} ${[...(extracted.queries_ko ?? []), ...(extracted.queries_en ?? [])].join(' ')}`);
     for (const result of settled.filter(s => s.status === 'fulfilled').flatMap(s => s.value)) {
       const key = result.url?.replace(/[#?].*$/, '').replace(/\/$/, '');
       if (!key || seen.has(key)) continue;
+      const head = `${result.title ?? ''} ${result.snippet ?? ''} ${result.preloaded ? result.text.slice(0, 500) : ''}`.toLowerCase();
+      if (!terms.some(t => head.includes(t))) continue;
       seen.add(key); candidates.push(result);
     }
     // 실제로 열리고 본문이 있는 자료만 근거 후보로 남긴다. 검색 요약만으로는 통과시키지 않는다.
