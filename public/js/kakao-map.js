@@ -93,6 +93,29 @@ export function kakaoServices(kakao) {
 // Kakao's own ZoomControl (with its level slider) is taller than the 140–150px map boxes and gets cut off, so the
 // map gets a compact +/− pair styled like the dashboard (.kmap-zoom in the design sources).
 const MIN_LEVEL = 1, MAX_LEVEL = 14;
+const PIN_KINDS = new Set(['exhibit', 'restaurant', 'space']);
+
+/** A native link stays keyboard accessible; address-only pins are labelled, non-interactive images. */
+export function createCategoryPin(doc, { kind, name, placeUrl, label }) {
+  const category = PIN_KINDS.has(kind) ? kind : 'unknown';
+  const pin = doc.createElement(placeUrl ? 'a' : 'span');
+  pin.className = `kmap-pin kmap-pin-${category}`;
+  pin.setAttribute('aria-label', `${name || label || '장소'}${placeUrl ? ' · 카카오맵에서 보기 (새 창)' : ' 위치'}`);
+  if (placeUrl) {
+    pin.href = placeUrl;
+    pin.target = '_blank';
+    pin.rel = 'noopener noreferrer';
+  } else pin.setAttribute('role', 'img');
+  const head = doc.createElement('span');
+  head.className = 'kmap-pin-head';
+  head.setAttribute('aria-hidden', 'true');
+  const orb = doc.createElement('span');
+  orb.className = `orb o-${category}`;
+  head.appendChild(orb);
+  pin.appendChild(head);
+  return pin;
+}
+
 function mount(container, kakao, place) {
   const doc = container.ownerDocument ?? globalThis.document;
   const position = new kakao.maps.LatLng(place.lat, place.lng);
@@ -113,8 +136,9 @@ function mount(container, kakao, place) {
     zoom.appendChild(button);
   }
   container.appendChild(zoom);
-  const marker = new kakao.maps.Marker({ position, map });
-  if (place.placeUrl) kakao.maps.event.addListener(marker, 'click', () => globalThis.open(place.placeUrl, '_blank', 'noopener'));
+  const pin = createCategoryPin(doc, { ...place, kind: container.dataset.kind, name: container.dataset.name });
+  // The outer box and pointer never animate: its bottom centre is the exact geographic coordinate.
+  new kakao.maps.CustomOverlay({ position, map, content: pin, xAnchor: 0.5, yAnchor: 1, clickable: Boolean(place.placeUrl), zIndex: 1 });
   map.relayout(); map.setCenter(position);
   // The illustrated box is decorative (aria-hidden); a live map with buttons is not.
   container.parentElement?.removeAttribute?.('aria-hidden');

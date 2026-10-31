@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { locate, searchableName, loadKakaoMaps, attachMaps, NOTES } from './public/js/kakao-map.js';
+import { locate, searchableName, loadKakaoMaps, attachMaps, createCategoryPin, NOTES } from './public/js/kakao-map.js';
 import { restaurantRowItems } from './public/js/dashboard-live.js';
 
 // Kakao Local results, shaped like the SDK's (x = lng, y = lat).
@@ -97,21 +97,41 @@ function placeholder(dataset) {
   return { el, noteEl, box, root: { querySelectorAll: () => [el] } };
 }
 function fakeKakao() {
-  const made = [];
+  const made = []; const overlays = [];
   class LatLng { constructor(lat, lng) { this.lat = lat; this.lng = lng; } }
   class Map { constructor(container, options) { made.push(['map', options.center.lat, options.center.lng]); } setZoomable(z) { made.push(['zoomable', z]); }
     getLevel() { return this.level ?? 3; } setLevel(l) { this.level = l; made.push(['level', l]); } relayout() {} setCenter() {} }
-  class Marker { constructor({ position }) { made.push(['marker', position.lat, position.lng]); } }
-  return { made, kakao: { maps: { LatLng, Map, Marker, event: { addListener: () => {} } } } };
+  class CustomOverlay { constructor(options) { overlays.push(options); made.push(['marker', options.position.lat, options.position.lng]); } }
+  return { made, overlays, kakao: { maps: { LatLng, Map, CustomOverlay } } };
 }
 
+test('category pins reuse the existing orbs, safely label the place and keep only linked locations interactive', () => {
+  const doc = { createElement: tag => ({ ...fakeNode(), tagName: tag }) };
+  for (const [kind, expected] of [['exhibit', 'exhibit'], ['restaurant', 'restaurant'], ['space', 'space'], ['unrecognised', 'unknown']]) {
+    const pin = createCategoryPin(doc, { kind, name: '<장소 이름>', label: '주소' });
+    assert.equal(pin.tagName, 'span'); assert.equal(pin.attrs.role, 'img');
+    assert.equal(pin.attrs['aria-label'], '<장소 이름> 위치');
+    assert.equal(pin.className, 'kmap-pin kmap-pin-' + expected);
+    assert.equal(pin.children[0].attrs['aria-hidden'], 'true');
+    assert.equal(pin.children[0].children[0].className, 'orb o-' + expected);
+  }
+  const link = createCategoryPin(doc, { kind: 'space', label: '장소 주소', placeUrl: 'https://place.map.kakao.com/1' });
+  assert.equal(link.tagName, 'a'); assert.equal(link.attrs.role, undefined, 'retain native link semantics and keyboard activation');
+  assert.equal(link.href, 'https://place.map.kakao.com/1');
+  assert.match(link.attrs['aria-label'], /장소 주소.*새 창/);
+  assert.equal(link.target, '_blank'); assert.equal(link.rel, 'noopener noreferrer');
+});
+
 test('placeholders mount a pinned map, explain name-based or missing locations, and never load Kakao for nothing', async () => {
-  const { made, kakao } = fakeKakao();
+  const { made, overlays, kakao } = fakeKakao();
   const byAddress = placeholder({ name: '가상 국수집', address: '서울 성동구 성수이로 1', kind: 'restaurant' });
   await attachMaps(byAddress.root, { load: async () => kakao,
     services: () => services({ address: [{ x: '127.05', y: '37.54', address_name: '서울 성동구 성수이로 1' }] }) });
   assert.deepEqual(made.filter(m => m[0] !== 'zoomable'), [['map', 37.54, 127.05], ['marker', 37.54, 127.05]]);
   assert.ok(made.some(m => m[0] === 'zoomable' && m[1] === false), 'wheel zoom off so the page keeps scrolling');
+  assert.equal(overlays[0].xAnchor, 0.5); assert.equal(overlays[0].yAnchor, 1);
+  assert.equal(overlays[0].content.className, 'kmap-pin kmap-pin-restaurant');
+  assert.equal(overlays[0].clickable, false);
   assert.deepEqual(byAddress.el.classList.added, ['ready']); assert.equal(byAddress.noteEl.hidden, true);
   // Compact +/− buttons instead of Kakao's slider (which overflows the small map boxes); the live map is no longer aria-hidden.
   const [canvas, zoom] = byAddress.el.children;
@@ -124,6 +144,9 @@ test('placeholders mount a pinned map, explain name-based or missing locations, 
   const byName = placeholder({ name: '가상 커피', area: '명동', kind: 'restaurant' });
   await attachMaps(byName.root, { load: async () => kakao, services: () => services({ keyword: [place('가상 커피', '서울 중구 명동 1')] }) });
   assert.equal(byName.noteEl.textContent, NOTES.name); assert.equal(byName.noteEl.hidden, false);
+  assert.equal(overlays[1].content.href, 'https://place.map.kakao.com/1');
+  assert.equal(overlays[1].content.target, '_blank'); assert.equal(overlays[1].content.rel, 'noopener noreferrer');
+  assert.equal(overlays[1].clickable, true);
 
   const chain = placeholder({ name: '가상 체인', kind: 'restaurant' });
   await attachMaps(chain.root, { load: async () => kakao,
@@ -149,6 +172,7 @@ test('all six map placeholders carry the clean place fields; only the dashboard 
     assert.match(template, /"data-name": "\{\{d\.mapName\}\}"/); assert.match(template, /"data-kind": "\{\{d\.type\}\}"/);
   }
   assert.match(readFileSync('public/dashboard.html', 'utf8'), /<meta name="referrer" content="strict-origin-when-cross-origin">/);
+  assert.match(readFileSync('public/dashboard.html', 'utf8'), /href="\/css\/kakao-map\.css"/);
   for (const page of ['public/index.html', 'public/register.html']) assert.match(readFileSync(page, 'utf8'), /content="no-referrer"/);
   const [item] = restaurantRowItems({ id: 1, created_at: '2026-11-01T00:00:00Z', status: 'done', topic: 'restaurant', claim: 'x', verdict: null,
     reason: '{}', sources: [], dm_status: 'sent', dm_sent_at: null,
