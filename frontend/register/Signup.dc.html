@@ -237,7 +237,8 @@ class Component extends DCLogic {
     try {
       const user = await this.props.services.user(); if (run !== this._run) return;
       if (!user) return this.botSay(['안녕하세요! 당신의 가장 가까운 비서, 디미예요.', '먼저 Google 계정으로 로그인해 주세요.'], { step: 'google' });
-      this.push('me', 'Google 로그인 완료'); this.setState({ stage: 1 });
+      this.push('me', 'Google 계정으로 로그인했어요' + (user.email ? ' · ' + user.email : ''));
+      this.setState({ stage: 1, nameDraft: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || '' });
       const status = await this.props.services.status(); if (run !== this._run) return;
       if (status.status === 'linked') return this.linked(status.username);
       if (status.status === 'pending') this.setState({ handleDraft: status.username, linkCode: status.code });
@@ -301,7 +302,7 @@ class Component extends DCLogic {
     this.setState({ step: 'saving', error: '' }); const run = this._run;
     try {
       await this.props.services.profile(this.state.name, age); if (run !== this._run) return;
-      try { localStorage.setItem('inthon-dashboard-mode', 'live'); } catch {}
+      try { localStorage.setItem('inthon-dashboard-mode', JSON.stringify('live')); } catch {}
       this.setState({ stage: 4 });
       this.botSay(['가입이 완료됐어요!', this.state.name + '님, 이제 @dimi_in에 콘텐츠를 보내 주세요. 내 대시보드에서 다시 볼 수 있어요.'], { step: 'done', cheer: true });
     } catch (e) { if (run === this._run) this.setState({ step: 'age', error: e.message }); }

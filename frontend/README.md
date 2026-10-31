@@ -30,7 +30,10 @@ Python 표준 라이브러리로 원본의 `sc-if`·`sc-for`·바인딩을 컴�
 - 빌드는 세 페이지에 같은 렌더러를 사용한다. 페이지별 CSS는 원본과 동일하며, 링크만 `/`, `/register`, `/dashboard`로 매핑했다. 회원가입의 Enter 제출·나이 건너뛰기·다시 시작·채팅 스크롤과 타이핑 애니메이션을 유지한다.
 - 사용자가 요청한 브랜딩은 빌드에서 적용한다. 화면·모델 문구 `서비스명` → `디미`, Instagram 안내 → `@dimi_in`. 브랜드 옆 아이콘은 기존 파란 계열 컬러 구슬을 재사용한 `public/css/brand.css`의 `.dimi-mark`다. 기존 마스코트·콘텐츠 구슬은 유지한다.
 - 생성물은 `public/index.html`, `register.html`, `dashboard.html` 및 각 페이지 이름의 CSS·template JSON·model JS다. `landing-app.js`, `register-app.js`는 얇은 진입점이다.
-- **회원가입은 제공 ZIP에 명시된 데모 시뮬레이션이다.** Google 버튼은 데모 대화를 진행하며 계정을 생성하지 않는다. 이름·나이도 서버에 저장하지 않는다. 이후 실제 가입 연결은 `RegisterModel`을 상속하는 진입점에서 구현한다. 대시보드의 기존 실제 Google 로그인·Supabase 데이터 모드는 그대로 동작한다.
+- **회원가입은 실제 Google 로그인으로 시작한다.** 로그인 다음에 Instagram 아이디를 입력하고 발급된 영문·숫자 6자리 코드를 해당 계정에서 @dimi_in으로 DM 전송한다. 서버에서 실제 발신 핸들 일치를 확인한 뒤에만 이름·나이 단계로 진행한다. `register-live.js`는 기존 인증 코드를 지연 로딩하고, `registration.js`는 인증 API를 연결한다. Google 이름 제안과 외부 브라우저 안내도 유지한다.
+- 가입을 마치면 이름은 Supabase 사용자 메타데이터 `display_name`(대시보드 이름과 같은 값)에, 나이는 입력했을 때만 `age`에 저장하고, `/dashboard`가 실제 데이터 모드로 열리게 한다.
+- 랜딩의 **로그인**(`/dashboard` 링크)은 로그인하지 않았으면 Google 로그인 후 실제 데이터 대시보드로, 로그인했으면 바로 대시보드로 간다.
+- 인증 API·서명된 웹훅·DB 연결 및 보관 정책은 `docs/instagram-registration.md`를 참고한다. 기존 DM `연결` 링크 방식도 계속 쓸 수 있다.
 - 대시보드 실제 모드의 DM 이동 URL은 `https://ig.me/m/dimi_in`다. Meta 앱 ID·Instagram 숫자 ID·운영 권한은 변경하지 않는다.
 - `public/css/page-layout.css`는 추가 요청한 레이아웃만 덮어쓴다. 랜딩은 90% 표시, 회원가입은 `100dvh` 안에 헤더·마스코트·입력 영역을 배치하고 대화 목록만 내부 스크롤한다. 원본 CSS 파일은 그대로 유지한다.
 
