@@ -4,6 +4,7 @@ import { validateContest } from './public/js/contest-data.js';
 import { validateExhibit } from './public/js/exhibit-data.js';
 import { validateRestaurant } from './public/js/restaurant-data.js';
 import { validateSpace } from './public/js/space-data.js';
+import { validateBeauty } from './public/js/beauty-data.js';
 
 export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 const IGSID = /^\d{1,32}$/;
@@ -99,7 +100,8 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       const exhibit = result.action === 'schedule' && result.exhibit ? validateExhibit(result.exhibit) : null;
       const contest = result.action === 'schedule' && !exhibit ? validateContest(result.contest) : null;
       const space = result.action === 'space' ? validateSpace(result.space) : null;
-      const verdict = !recipe && !contest && !exhibit && !space && VERDICTS.has(result.verdict) ? result.verdict : null;
+      const beauty = result.action === 'beauty' ? validateBeauty(result.beauty) : null;
+      const verdict = !recipe && !contest && !exhibit && !space && !beauty && VERDICTS.has(result.verdict) ? result.verdict : null;
       const contentIndex = result.contentIndex;
       const contentIndexes = exhibit ? result.contentIndexes : null;
       if (contentIndex && embedIndex) {
@@ -129,13 +131,14 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));
       const rows = await request('POST', '/factchecks?select=id', { igsid, status, verdict, sources,
         claim: recipe ? recipe.title : contest ? contest.title : exhibit ? clip(result.extracted?.claim, 1000) ?? exhibit.events[0].title
-          : space ? clip(result.extracted?.claim, 1000) ?? space.places[0].name : clip(result.extracted?.claim, 1000),
-        topic: recipe ? 'recipe' : contest ? 'contest' : exhibit ? 'exhibit' : space ? 'space' : clip(result.extracted?.topic, 50),
+          : space ? clip(result.extracted?.claim, 1000) ?? space.places[0].name : beauty ? beauty.title : clip(result.extracted?.claim, 1000),
+        topic: recipe ? 'recipe' : contest ? 'contest' : exhibit ? 'exhibit' : space ? 'space' : beauty ? 'beauty' : clip(result.extracted?.topic, 50),
         // shortcut: keep v1 recipes, contests, exhibitions and 취향공간 in the existing RLS-protected result table; move to a typed column when the shared content schema lands.
         reason: recipe ? JSON.stringify({ recipe, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
           : contest ? JSON.stringify({ contest, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
           : exhibit ? JSON.stringify({ exhibit, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
           : space ? JSON.stringify({ space, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
+          : beauty ? JSON.stringify({ beauty, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
           : contentIndex ? JSON.stringify({ reason: clip(result.reason, 2000), sourceUrl: result.media?.sourceUrl ?? null, ...indexed }) : clip(result.reason, 2000) },
       undefined, true);
       return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };

@@ -63,7 +63,9 @@ export default class MobileModel extends DCLogic {
         intro: '그림책과 독립출판물을 모아 둔 작은 서점이에요. 주말에는 그림책 낭독회를 열어요. (가상 데이터)', category: '서점·책방', hours: '화–일 12:00 – 20:00', closed: '월요일 휴무',
         address: '가상시 연남로 3', mapNaver: 'https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', mapKakao: 'https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', reservation: '낭독회는 DM으로 신청', waiting: '대기 정보 미기재', parking: '주차 불가', phone: '전화번호 미기재' },
       { id: 'p1', type: 'unknown', title: '새로 보낸 릴스', status: 'needtype', dm: 'guide', received: '오늘 15:02', ts: 1502, key: '어떤 내용으로 정리할지 선택해 주세요', author: null },
-      { id: 'f1', type: 'unknown', title: '접근할 수 없는 게시물', status: 'insufficient', dm: 'guide', received: '10월 30일', ts: 1009, key: '원본을 확인하지 못했어요', author: null }
+      { id: 'f1', type: 'unknown', title: '접근할 수 없는 게시물', status: 'insufficient', dm: 'guide', received: '10월 30일', ts: 1009, key: '원본을 확인하지 못했어요', author: null },
+      {"id": "b1", "type": "beauty", "title": "가상 헤어살롱 — 레이어드 컷", "status": "done", "dm": "sent", "dmAt": "10월 30일 12:31", "received": "10월 30일", "ts": 10301230, "key": "미용실 · 컷 45,000원~", "author": "@sample_salon", "origin": "https://example.com/instagram/p/b1", "organized": "10월 30일 12:31", "checkedAt": "2026.10.30 12:31 KST", "thumb": true, "sub": "salon", "phase": "영업 중", "phaseCls": "badge s-done", "intro": "얼굴선을 따라 층을 내는 레이어드 컷을 소개한 미용실 게시물이에요. (가상 데이터)", "bFacts": [["종류", "미용실"], ["시술", "레이어드 컷 · 드라이 포함"], ["가격", "45,000원~ (기장 추가 요금 있음)"], ["소요 시간", "약 1시간"]], "points": ["상담 때 평소 가르마 방향을 알려주면 층 위치를 맞춰준다고 했어요.", "컷 후 한 달 안 앞머리 다듬기는 무료라고 안내했어요.", "주말은 예약이 빨리 마감된다고 했어요."], "place": "가상 헤어살롱 2호점", "address": "가상시 미용로 21, 2층", "hours": "화–일 11:00 – 20:00 · 월 휴무", "links": [["예약 페이지 열기", "https://example.com/salon/booking", 1], ["매장 안내 보기", "https://example.com/salon", 0]], "linkNote": "예약은 매장 페이지에서 진행돼요. 이 서비스에서 예약이 완료되지 않아요.", "caution": "가격은 게시물 기준이에요. 실제 요금은 기장·모발 상태에 따라 달라질 수 있어요."},
+      {"id": "b2", "type": "beauty", "title": "수분 진정 토너 (가상 브랜드)", "status": "done", "dm": "sent", "dmAt": "10월 27일 15:32", "received": "10월 27일", "ts": 10271530, "key": "화장품 · 200ml 18,000원", "author": "@sample_skin", "origin": "https://example.com/instagram/p/b2", "organized": "10월 27일 15:32", "checkedAt": "2026.10.27 15:32 KST", "thumb": true, "sub": "product", "phase": "협찬 표시 있음", "phaseCls": "badge s-warn", "intro": "세안 후 바로 쓰는 묽은 제형의 토너를 소개한 게시물이에요. 게시물에 유료 광고 표시가 있어요. (가상 데이터)", "bFacts": [["종류", "화장품 · 토너"], ["브랜드", "가상 코스메틱"], ["용량·가격", "200ml · 18,000원"], ["언급한 피부 타입", "건성·복합성"]], "points": ["화장솜보다 손바닥으로 두드려 흡수시키는 방법을 추천했어요.", "아침에는 1번, 저녁에는 2–3번 겹쳐 바른다고 했어요.", "향료가 없다고 소개했어요 — 전성분은 판매처에서 확인해 주세요."], "place": "", "address": "", "hours": "", "links": [["판매처 보기", "https://example.com/toner/shop", 1], ["전성분 확인하기", "https://example.com/toner/ingredients", 0]], "linkNote": "구매는 판매처에서 진행돼요. 가격은 확인 시점 기준이에요.", "caution": "효과·사용감은 게시물 작성자의 설명이에요. 피부 타입에 따라 다를 수 있어요."}
     ];
     this._data = { ITEMS };
     return this._data;
@@ -92,7 +94,7 @@ export default class MobileModel extends DCLogic {
   }
   renderVals() {
     const s = this.state; this.data(); const ITEMS = this._data.ITEMS;
-    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', unknown: '유형 미정' };
+    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용', unknown: '유형 미정' };
     const ST = { done: ['정리 완료', 'badge s-done', 'done'], processing: ['처리 중', 'badge s-proc', 'processing'], needtype: ['유형 선택 필요', 'badge s-warn', 'check'], insufficient: ['자료 부족', 'badge s-err', 'failed'] };
     const DM = { sent: ['DM 발송 확인', 'badge s-neutral'], failed: ['DM 전달 실패', 'badge s-err'], unknown: ['DM 전달 미확인', 'badge s-warn'], guide: ['안내 DM 발송', 'badge s-neutral'], waiting: ['DM 대기', 'badge s-neutral'] };
     const deco = (raw) => {
@@ -107,7 +109,7 @@ export default class MobileModel extends DCLogic {
       });
     };
     const items = ITEMS.map(deco);
-    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
+    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0, beauty: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
     let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF) && (!s.favOnly || s.fav[i.id]));
     lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
@@ -123,6 +125,17 @@ export default class MobileModel extends DCLogic {
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
+      d.isBeauty = done && raw.type === 'beauty';
+      d.bFacts = []; d.points = []; d.bLinks = [];
+      if (d.isBeauty) {
+        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
+        d.hasPlace = !!raw.place;
+        d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
+        d.bSectionTitle = raw.sub === 'salon' ? '장소·예약' : '구매처';
+        d.shareIncludes = raw.sub === 'salon' ? ['미용실·시술·가격', '운영 시간·위치', '예약 링크와 원본 링크'] : ['제품명·브랜드·용량·가격', '게시물에서 말한 사용법', '판매처 링크와 원본 링크'];
+      }
+
       d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
       d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isSpace = done && raw.type === 'space'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
@@ -205,11 +218,11 @@ export default class MobileModel extends DCLogic {
       sort: s.sortNew ? 'new' : 'old', onSort: e => this.setState({ sortNew: e.target.value === 'new' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value }),
-      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
+      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space], ['beauty', '미용', 'dot t-beauty', counts.beauty]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
       statusChips: [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k }) })),
       libItems: lib, libCount: lib.length, libHasItems: lib.length > 0, libEmpty: lib.length === 0, isFiltered,
       emptyTitle: q ? '검색 결과가 없어요.' : '선택한 조건에 맞는 콘텐츠가 없어요.', emptyDesc: q ? '검색어를 바꾸거나 지워 보세요.' : '필터를 바꾸거나 초기화해 보세요.',
-      resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all' }),
+      resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all', favOnly: false }),
       sortLabel: s.sortNew ? '최근순' : '오래된순', toggleSort: () => this.setState({ sortNew: !s.sortNew }),
       tasteTabs: [['recipe', '레시피', 'dot t-recipe'], ['exhibit', '전시·공간', 'dot t-exhibit']].map(([k, label, dot]) => ({ label, dot, count: tasteAll.filter(i => i.type === k).length, cls: tasteType === k ? 'on' : '', pressed: tasteType === k ? 'true' : 'false', pick: () => this.setState({ tasteTab: k }) })),
       tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteCardLabel: '15분 안팎의 간단한 팬·면 요리', tasteCardDesc: '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
@@ -219,9 +232,9 @@ export default class MobileModel extends DCLogic {
       removeTasteCard: () => { this.setState({ tasteRemoved: true }); this.toast('취향 표현을 삭제했어요. 모은 콘텐츠는 그대로예요.'); },
       hasDetail: !!raw, d, closeDetail: () => { clearInterval(this._ct); this.setState({ detailId: null, cook: null, share: null }); },
       srcOpen: s.srcOpen, srcExpanded: s.srcOpen ? 'true' : 'false', srcChevStyle: s.srcOpen ? 'transform: rotate(180deg); transition: transform .25s ease' : 'transition: transform .25s ease', toggleSrc: () => this.setState({ srcOpen: !s.srcOpen }),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
-      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
+      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       startCook: () => this.cookGo('prep', 0, 'fwd'), closeCook: () => { clearInterval(this._ct); this.setState({ cook: null, timer: null }); },
       cookNext: () => this.cookNext(), cookPrev: () => this.cookPrev(), timerToggle: () => this.timerToggle(),
       timerReset: () => { clearInterval(this._ct); const t = this.state.timer; if (t) this.setState({ timer: Object.assign({}, t, { left: t.total, running: false }) }); },

@@ -73,3 +73,14 @@ test('long chat replies split safely at Unicode boundaries and preserve the enti
   assert.equal(parts.join(''), text);
   assert.ok(parts.every(part => Buffer.byteLength(part) <= 900 && !part.includes('\ufffd')));
 });
+
+test('server-deferred history never delays chat or a content result and still saves the conversation',async()=>{
+  for(const content of [false,true]){
+    const tasks=[];const events=[];
+    const reply=createDmAssistant({history:{read:async()=>{events.push('read');return[];},write:async()=>{events.push('write');}},
+      choices:{select:async()=>({kind:'content',status:'done',messages:['미용 결과']})},model:async()=>{events.push('model');return '안녕, 디미예요!';}});
+    const result=await reply(content?{quick_reply:{payload:'test'}}:{text:'안녕'}, {senderId:'123',defer:task=>{tasks.push(task);}});
+    assert.equal(result.status,'done');assert.deepEqual(events,content?[]:['read','model']);
+    assert.equal(tasks.length,1);await tasks[0]();assert.deepEqual(events,content?['read','write']:['read','model','write']);
+  }
+});

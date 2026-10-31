@@ -1,6 +1,24 @@
 # 내 취향·캘린더 백엔드 연결 요청
 
-작성 기준: 2026-11-01. 확인한 기준 커밋은 `2e4db9a`이며, 이번 프론트 수정에서 캘린더에 맛집·취향공간을 추가했다. **아래 신규 테이블과 API는 연결 제안이다. 아직 구현·마이그레이션하지 않았다.**
+작성 기준: 2026-11-01. 확인한 기준 커밋은 `2e4db9a`이며, 이번 프론트 수정에서 캘린더에 맛집·취향공간을 추가했다.
+
+## 구현 상태 (2026-11-01)
+
+1~4순위를 구현했다. DM 리마인드(후속)는 그대로 비활성이다.
+
+| 항목 | 구현 위치 |
+| --- | --- |
+| 테이블·RLS | `supabase/migrations/20261031180518_calendar_and_taste.sql`: `calendar_events`, `taste_collections`, `member_can_see_result()`. 읽기·추가·수정은 본인 UID + 현재 연결 계정으로 볼 수 있는 정리 완료 결과일 때만, 삭제는 본인 UID면 항상 가능. 회원(`auth.users`)·결과(`factchecks`) 삭제 시 함께 삭제 |
+| API | `member-data.mjs` (`api/calendar.mjs`, `api/taste.mjs`, `vercel.json`의 `/api/calendar/:id`·`/api/taste/:id` rewrite). 사용자 JWT를 PostgREST에 그대로 전달하고 서버 비밀키는 쓰지 않는다. 카드는 서버가 원본 행을 다시 읽어 `rowItems()`로 변환해 확인한다 |
+| 일정 규칙 | `public/js/calendar-rules.js`를 브라우저와 서버가 함께 쓴다(종류·날짜·HH:mm·과거·전시 기간·공고 확정 날짜). 가져오기와 같은 날짜 유지 수정만 과거 날짜 허용 |
+| 오류 코드 | `400` 형식, `401` 재로그인, `403` 다른 화면(Origin), `404` 없는/볼 수 없는 카드·일정, `409` revision 충돌, `422` 날짜·콘텐츠 조건, `503` 저장소 오류 |
+| 캘린더 프론트 | `dashboard-calendar.js`: 서버 확정 뒤에만 반영·모달 닫기, 저장 중 중복 클릭 차단, 실패 시 초안 유지, 초안별 `Idempotency-Key`, 1년 전~2년 후 + 보는 달 범위 조회, 계정 전환 시 늦은 응답 폐기 |
+| 취향 프론트 | `member-sync.js`의 `createTasteSync`: `state.taste`의 변화를 카드별로 직렬화해 PUT/DELETE, 실패한 카드만 되돌림. 서버 목록 로드 전 변경은 보내지 않음 |
+| 오래된 참조 | `DashboardApp.ensureReferences()`: 최근 200개 밖의 일정·취향 카드를 사용자 권한으로 조회해 `refItems`로 추가(같은 변환 함수) |
+| 브라우저 기록 이관 | 로그인 후 1회: 일정은 `import:<브라우저ID>:<로컬ID>` 키로, 취향은 `true`인 것 중 서버에 없는 것만. 성공·영구 실패(400/422)만 로컬에서 지우고 나머지는 다음 로그인에 재시도 |
+| 테스트 | `member-data.test.mjs`, `member-sync.test.mjs`, `dashboard-calendar.test.mjs` |
+
+즐겨찾기(`inthon-fav:<uid>`)는 범위 밖이라 계속 브라우저에 저장한다. 이 문서의 아래 내용은 원래 요청이며, 바뀐 결정은 위 표가 우선한다.
 
 ## 팀원에게 부탁할 작업
 
@@ -34,6 +52,7 @@
 | `restaurant` | 맛집 | 맛집 | `visit` |
 | `space` | 전시·공간에 함께 표시 | 취향공간 | `visit` |
 | `news` | 제외 | 제외 | 없음 |
+| `beauty` | 제외 | 제외 | 없음 |
 
 취향은 4개 그룹이고 캘린더는 5개 유형이다. 화면에서 함께 묶는다고 저장된 `space`를 `exhibit`로 바꾸면 안 된다. 즐겨찾기(`state.fav`)와 직접 모은 취향(`state.taste`)도 별도 상태다.
 
@@ -176,6 +195,7 @@
 - `frontend/calendar/Calendar.dc.html`: 제공 캘린더의 화면/기본 동작 원본. `public/js/calendar-model.js`는 생성물이므로 직접 수정하지 않는다.
 - `public/js/dashboard-taste.js`: PC/모바일이 함께 쓰는 궤도·선택·모음 해제. 서버 저장 시 기존 `app.state.taste`와 모음 갱신 경로를 연결한다.
 - `frontend/taste-redesign/Taste.fragment.html`, `public/css/taste.css`: 취향 디자인. `scripts/build-dashboard.py`가 PC/모바일 템플릿에 삽입한다.
+- 모바일 새 화면은 `frontend/mobile/Mobile.dc.html`의 궤도와 `frontend/mobile/MobileCalendar.fragment.html`을 사용한다. 상태·저장은 같은 `dashboard-taste.js`/`dashboard-calendar.js`를 공유한다. 캘린더의 `values(true)`는 날짜 점·일정 카드 등 모바일 표시만 변환한다.
 - 기존 결과 상세의 Google Calendar 링크/방문 날짜 링크는 별도 기능으로 유지했다. 향후 내부 일정 추가로 바꿀지는 백엔드 CRUD 연결 시 결정한다.
 
 ### 반드시 함께 바꿀 동작

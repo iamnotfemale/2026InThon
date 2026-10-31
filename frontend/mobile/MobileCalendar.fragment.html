@@ -1,0 +1,251 @@
+
+<div class="mobile-calendar" style="flex:1;min-height:0;position:relative;overflow:hidden;display:flex;flex-direction:column">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 12px 0 20px">
+    <h1 style="font-size: 22px; font-weight: 700; letter-spacing: -0.03em">캘린더</h1>
+    <button type="button" class="today-btn" onClick="{{goToday}}" style="margin-left: auto">오늘</button>
+    <button type="button" onClick="{{openSettings}}" aria-label="설정 열기" style="width: 40px; height: 40px; border-radius: 50%; display: grid; place-content: center; text-decoration: none; background: linear-gradient(135deg,#C4B5FD,#93C5FD); color: #1E1B4B; font-size: 14px; font-weight: 600;border:0;cursor:pointer">{{profileInitial}}</button>
+  </header>
+
+  <div class="scroll" style="flex: 1; min-height: 0; padding-bottom: 96px">
+    <div class="calendar-month-toolbar" style="display: flex; align-items: center; gap: 2px; padding: 2px 16px 10px 14px">
+      <button type="button" class="navbtn" aria-label="이전" onClick="{{prev}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <h2 class="dfont" style="font-size: 19px; font-weight: 700; padding: 0 2px">{{title}}</h2>
+      <button type="button" class="navbtn" aria-label="다음" onClick="{{next}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+      <div class="vseg" role="group" aria-label="보기 방식" style="margin-left: auto">
+        <button type="button" class="{{segMonth}}" onClick="{{viewMonth}}">월</button>
+        <button type="button" class="{{segWeek}}" onClick="{{viewWeek}}">주</button>
+      </div>
+    </div>
+
+    <div style="padding: 0 20px 12px">
+      <div class="hscroll" role="group" aria-label="유형 필터">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
+          <button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.toggle}}" style="height: 34px; font-size: 13.5px">
+            <sc-if value="{{f.hasDot}}" hint-placeholder-val="{{ true }}"><span class="{{f.dot}}"></span></sc-if>{{f.label}}<span class="n">{{f.count}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <sc-if value="{{isMonth}}" hint-placeholder-val="{{ true }}">
+      <div class="mgrid-head"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="mgrid">
+        <sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+          <button type="button" class="{{c.cls}}" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}">
+            <span class="n">{{c.d}}</span>
+            <span class="mdots"><sc-for list="{{c.dots}}" as="dt" hint-placeholder-count="1"><span class="{{dt.cls}}"></span></sc-for></span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{isWeek}}" hint-placeholder-val="{{ false }}">
+      <div class="wstrip">
+        <sc-for list="{{weekCols}}" as="w" hint-placeholder-count="7">
+          <button type="button" class="{{w.cls}}" aria-label="{{w.aria}}" aria-pressed="{{w.pressed}}" onClick="{{w.pick}}">
+            <span class="d">{{w.dow}}</span>
+            <span class="n">{{w.d}}</span>
+            <span class="mdots"><sc-for list="{{w.dots}}" as="dt" hint-placeholder-count="1"><span class="{{dt.cls}}"></span></sc-for></span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <div style="height: 1px; background: var(--border); margin: 14px 20px 0"></div>
+
+    <section style="padding: 18px 16px 0; display: flex; flex-direction: column; gap: 10px">
+      <div class="agenda-h" style="padding: 0 4px">
+        <h2 class="dfont" style="font-size: 18px; font-weight: 700">{{selLabel}}</h2>
+        <sc-if value="{{selIsToday}}" hint-placeholder-val="{{ true }}"><span class="badge s-neutral" style="height: 22px; font-size: 11.5px">오늘</span></sc-if>
+        <span class="mono muted" style="font-size: 13px; margin-left: auto">{{selCount}}</span>
+      </div>
+      <sc-for list="{{selEvents}}" as="e" hint-placeholder-count="2">
+        <article class="ecard">
+          
+          <button type="button" class="{{e.swCls}} ec-sw" role="switch" aria-checked="{{e.dmChecked}}" aria-label="DM 리마인드" onClick="{{e.toggleDm}}" disabled="{{dmUnavailable}}"></button><button type="button" class="ec-head" onClick="{{e.view}}" aria-label="{{e.viewAria}}">
+            <span class="{{e.orb}}" style="width: 40px; height: 40px"></span>
+            <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span class="ec-meta"><span class="{{e.dot}}"></span><span class="k">{{e.kindLabel}}</span><span>·</span><span class="mono">{{e.timeLabel}}</span></span>
+              <span class="ec-title">{{e.title}}</span>
+            </span>
+          </button>
+          <div class="ec-rems">
+            <sc-for list="{{e.rems}}" as="r" hint-placeholder-count="1">
+              <span class="rem">
+                <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                <span class="mono" style="white-space: nowrap">{{r.at}}</span><span class="muted">{{r.label}}</span>
+              </span>
+            </sc-for>
+            <sc-if value="{{e.noRems}}" hint-placeholder-val="{{ false }}"><span class="muted" style="font-size: 13px">리마인드 없음</span></sc-if>
+          </div>
+          <div class="ec-foot">
+            <button type="button" class="btn btn-ghost" onClick="{{e.edit}}">수정</button>
+            <button type="button" class="btn btn-ghost btn-danger" onClick="{{e.remove}}">삭제</button>
+          </div>
+        </article>
+      </sc-for>
+      <sc-if value="{{selEmpty}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px dashed var(--border-strong); border-radius: 18px">
+          <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" class="mascot" style="width: 64px; flex: none">
+          <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0">
+            <span style="font-size: 15px; font-weight: 600">이 날은 일정이 없어요</span>
+            <span class="muted" style="font-size: 13px; line-height: 1.5">모아둔 콘텐츠로 나만의 일정을 정해보세요.</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-block" onClick="{{openAddSel}}">이 날 일정 추가</button>
+      </sc-if>
+    </section>
+
+    <section style="padding: 26px 20px 8px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 4px">
+        <h2 class="sec-title">{{upcomingTitle}}</h2>
+        <span class="mono muted" style="font-size: 13px">{{upCount}}</span>
+      </div>
+      <sc-for list="{{upcoming}}" as="u" hint-placeholder-count="4">
+        <button type="button" class="up" onClick="{{u.pick}}" aria-label="{{u.aria}}">
+          <span class="at mono">{{u.at}}</span>
+          <span class="{{u.dot}}"></span>
+          <span class="tt">{{u.title}}</span>
+          <span class="k">{{u.kind}}</span>
+          <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
+      </sc-for>
+      <p class="muted" style="font-size: 12px; line-height: 1.6; padding-top: 10px">{{reminderNote}}</p>
+    </section>
+    <p class="muted" role="status" style="padding:12px 20px;font-size:12px">{{storageNote}}</p>
+  </div>
+
+  <button type="button" class="fab" aria-label="일정 추가" onClick="{{openAddSel}}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+  </button>
+
+
+
+  <!-- CONTENT SHEET -->
+  <sc-if value="{{cvOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim" aria-hidden="true" onClick="{{closeCv}}"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="{{cvTitle}}">
+      <span class="grab"></span>
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding: 8px 10px 14px 20px">
+        <span class="{{cvOrb}}" style="width: 44px; height: 44px; margin-top: 2px"></span>
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted)"><span class="{{cvDot}}"></span>{{cvType}}</span>
+          <h2 style="font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">{{cvTitle}}</h2>
+        </div>
+        <button type="button" class="icon-btn" aria-label="닫기" onClick="{{closeCv}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="scroll" style="flex: 1; min-height: 0; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 18px">
+        <p style="font-size: 14.5px; line-height: 1.65; color: var(--text-2)">{{cvSummary}}</p>
+        <div class="info-grid">
+          <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
+          </sc-for>
+        </div>
+        <sc-if value="{{cvHasList}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span class="label">{{cvListTitle}}</span>
+            <div>
+              <sc-for list="{{cvList}}" as="l" hint-placeholder-count="4">
+                <div class="lrow"><span>{{l.a}}</span><span class="{{l.bCls}}">{{l.b}}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{cvHasEvents}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span class="label">캘린더에 잡힌 일정 <span class="mono">{{cvEvCount}}</span></span>
+            <sc-for list="{{cvEvents}}" as="v" hint-placeholder-count="2">
+              <button type="button" class="{{v.cls}}" onClick="{{v.pick}}"><span class="mono" style="white-space: nowrap">{{v.label}}</span><span class="muted" style="margin-left: auto; font-size: 13px">{{v.kind}}</span></button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn btn-primary btn-block" onClick="{{openFullContent}}">전체 내용 보기</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ADD / EDIT SHEET -->
+  <sc-if value="{{modalOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim" aria-hidden="true" onClick="{{closeModal}}"></div>
+    <div class="sheet tall" role="dialog" aria-modal="true" aria-label="{{modalTitle}}">
+      <span class="grab"></span>
+      <div style="display: flex; align-items: center; padding: 4px 10px 8px 20px">
+        <span style="font-size: 18px; font-weight: 700; letter-spacing: -0.03em">{{modalTitle}}</span>
+        <button type="button" class="icon-btn" aria-label="닫기" onClick="{{closeModal}}" style="margin-left: auto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="scroll" style="flex: 1; min-height: 0; padding: 4px 20px 20px; display: flex; flex-direction: column; gap: 24px">
+        <div class="step">
+          <span class="step-h"><span class="no">1</span>어떤 콘텐츠의 일정인가요?</span>
+          <sc-if value="{{noContentOptions}}"><p class="muted">아직 일정으로 만들 콘텐츠가 없어요. @dimi_in에 콘텐츠를 보내 먼저 정리해 주세요.</p></sc-if>
+          <sc-for list="{{contentOpts}}" as="o" hint-placeholder-count="5">
+            <button type="button" class="{{o.cls}}" aria-pressed="{{o.pressed}}" disabled="{{o.disabled}}" onClick="{{o.pick}}">
+              <span class="{{o.orb}}" style="width: 34px; height: 34px"></span>
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="t1">{{o.title}}</span><span class="t2">{{o.sub}}</span></span>
+            </button>
+          </sc-for>
+        </div>
+        <div class="step">
+          <span class="step-h"><span class="no">2</span>무슨 날인가요?</span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <sc-for list="{{kindOpts}}" as="k" hint-placeholder-count="2">
+              <button type="button" class="{{k.cls}}" aria-pressed="{{k.pressed}}" onClick="{{k.pick}}">{{k.label}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-h"><span class="no">3</span>날짜와 시간<span class="dfont" style="margin-left: auto; font-size: 13.5px; color: var(--text)">{{draftDateLabel}}</span></span>
+          <sc-if value="{{dateLocked}}" hint-placeholder-val="{{ false }}">
+            <div class="hint"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-top: 2px"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg><span>공고에서 확인된 날짜라 바꿀 수 없어요.</span></div>
+          </sc-if>
+          <div class="mini">
+            <div class="mini-h">
+              <button type="button" class="navbtn" aria-label="이전 달" onClick="{{miniPrev}}"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+              <span class="dfont" style="flex: 1; text-align: center; font-size: 14.5px; font-weight: 600">{{miniTitle}}</span>
+              <button type="button" class="navbtn" aria-label="다음 달" onClick="{{miniNext}}"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+            </div>
+            <div class="mini-g">
+              <span class="w" style="color: #DC2626">일</span><span class="w">월</span><span class="w">화</span><span class="w">수</span><span class="w">목</span><span class="w">금</span><span class="w">토</span>
+              <sc-for list="{{miniDays}}" as="d" hint-placeholder-count="35">
+                <button type="button" class="{{d.cls}}" aria-label="{{d.aria}}" title="{{d.why}}" disabled="{{d.disabled}}" onClick="{{d.pick}}">{{d.d}}</button>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{hasDateHint}}" hint-placeholder-val="{{ false }}">
+            <div class="hint"><span>{{dateHint}}</span></div>
+          </sc-if>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <input class="tinput mono" type="time" aria-label="시간" value="{{draftTime}}" onChange="{{onTime}}" disabled="{{timeDisabled}}">
+            <button type="button" class="{{allDayCls}}" onClick="{{toggleAllDay}}" disabled="{{timeLockedFlag}}">시간 없음</button>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-h"><span class="no">4</span>DM으로 알려드릴까요?<button type="button" class="{{draftSwCls}}" role="switch" aria-checked="{{draftDmChecked}}" aria-label="DM 리마인드" onClick="{{toggleDraftDm}}" disabled="{{dmUnavailable}}" style="margin-left: auto"></button></span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap">
+            <sc-for list="{{remOpts}}" as="r" hint-placeholder-count="4">
+              <button type="button" class="{{r.cls}}" aria-pressed="{{r.pressed}}" disabled="{{r.disabled}}" onClick="{{r.toggle}}">{{r.label}}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{showPreview}}" hint-placeholder-val="{{ false }}">
+            <div class="dmprev">
+              <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width: 40px; flex: none">
+              <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+                <span class="mono muted" style="font-size: 11.5px">{{previewAt}} 보낼 DM 미리보기</span>
+                <div class="bubble">{{previewText}}</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      <div class="sheet-foot">
+        <span class="muted" style="font-size: 12.5px; text-align: center">{{footHint}}</span>
+        <button type="button" class="btn btn-primary btn-block" onClick="{{save}}" disabled="{{saveDisabled}}">{{saveLabel}}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div class="toast" role="status" aria-live="polite"><span>{{toastMsg}}</span></div>
+  </sc-if>
+</div>

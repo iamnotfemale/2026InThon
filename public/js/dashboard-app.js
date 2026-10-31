@@ -7,7 +7,9 @@ import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { applyTasteOrbitValues } from './dashboard-taste.js';
 import { createCalendarDashboard } from './dashboard-calendar.js';
 import { applyDmPreview } from './dm-preview.js';
-import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, spaceRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { BOT_DM_URL, ROW_SELECT, rowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { createMemberApi, createTasteSync } from './member-sync.js';
+import { parseContentId } from './calendar-rules.js';
 
 function routeState(path) {
   const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/settings': 'settings' }[path];
@@ -21,6 +23,7 @@ function routeState(path) {
 let supabaseModule;
 const loadSupabase = () => (supabaseModule ??= import('./supabase.js'));
 const MODE_KEY = 'inthon-dashboard-mode';
+let localStore = null; try { localStore = localStorage; } catch {}
 const store = {
   get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
   set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} },
@@ -29,7 +32,7 @@ const store = {
 const DEMO_KEYS = ['connected', 'account', 'connectedAt', 'name', 'nameDraft', 'email', 'dataset', 'extra', 'over', 'deleted',
   'fav', 'taste', 'shares', 'simState', 'flow', 'conds', 'tasteRemoved'];
 const LINK_DONE = 'Instagram 계정이 연결됐어요. 전에 보낸 콘텐츠도 함께 보여요.';
-const activeOverlay = () => [...document.querySelectorAll('.overlay, .cook, .m .layer')]
+const activeOverlay = () => [...document.querySelectorAll('.overlay, .cook, .m .layer, .m .sheet')]
   .filter(element => element.getClientRects().length).at(-1);
 
 class DashboardApp extends DashboardModel {
@@ -40,7 +43,11 @@ class DashboardApp extends DashboardModel {
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'full', hidden: [] };
     this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
-    this.calendar = createCalendarDashboard(this);
+    // Schedules (/api/calendar) and hand-picked taste (/api/taste) live on the server per member.
+    this.memberApi = createMemberApi({ token: async () => (await (await loadSupabase()).supabase.auth.getSession()).data.session?.access_token });
+    this.calendar = createCalendarDashboard(this, { api: this.memberApi, storage: localStore });
+    this.tasteSync = createTasteSync({ api: this.memberApi, app: this, storage: localStore });
+    this.referenceRequests = new Set();
     this.mobileMedia = matchMedia('(max-width: 767px)');
     this.state.mobile = this.mobileMedia.matches;
     this.mobileValues = createMobileDashboard(this);
@@ -114,10 +121,10 @@ class DashboardApp extends DashboardModel {
         : this.state.view === 'home' ? '/dashboard' : '/' + this.state.view;
       if (location.pathname !== path) history.pushState(null, '', path);
     }
-    // Favourites and taste picks have no table yet: kept per user in this browser.
+    // Favourites have no table yet (kept per user in this browser); taste picks are mirrored to the server card by card.
     if (this.state.mode === 'live' && this.state.user) {
       if (previousState.fav !== this.state.fav) store.set('inthon-fav:' + this.state.user.id, this.state.fav);
-      if (previousState.taste !== this.state.taste) store.set('inthon-taste:' + this.state.user.id, this.state.taste);
+      if (previousState.taste !== this.state.taste && previousState.user?.id === this.state.user.id) this.tasteSync.changed(previousState.taste, this.state.taste);
     }
     const overlay = activeOverlay();
     if (overlay && overlay !== this.overlay) {
@@ -186,10 +193,47 @@ class DashboardApp extends DashboardModel {
     const name = displayName(user);
     this.setState({ mode: 'live', user, demoOpen: false, name, nameDraft: name, email: user.email ?? '',
       dataset: 'empty', extra: [], over: {}, deleted: {}, shares: {}, simState: 'idle', flow: 'idle', liveGuide: false,
-      fav: store.get('inthon-fav:' + user.id) ?? {}, taste: store.get('inthon-taste:' + user.id) ?? {},
+      fav: store.get('inthon-fav:' + user.id) ?? {}, taste: {}, tasteLoaded: false, refItems: [],
       conds: [], tasteRemoved: false, connected: false, account: '', connectedAt: '', libLoading: true, libError: false,
       semanticSearch: null, indexInterests: [], searchNote: '', searchBusy: false });
-    await this.loadLive();
+    this.tasteSync.reset(); this.referenceRequests.clear();
+    if (await this.loadLive()) this.loadTaste();
+  }
+
+  /** Server taste picks (and a one-time move of this browser's old picks). Old cards outside the latest 200 are fetched. */
+  async loadTaste() {
+    try {
+      const ids = await this.tasteSync.load();
+      if (ids) this.ensureReferences(ids);
+    } catch (error) {
+      if (this.state.mode === 'live') this.toast(error?.status === 401 ? '로그인이 만료됐어요. 다시 로그인해 주세요.' : '내 취향을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  }
+
+  /**
+   * Schedules and taste may point at results older than the latest 200 the list loads. Those rows are read with the
+   * member's own permissions (RLS) and converted exactly like the list; inaccessible ones simply never appear.
+   */
+  async ensureReferences(ids) {
+    if (this.state.mode !== 'live') return;
+    const known = new Set([...this.state.liveItems, ...(this.state.refItems || [])].map(item => item.id));
+    const rows = [...new Set(ids.filter(id => !known.has(id)).map(id => parseContentId(id)?.factcheckId).filter(Boolean))]
+      .filter(row => !this.referenceRequests.has(row));
+    if (!rows.length) return;
+    rows.forEach(row => this.referenceRequests.add(row));
+    const uid = this.state.user?.id;
+    try {
+      const { supabase } = await loadSupabase();
+      const now = new Date(); const found = [];
+      for (let i = 0; i < rows.length; i += 50) {
+        const { data, error } = await supabase.from('factchecks').select(ROW_SELECT).in('id', rows.slice(i, i + 50)).eq('status', 'done');
+        if (error) throw error;
+        found.push(...data.flatMap(row => rowItems(row, now)));
+      }
+      if (this.state.mode !== 'live' || this.state.user?.id !== uid) return;
+      const have = new Set([...this.state.liveItems, ...this.state.refItems].map(item => item.id));
+      this.setState({ refItems: [...this.state.refItems, ...found.filter(item => !have.has(item.id))] });
+    } catch { rows.forEach(row => this.referenceRequests.delete(row)); }
   }
 
   /** Loads the linked account and fact-check history. Resolves to false if Supabase could not be read. */
@@ -198,7 +242,7 @@ class DashboardApp extends DashboardModel {
     let results;
     try { results = await Promise.all([
       supabase.from('account_links').select('linked_at, ig_accounts(username)').maybeSingle(),
-      supabase.from('factchecks').select('id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at, ' + RESTAURANT_SELECT)
+      supabase.from('factchecks').select(ROW_SELECT)
         .eq('status', 'done').order('created_at', { ascending: false }).limit(200),
       this.resultSettings(),
     ]); } catch {
@@ -216,8 +260,9 @@ class DashboardApp extends DashboardModel {
     const next = linkState(link.data);
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
-    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done')
-      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now) : row.topic === 'space' ? spaceRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
+    const liveItems = rows.data.flatMap(row => rowItems(row, now));
+    const listed = new Set(liveItems.map(item => item.id));
+    this.setState({ ...next, liveItems, refItems: (this.state.refItems || []).filter(item => !listed.has(item.id)), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
@@ -299,8 +344,9 @@ class DashboardApp extends DashboardModel {
 
   leaveLive() {
     this.searchController?.abort();
+    this.tasteSync.reset(); this.referenceRequests.clear();
     store.set(MODE_KEY, 'demo');
-    this.setState({ mode: 'demo', liveItems: [], liveLoaded: false, liveGuide: false, libLoading: false, libError: false, semanticSearch: null, indexInterests: [], interestIds: [],
+    this.setState({ mode: 'demo', liveItems: [], refItems: [], tasteLoaded: false, liveLoaded: false, liveGuide: false, libLoading: false, libError: false, semanticSearch: null, indexInterests: [], interestIds: [],
       ...this.demoDefaults });
   }
 
@@ -351,7 +397,9 @@ class DashboardApp extends DashboardModel {
   }
 
   allItems() {
-    return this.state.mode === 'live' ? this.state.liveItems.filter(item => !this.state.resultPreferences.hidden.includes(item.rowId ?? item.id)) : super.allItems();
+    if (this.state.mode !== 'live') return super.allItems();
+    // Latest 200 first, then older cards that a schedule or taste pick refers to.
+    return [...this.state.liveItems, ...(this.state.refItems || [])].filter(item => !this.state.resultPreferences.hidden.includes(item.rowId ?? item.id));
   }
 
   renderVals() {
@@ -370,8 +418,8 @@ class DashboardApp extends DashboardModel {
   pageValues() {
     const isCalendar = this.state.view === 'calendar';
     const active = isCalendar || (this.state.view === 'detail' && this.state.from === 'calendar');
-    return { isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
-      goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values() : {},
+    return { isCalendar, notCalendar: !isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
+      goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
       ...(active ? { navLib: 'nav-item' } : {}),
       ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}) };
   }

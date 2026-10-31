@@ -6,6 +6,7 @@ import { validateContest, contestTimeline, calendarLink } from './contest-data.j
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 import { placesFromRows, mapLinks, priceLabel, placeKeyLine } from './restaurant-data.js';
 import { validateSpace, spaceKeyLine } from './space-data.js';
+import { validateBeauty } from './beauty-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -119,6 +120,14 @@ export function factcheckToItem(row, now = new Date()) {
   if (done && row.topic === 'exhibit') return exhibitRowItems(row, now)[0] ?? null;
   if (done && row.topic === 'restaurant') return restaurantRowItems(row, now)[0] ?? null;
   if (done && row.topic === 'space') return spaceRowItems(row, now)[0] ?? null;
+  if (done && row.topic === 'beauty') {
+    try {
+      const beauty = validateBeauty(stored.beauty);
+      return { ...item, ...beauty, type: 'beauty', title: beauty.title,
+        key: (beauty.sub === 'salon' ? '미용실' : '화장품') + ' · ' + beauty.bFacts.map(([, value]) => value).slice(0, 2).join(' · '),
+        phase: beauty.sponsored ? '협찬 표시 있음' : null, phaseCls: 'badge s-warn', origin: instagramOrigin(stored.sourceUrl) };
+    } catch { return null; }
+  }
   return item;
 }
 
@@ -155,6 +164,17 @@ export function exhibitRowItems(row, now = new Date()) {
 // Columns the dashboard reads from the typed 맛집 tables (embedded under each factchecks row; RLS limits them to the member).
 export const RESTAURANT_SELECT = 'restaurants(position, name, category, intro, area, address, phone, hours, closed, price_range, reservation, '
   + 'waiting, parking, links, evidence, checks, restaurant_menus(position, name, price_text, price_won, note, signature))';
+
+/** Columns every dashboard reader of factchecks needs (the list, old references and the calendar/taste API). */
+export const ROW_SELECT = 'id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at, ' + RESTAURANT_SELECT;
+
+/** One finished factchecks row → its dashboard cards (an exhibition/맛집/공간 post may hold several: fc42, fc42-2…). */
+export function rowItems(row, now = new Date()) {
+  if (row?.status !== 'done') return [];
+  const items = row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now)
+    : row.topic === 'space' ? spaceRowItems(row, now) : [factcheckToItem(row, now)];
+  return items.filter(Boolean);
+}
 
 /**
  * One 맛집 result row (with its restaurants and menus) → one dashboard item per place, mapped onto the design's

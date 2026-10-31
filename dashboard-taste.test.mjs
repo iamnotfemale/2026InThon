@@ -13,6 +13,8 @@ test('taste orbit selections, counts and removals use the same owned saved recor
   assert.equal(values().tasteCount,5); assert.deepEqual(values().tasteTabs.map(tab=>tab.count),[5,1,2,1,1]);
   assert.equal(values().tasteOrbits.length,4);
   values().tasteOrbits[1].planets[0].select(); assert.equal(values().tasteGroups[1].items[0].isSel,true);
+  assert.equal(values().tasteSelection.id,'fc9-2');assert.equal(values().tasteHasSelection,true);
+  values().clearTasteSelection();assert.equal(values().tasteNoSelection,true);
   values().tasteGroups[1].items[0].open(); assert.deepEqual(opened,['fc9-2']);
   values().tasteTabs[1].pick(); assert.match(values().tasteOrbits[1].cls,/dim/); assert.doesNotMatch(values().tasteOrbits[0].cls,/dim/);
   values().tasteGroups[0].items[0].remove(); assert.equal(values().tasteCount,4); assert.equal(values().tasteOrbits[0].planets.length,0);

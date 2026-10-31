@@ -10,6 +10,7 @@ import { resultLinkMessage } from './result-preferences.mjs';
 import { CONTEST_ACK } from './contest.mjs';
 import { RESTAURANT_ACK } from './restaurant.mjs';
 import { SPACE_ACK } from './space.mjs';
+import { BEAUTY_ACK } from './beauty.mjs';
 import { createSenderActivities } from './sender-activity.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
@@ -67,7 +68,8 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, loadProfileToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode,
+  logTiming = data => console.info('DM_TIMING', JSON.stringify(data)) }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null, senderActionFailures: 0 };
@@ -107,12 +109,14 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     return target;
   }
   async function autoReply(deliveries) {
+    const tokenStarted = performance.now();
     let accessToken = config.accessToken;
     if (loadAccessToken) {
       try { accessToken = await loadAccessToken(); }
       catch { stats.replyFailures++; stats.lastError = '운영 토큰을 불러오지 못했습니다.'; return; }
     }
     if (!accessToken || config.userId !== IG_ID) return;
+    const tokenMs = Math.round(performance.now() - tokenStarted);
     for (const { accountId, event: m } of deliveries) {
       const age = now() - Number(m.timestamp);
       if (accountId !== IG_ID || m.recipient?.id !== IG_ID || m.sender?.id === IG_ID
@@ -122,6 +126,8 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       const key = createHash('sha256').update(`${IG_ID}:${m.message.mid}`).digest('hex');
       if (handledReplies.has(key)) continue;
       handledReplies.add(key);
+      const started = performance.now(); const timing = { token_ms: tokenMs }; const deferred = [];
+      const elapsed = () => Math.round(performance.now() - started);
       let activity;
       try {
         // Reserve before sending: retries, concurrent deliveries and restarts must not send the greeting twice.
@@ -134,6 +140,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
             headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ recipient: { id: m.sender.id }, message: typeof message === 'string' ? { text: message } : message }) });
           if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
+          timing.first_response_ms ??= elapsed();
         };
         const sender = m.sender.id;
         // Storage problems must not stop the reply itself; they only cost history.
@@ -184,33 +191,52 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           const backfill = () => track().then(() => trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null);
           if (!respondToMessage) { await send(FACTCHECK_ACK); activity.typing(); }
           let result;
+          const analysisStarted = performance.now();
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, {
-            senderId: sender, acknowledge: async action => { await send(action === 'recipe'
+            senderId: sender, defer: task => { deferred.push(task); }, acknowledge: async action => { await send(action === 'recipe'
               ? '디미가 금방 정리해드릴게요! 재료와 조리 순서까지 함께 살펴볼게요.'
-              : action === 'schedule' ? CONTEST_ACK : action === 'restaurant' ? RESTAURANT_ACK : action === 'space' ? SPACE_ACK : FACTCHECK_ACK); activity.typing(); },
+              : action === 'schedule' ? CONTEST_ACK : action === 'restaurant' ? RESTAURANT_ACK : action === 'space' ? SPACE_ACK : action === 'beauty' ? BEAUTY_ACK : FACTCHECK_ACK); activity.typing(); },
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
+          timing.analysis_ms = Math.round(performance.now() - analysisStarted);
+          timing.kind = result.kind ?? 'content'; timing.action = result.action ?? null; timing.status = result.status ?? null;
           // A post with several recipes comes back as parts: each part is saved as its own record.
           const parts = Array.isArray(result.parts) && result.parts.length ? result.parts.map(part => ({ ...part, media: result.media })) : [result];
+          const collection = parts.length > 1;
           const savedIds = [];
-          if ((result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck) {
+          const shouldSave = (result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck;
+          const saveResult = async () => {
+            const saveStarted = performance.now();
             await track(); // The sender row must exist before writing a content result with its foreign key.
             for (const part of parts) {
               await quietly(async () => { const id = (await saveFactCheck(sender, part))?.id; if (id) savedIds.push([id, part]); }, '팩트체크 기록 실패');
             }
-          }
-          let messages = result.messages;
-          // Several recipes would be dozens of DMs in full mode, so a collection always gets one link per recipe.
-          if (parts.length > 1 && savedIds.length === parts.length && config.publicUrl) {
-            messages = [...(Array.isArray(result.intro) ? result.intro : []), ...savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part))];
-          } else if (savedIds.length && config.publicUrl && getDeliveryMode) {
-            let mode = 'full';
+            timing.save_ms = Math.round(performance.now() - saveStarted);
+          };
+          let mode = 'full';
+          if (shouldSave && !collection && config.publicUrl && getDeliveryMode) {
+            const preferenceStarted = performance.now();
             try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
-            if (mode === 'summary' && savedIds.length === parts.length) messages = savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part));
+            timing.preference_ms = Math.round(performance.now() - preferenceStarted);
           }
-          for (const text of messages) await send(text);
-          await activity.finish();
+          // Private links need saved IDs. Several recipes would be dozens of DMs in full mode, so a collection
+          // always gets one link per recipe; full DMs can arrive before optional search embeddings and storage.
+          const linksFirst = shouldSave && (collection || mode === 'summary');
+          if (linksFirst) await saveResult();
+          let messages = result.messages;
+          if (linksFirst && config.publicUrl && savedIds.length === parts.length) {
+            messages = [...(collection && Array.isArray(result.intro) ? result.intro : []),
+              ...savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part))];
+          }
+          try {
+            for (const text of messages) await send(text);
+            timing.result_sent_ms = elapsed();
+          } finally {
+            await activity.finish();
+            // Keep completed analysis even when one DM chunk fails; its delivery state stays pending.
+            if (shouldSave && !linksFirst) await saveResult();
+          }
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
           if (markFactCheckSent) for (const [id] of savedIds) await quietly(() => markFactCheckSent(id), 'DM 발송 기록 실패');
           await backfill();
@@ -222,7 +248,13 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         stats.replyFailures++;
         stats.lastError = '자동 답장: ' + (error.message.startsWith('Meta API') ? error.message : '전송 결과를 확인하지 못했습니다.');
         // shortcut: failed or uncertain sends are not retried; add a durable outbox before using this beyond a local test.
-      } finally { await activity?.finish(); }
+      } finally {
+        await activity?.finish();
+        // Remain inside the webhook's waitUntil task so Vercel cannot drop history writes after responding.
+        for (const task of deferred) { try { await task(); } catch { stats.lastError = '대화 기록 실패'; } }
+        timing.total_ms = elapsed();
+        try { logTiming(timing); } catch { /* Diagnostics must never change delivery. */ }
+      }
     }
   }
   const protect = handler => async (req, res) => {
