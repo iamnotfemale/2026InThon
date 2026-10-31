@@ -35,7 +35,7 @@ export const contentIdOf = (factcheckId, index) => 'fc' + factcheckId + (index >
 /** A dashboard item → what the calendar shows and checks for it. */
 export function calendarContent(item) {
   const event = item.exhibitEvent;
-  const facts = item.type === 'recipe' ? [['인분', item.serving], ['준비', item.prep], ['조리', item.cook]]
+  const facts = item.type === 'recipe' ? []
     : item.type === 'exhibit' ? [['기간', item.period], ['운영', item.hours], ['휴무', item.closed], ['장소', item.place], ['입장료', item.fee]]
       : item.type === 'contest' ? [['주최', item.host], ['마감', item.deadline]]
         : [['분류', item.category], ['주소', item.address], ['운영', item.hours], ['휴무', item.closed], ['예약', item.reservation],

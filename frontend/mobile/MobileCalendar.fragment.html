@@ -136,11 +136,13 @@
       </div>
       <div class="scroll" style="flex: 1; min-height: 0; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 18px">
         <p style="font-size: 14.5px; line-height: 1.65; color: var(--text-2)">{{cvSummary}}</p>
-        <div class="info-grid">
-          <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
-            <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
-          </sc-for>
-        </div>
+        <sc-if value="{{cvHasFacts}}" hint-placeholder-val="{{ true }}">
+          <div class="info-grid">
+            <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
+            </sc-for>
+          </div>
+        </sc-if>
         <sc-if value="{{cvHasList}}" hint-placeholder-val="{{ true }}">
           <div style="display: flex; flex-direction: column; gap: 4px">
             <span class="label">{{cvListTitle}}</span>
