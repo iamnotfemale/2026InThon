@@ -11,7 +11,7 @@ export const VERDICTS = {
   not_checkable: '검증 대상 아님',
 };
 const DECISIVE = new Set(['supported', 'refuted', 'context']);
-const MAX_IMAGES = 5;
+export const MAX_IMAGES = 10;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 20 * 1024 * 1024; // Gemini inline_data 한도
 const MAX_PAGE_BYTES = 1.5 * 1024 * 1024;
@@ -200,7 +200,7 @@ export function describeMessage(message) {
   return { text, items };
 }
 
-async function gatherInput(message, { fetchMedia, readVideo }) {
+async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia }) {
   const { text, items } = describeMessage(message);
   const images = []; const notes = []; const transcripts = [];
   const captions = items.map(i => i.caption).filter(Boolean);
@@ -208,26 +208,40 @@ async function gatherInput(message, { fetchMedia, readVideo }) {
     if (!item.url) continue;
     let media;
     try { media = await fetchMedia(item.url, MAX_VIDEO_BYTES); }
-    catch (error) { notes.push(`${item.type} 첨부를 받지 못함(${error.message})`); continue; }
+    catch (error) {
+      if (requireAllMedia) throw new Error('일부 원본 미디어를 읽지 못해 분석을 중단했어요.');
+      notes.push(`${item.type} 첨부를 받지 못함(${error.message})`); continue;
+    }
     const b = media.body;
     // Meta CDN can label JPEG bytes as WebP; model inputs must match the bytes.
     const imageType = b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff ? 'image/jpeg'
       : b.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? 'image/png'
       : b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP' ? 'image/webp'
       : /^GIF8[79]a$/.test(b.subarray(0, 6).toString()) ? 'image/gif' : null;
+    if (imageType && images.length >= MAX_IMAGES) throw new Error('이미지는 한 번에 최대 10장까지 처리해요.');
     if (imageType && images.length < MAX_IMAGES && b.length <= MAX_IMAGE_BYTES) {
       images.push({ mediaType: imageType, data: b.toString('base64') });
       // A JPEG ig_post attachment alone does not establish coverage of all slides or video.
       if (item.type === 'ig_post') notes.push('공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함');
     } else if (media.contentType.startsWith('image/') && !imageType) {
+      if (requireAllMedia) throw new Error('원본 이미지 형식을 확인하지 못해 분석을 중단했어요.');
       notes.push(`${item.type} 첨부의 이미지 형식을 확인하지 못함`);
     } else if (media.contentType.startsWith('video/')) {
+      if (requireAllMedia && !readVideo) throw new Error('영상 분석 모델이 연결되지 않았어요.');
       if (!readVideo) { notes.push('영상은 열었지만 화면·음성 분석 모델이 없어 확인하지 못함'); continue; }
       try {
-        transcripts.push(await readVideo({ video: media.body, mediaType: media.contentType,
-          prompt: '이 영상의 자막·화면 글자·음성 발언을 시간 순서대로 한국어로 옮겨 적어. 들리지 않거나 읽히지 않는 부분은 [불명확]으로 표시해.' }));
-      } catch (error) { notes.push(`영상 분석 실패(${error.message})`); }
-    } else notes.push(`${item.type} 첨부 형식(${media.contentType || '알 수 없음'})은 분석하지 않음`);
+        const transcript = await readVideo({ video: media.body, mediaType: media.contentType,
+          prompt: '이 영상의 자막·화면 글자·음성 발언을 시간 순서대로 한국어로 옮겨 적어. 들리지 않거나 읽히지 않는 부분은 [불명확]으로 표시해.' });
+        if (requireAllMedia && !transcript.trim()) throw new Error('Empty video transcript');
+        transcripts.push(transcript);
+      } catch (error) {
+        if (requireAllMedia) throw new Error('영상 분석에 실패해 전체 분석을 중단했어요.');
+        notes.push(`영상 분석 실패(${error.message})`);
+      }
+    } else {
+      if (requireAllMedia) throw new Error('읽을 수 없는 원본 미디어가 있어 분석을 중단했어요.');
+      notes.push(`${item.type} 첨부 형식(${media.contentType || '알 수 없음'})은 분석하지 않음`);
+    }
   }
   const scope = [text && '메시지 본문', captions.length && `게시물 캡션 ${captions.length}개`, images.length && `이미지 ${images.length}장`,
     transcripts.length && `영상 ${transcripts.length}개(Gemini 전사)`].filter(Boolean);
@@ -286,10 +300,15 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     return { evidence, searched: candidates.length, failures, unopened: opened.filter(o => o.status === 'rejected').length };
   }
 
-  return async function check(message) {
+  return async function check(message, { fetchMedia: preparedFetch, requireAllMedia } = {}) {
     const started = Date.now(); const timings = {};
     let step = Date.now();
-    const input = await gatherInput(message, { fetchMedia, readVideo });
+    let input;
+    try { input = await gatherInput(message, { fetchMedia: preparedFetch ?? fetchMedia, readVideo, requireAllMedia }); }
+    catch (error) {
+      if (!requireAllMedia) throw error;
+      return { status: 'no_input', notes: [error.message], messages: [error.message], timings: { total: elapsed(started) } };
+    }
     timings.input = elapsed(step);
     if (!input.text && !input.captions.length && !input.images.length && !input.transcripts.length) {
       return { status: 'no_input', timings: { ...timings, total: elapsed(started) }, notes: input.notes,

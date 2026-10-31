@@ -9,6 +9,29 @@ const article = `<html><head><title>제임스웹 발사</title><meta property="a
 <body><article><p>제임스웹 우주망원경은 2021년 12월 25일 프랑스령 기아나에서 아리안 5호 로켓으로 발사됐다.</p>
 <p>${'관련 없는 문장이 이어진다. '.repeat(20)}</p></article></body></html>`;
 
+test('ten images are passed in order; an eleventh image is not silently discarded', async () => {
+  let seen;
+  const checker = createFactChecker({ model: async ({ content }) => { seen = content; return '{"checkable":false}'; },
+    search: {}, fetchMedia: async url => ({ contentType: 'image/jpeg', body: Buffer.from([255, 216, 255, Number(url)]) }) });
+  const attachments = Array.from({ length: 10 }, (_, i) => ({ type: 'image', payload: { url: String(i) } }));
+  await checker({ attachments });
+  assert.equal(seen.filter(c => c.type === 'image').length, 10);
+  assert.deepEqual(seen.filter(c => c.type === 'image').map(c => Buffer.from(c.source.data, 'base64').at(-1)), [...Array(10).keys()]);
+  await assert.rejects(checker({ attachments: [...attachments, { type: 'image', payload: { url: '10' } }] }), /최대 10장/);
+});
+
+test('prepared media never falls back to caption-only AI after a missing image or unavailable video reader', async () => {
+  let calls = 0;
+  const checker = createFactChecker({ model: async () => { calls++; return '{"checkable":false}'; }, search: {} });
+  const attachments = [{ type: 'image', payload: { url: 'staged/file', title: '본문이 있어도 전체 미디어가 필요함' } }];
+  for (const fetchMedia of [async () => { throw new Error('storage failed'); },
+    async () => ({ contentType: 'image/jpeg', body: Buffer.from('invalid image') }),
+    async () => ({ contentType: 'video/mp4', body: Buffer.from('video') })]) {
+    const result = await checker({ attachments }, { requireAllMedia: true, fetchMedia });
+    assert.equal(result.status, 'no_input'); assert.equal(calls, 0);
+  }
+});
+
 function fixture({ judge, search, fetchPage = async () => page(article), extract } = {}) {
   const calls = [];
   const model = async ({ system, content }) => {

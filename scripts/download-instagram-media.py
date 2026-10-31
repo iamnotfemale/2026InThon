@@ -100,7 +100,7 @@ class QuietLogger:
         pass  # The caller reports the exception without temporary media URLs.
 
 
-def download(url, directory, info=None, ffmpeg=None):
+def download(url, directory, info=None, ffmpeg=None, *, max_entries=20, max_video_bytes=150 * 1024 * 1024):
     import yt_dlp
 
     source = canonical_url(url)
@@ -112,16 +112,18 @@ def download(url, directory, info=None, ffmpeg=None):
     with yt_dlp.YoutubeDL(options) as ydl:
         info = info or ydl.extract_info(source, download=False)
     entries = info.get("entries") or [info]
-    if len(entries) > 20:
-        raise ValueError("More than 20 media entries; split the test")
+    if len(entries) > max_entries:
+        raise ValueError("Too many media entries; split the input")
     if re.search(r"/(?:reels?|tv)/", source) and any(not entry.get("formats") for entry in entries):
         raise ValueError("Reel video formats unavailable; a cover image is not the full video")
     manifest = {"source": source, "caption": info.get("description") or "", "files": []}
     for index, entry in enumerate(entries, start=1):
         if entry.get("formats"):
+            for video_format in entry["formats"]:
+                check_media_url(video_format["url"])
             video_options = {**options, "skip_download": False, "noplaylist": True,
                              "ignore_no_formats_error": False, "format": "b[ext=mp4]/b",
-                             "max_filesize": 150 * 1024 * 1024, "nopart": False,
+                             "max_filesize": max_video_bytes, "nopart": False,
                              "outtmpl": str(directory / f"video_{index:02d}.%(ext)s")}
             if ffmpeg:
                 video_options["ffmpeg_location"] = ffmpeg
@@ -130,6 +132,8 @@ def download(url, directory, info=None, ffmpeg=None):
                 target = Path(ydl.prepare_filename(result))
             if not target.is_file() or not target.stat().st_size:
                 raise ValueError("Video download not confirmed")
+            if target.stat().st_size > max_video_bytes:
+                raise ValueError("Video exceeds size limit")
             manifest["files"].append({"index": index, "kind": "video", "file": target.name,
                                       "bytes": target.stat().st_size, "width": result.get("width"),
                                       "height": result.get("height"), "duration": result.get("duration")})

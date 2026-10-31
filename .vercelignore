@@ -11,3 +11,5 @@ node_modules
 docs
 start.ps1
 stop.ps1
+**/__pycache__
+**/*_test.py

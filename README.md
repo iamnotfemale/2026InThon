@@ -26,7 +26,7 @@ node --test
 - 운영: Vercel에 `CONTINUUM_API_KEY`(선택 `CONTINUUM_BASE_URL`, `CONTINUUM_MODEL`, `GEMINI_API_KEY`)를 넣으면 `안녕?` 대신 접수 안내 + 팩트체크 결과를 보냅니다. 키가 없으면 기존 고정 답장 그대로입니다. 함수 제한 시간은 300초로 늘렸습니다.
 - 로컬 실DM 테스트: `node scripts/factcheck-local.mjs .env` (포트 3000, ngrok 연결). 실행 기록은 `factcheck-runs.jsonl`에 남습니다.
 - 사례 묶음 평가: `node scripts/factcheck-eval.mjs cases.json .env`
-- 공유 첨부 형식은 고정되어 있지 않습니다. 실제 테스트에서 `ig_reel`은 캡션·원본 릴스 URL, `ig_post`는 캡션·미디어 ID·JPEG 한 장의 CDN URL을 반환했습니다. [미디어 확보 테스트](docs/instagram-media-input-test.md)에 실제 범위와 제한을 기록했습니다. 로컬 yt-dlp 도구로 릴스 영상과 원본 링크가 있는 게시물 3장 다운로드를 확인했지만, 운영 팩트체크 함수에는 아직 이 다운로드 도구가 연결되지 않았습니다. `GEMINI_API_KEY`가 있으면 직접 보낸 영상 파일을 Gemini로 전사합니다.
+- 공유 첨부 형식은 고정되어 있지 않습니다. 실제 테스트에서 `ig_reel`은 캡션·원본 릴스 URL, `ig_post`는 캡션·미디어 ID·JPEG 한 장의 CDN URL을 반환했습니다. [미디어 확보 테스트](docs/instagram-media-input-test.md)에 실제 범위와 제한을 기록했습니다. 운영 함수에는 원본 URL 확인 → Vercel Python/yt-dlp 다운로드 → 최대 10장 AI 입력 → AI 종료 후 비공개 임시파일 삭제를 연결했습니다. 원본 주소를 얻을 수 없는 공유 게시물은 링크를 요청합니다. `GEMINI_API_KEY`가 있으면 영상도 전사합니다. 팀원 연결 계약과 제한은 [미디어 파이프라인](docs/media-pipeline.md)을 참고하세요.
 
 ## 연결
 

@@ -4,7 +4,10 @@
   "outputDirectory": "public",
   "cleanUrls": true,
   "regions": ["icn1"],
-  "functions": { "api/instagram.mjs": { "maxDuration": 300 } },
+  "functions": {
+    "api/instagram.mjs": { "maxDuration": 300 },
+    "api/media.py": { "maxDuration": 120, "excludeFiles": "{node_modules/**,public/**,**/*_test.py,**/*.test.mjs}" }
+  },
   "rewrites": [
     { "source": "/health", "destination": "/api/instagram" },
     { "source": "/webhooks/instagram", "destination": "/api/instagram" },
