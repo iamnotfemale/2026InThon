@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createFactChecker, createSearch, safeFetch, composeMessages, isPrivateAddress, unwrapBingLink, parseJson,
-  htmlToText, excerpt, factCheckerFromEnv, createAnthropicModel, createGeminiVideoReader } from './factcheck.mjs';
+  htmlToText, excerpt, factCheckerFromEnv, createAnthropicModel, createGeminiVideoReader, createGeminiModel } from './factcheck.mjs';
 
 const publicDns = async () => [{ address: '93.184.216.34' }];
 const page = (html, contentType = 'text/html') => ({ url: 'https://news.example.com/a', contentType, body: Buffer.from(html) });
@@ -41,6 +41,32 @@ test('the media job cancellation signal reaches both providers before the platfo
   await video({ prompt: '', video: Buffer.from('x'), mediaType: 'video/mp4', signal: controller.signal });
   assert.ok(signals.every(s => !s.aborted));
   controller.abort(); assert.ok(signals.every(s => s.aborted));
+});
+
+test('Gemini alone handles ordered image inputs and JSON with unchanged system instructions', async () => {
+  let request;
+  const checker = factCheckerFromEnv({ GEMINI_API_KEY: 'fake-gemini-key' }, {
+    fetchMedia: async url => ({ contentType: 'image/jpeg', body: Buffer.from([255, 216, 255, Number(url)]) }),
+    fetchImpl: async (url, options) => {
+      assert.ok(!url.includes('fake-gemini-key'));
+      assert.equal(options.headers['x-goog-api-key'], 'fake-gemini-key');
+      request = JSON.parse(options.body);
+      return Response.json({ candidates: [{ content: { parts: [{ thought: true, text: 'hidden reasoning' }, { text: '{"checkable":false}' }] } }] });
+    },
+  });
+  assert.equal(typeof checker, 'function');
+  const result = await checker({ attachments: Array.from({ length: 10 }, (_, i) => ({ type: 'image', payload: { url: String(i) } })) });
+  assert.equal(result.status, 'not_checkable');
+  assert.match(request.systemInstruction.parts[0].text, /1단계/);
+  const images = request.contents[0].parts.filter(p => p.inline_data);
+  assert.equal(images.length, 10);
+  assert.deepEqual(images.map(p => Buffer.from(p.inline_data.data, 'base64').at(-1)), [...Array(10).keys()]);
+  assert.equal(request.generationConfig.responseMimeType, 'application/json');
+});
+
+test('Gemini errors do not reveal provider response bodies or key values', async () => {
+  const model = createGeminiModel({ apiKey: 'fake-secret', fetchImpl: async () => new Response('fake-secret', { status: 429 }) });
+  await assert.rejects(model({ system: '', content: [] }), error => error.message === 'Gemini 호출 실패 (HTTP 429)');
 });
 
 function fixture({ judge, search, fetchPage = async () => page(article), extract } = {}) {

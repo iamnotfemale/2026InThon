@@ -36,7 +36,7 @@
 - 사진은 원본을 보관하면서 EXIF 방향을 적용하고, AI 입력용 JPEG를 별도로 만든다. 최대 긴 변 2048px, 한 장 1.5MiB 이하. 위치 등 EXIF는 입력용 JPEG에 복사하지 않는다.
 - 기존 직접 이미지 입력도 5장 → 10장으로 늘렸다. 실제 바이트로 이미지 형식을 판별하므로 Meta가 JPEG를 WebP라고 표시해도 올바른 MIME을 사용한다.
 - 영상은 MP4 한 파일을 받는다. 개당 20MiB 이하, 작업 원본 합계 80MiB 이하. 영상 포맷이 없으면 커버 이미지를 영상 다운로드 성공으로 보고하지 않는다.
-- 영상 분석은 현재 `GEMINI_API_KEY`가 있는 Gemini 전사 경로다. DeepSeek/Continuum은 이미지·텍스트 입력을 사용한다. 영상 모델이 없거나 일부 파일을 읽지 못하면 원본 확보 경로에서는 전체 분석을 중단한다.
+- `GEMINI_API_KEY` 하나로 이미지 주장 추출·근거 판단·영상 전사를 모두 처리한다. 기본 모델은 실제 호출을 확인한 `gemini-3.8-flash`; `GEMINI_MODEL`로 변경할 수 있다. Gemini 키가 없고 Continuum 키만 있으면 기존 DeepSeek 이미지·텍스트 경로를 사용한다. 영상 모델이 없거나 일부 파일을 읽지 못하면 원본 확보 경로에서는 전체 분석을 중단한다.
 - 한도 초과·다운로드 차단은 `no_input` 응답이다. 이를 팩트체크의 “거짓”이나 “확인됨” 판정으로 저장하지 않는다.
 
 ## 팀원 코드와 연결되는 인터페이스
@@ -47,7 +47,7 @@
 factCheck: mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken })
 ```
 
-`CONTINUUM_API_KEY`가 없으면 기존 고정 답장을 유지한다. 키를 설정하면 접수 안내와 실제 팩트체크로 전환된다. 이번 작업에서 운영 AI 키를 새로 등록하거나 프롬프트를 변경하지 않았다. 릴스까지 처리하려면 `GEMINI_API_KEY`도 필요하다.
+`GEMINI_API_KEY` 또는 `CONTINUUM_API_KEY`가 있으면 접수 안내와 실제 팩트체크로 전환된다. 둘 다 없으면 기존 고정 답장을 유지한다. 둘 다 있으면 Gemini를 사용한다. Gemini는 기존 시스템 프롬프트와 결과 계약을 그대로 사용하며, 순서가 있는 이미지·텍스트를 Gemini 입력 형식으로 바꿔 보낸다. 키는 Vercel Production의 Sensitive 환경변수에 저장하고 Git이나 로그에 넣지 않는다.
 
 기존 `createFactChecker`의 첫 번째 인자는 그대로다. 원본 다운로드 경로만 두 번째 인자를 쓴다.
 
@@ -89,12 +89,16 @@ await check(message, {
 
 ## 검증과 알려진 한계
 
-- Node 회귀 테스트 62개: 원본 URL 검증, Graph 결과 검증과 실패 보완, 10장 순서·11장 거절, HMAC 요청, 작업 경로 격리, 성공·실패 후 정리, 모델 취소 신호.
+- Node 회귀 테스트 64개: 원본 URL 검증, Graph 결과 검증과 실패 보완, 10장 순서·11장 거절, HMAC 요청, 작업 경로 격리, 성공·실패 후 정리, 모델 취소 신호, Gemini 단독 키·10장 입력·안전한 오류 처리.
 - Python 회귀 테스트 13개: 요청 서명·만료, JPEG 변환, 10개 업로드 순서, 중복 작업 보호, 부분 실패 정리, 오래된 파일 복구, 기존 다운로드 회귀.
 - 실제 10장 게시물: 로컬 및 **배포된 Vercel Python 함수**에서 yt-dlp 다운로드 → 비공개 원본·입력용 파일 20개 보관 → AI adapter에 10장 전달 → 잔여 0개 확인. 입력 JPEG 합계 약 3.34MB.
 - 실제 릴스: 로컬 및 배포된 Vercel에서 MP4 10,854,918bytes 확보 → 영상 분석 adapter까지 전달 → 잔여 0개 확인. 모델·영상 전사는 테스트 함수로 대체했으며 외부 AI 호출은 하지 않았다. 샘플의 공개 원본 URL이나 캡션은 이 문서에 공개하지 않는다.
 - 운영 확인: `/health` 200, Python 함수 GET 405·서명 없는 POST 403, 소스 파일·로컬 비밀 파일 경로 404. 비공개 다운로드 함수가 공개 파일 서버가 되지 않도록 확인했다.
 - 공개 게시물도 Instagram이 데이터센터 IP를 제한하거나 로그인을 요구할 수 있다. 이는 토큰 재발급·테스터 추가만으로 해결된다고 가정하지 않는다. 실패 시 부분 파일로 분석하지 않는다.
-- 이번 변경은 프롬프트 정확도·팩트체크 품질을 평가하지 않는다. AI 모델의 이미지 수·요청 용량 제한과 실제 운영 모델 호출은 팀원이 별도로 확인해야 한다.
+- Gemini 키 인증과 `gemini-3.8-flash`의 실제 JSON 응답을 확인했다. 기존 `gemini-2.5-flash`는 해당 키의 모델 목록에 있어도 실제 생성 요청은 404여서 기본 모델을 변경했다.
+- **실제 Gemini 미디어 검증**: Vercel에서 10장 게시물을 다운로드해 Gemini에 10장 모두 전달했고 `done`, 근거 링크 2개, 약 102초를 확인했다. 릴스는 영상 전사·주장 추출·판단까지 `done`, 약 60초를 확인했다. 두 검증 모두 실제 AI 요청 중 원본을 유지했고 종료 후 잔여 파일은 0개였다. 이때 DM은 발송하지 않았다. 링크 내용과 판정의 정확성을 사람이 평가한 결과는 아니다.
+- 이번 변경은 프롬프트 정확도·팩트체크 품질을 평가하지 않는다. 서비스별 프롬프트 개선·판정 품질 평가·대시보드 계정 연결은 팀원 담당이다.
 
 플랫폼 근거: [Vercel Python /api 함수](https://vercel.com/docs/functions/runtimes/python/api-directory), [비공개 Blob Python SDK](https://vercel.com/docs/vercel-blob/python-sdk-reference). SDK·미디어 라이브러리는 `requirements.txt`에 버전을 고정했다.
+
+Gemini 입력 근거: [이미지 이해](https://ai.google.dev/gemini-api/docs/generate-content/image-understanding), [영상 이해](https://ai.google.dev/gemini-api/docs/generate-content/video-understanding), [JSON 응답](https://ai.google.dev/gemini-api/docs/generate-content/structured-output).

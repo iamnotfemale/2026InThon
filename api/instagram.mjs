@@ -37,7 +37,7 @@ export default function handler(req, res) {
       webhookSecret: process.env.META_APP_SECRET, accessToken: process.env.META_ACCESS_TOKEN,
       verifyToken: process.env.META_VERIFY_TOKEN, userId: '17841414630453998' },
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
-    // CONTINUUM_API_KEY가 있으면 고정 인사 대신 팩트체크 답장을 보낸다.
+    // Gemini 또는 Continuum 키가 있으면 고정 인사 대신 팩트체크 답장을 보낸다.
     ...stateStore(), loadAccessToken, background: task => waitUntil(task),
     factCheck: mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
     observeMessages: mediaProbeFromEnv(),

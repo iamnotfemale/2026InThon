@@ -13,7 +13,7 @@ export const VERDICTS = {
 const DECISIVE = new Set(['supported', 'refuted', 'context']);
 export const MAX_IMAGES = 10;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 20 * 1024 * 1024; // Gemini inline_data 한도
+const MAX_VIDEO_BYTES = 20 * 1024 * 1024; // MVP의 영상 원본 크기 제한
 const MAX_PAGE_BYTES = 1.5 * 1024 * 1024;
 const MAX_TEXT = 5000;
 const MESSAGE_BYTES = 900;
@@ -170,8 +170,30 @@ export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch
   };
 }
 
+export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000 }) {
+  return async ({ system, content, maxTokens = 8192, signal }) => {
+    const parts = content.map(item => {
+      if (item.type === 'text') return { text: item.text };
+      if (item.type === 'image' && item.source?.type === 'base64') {
+        return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+      }
+      throw new Error('지원하지 않는 Gemini 입력 형식');
+    });
+    const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts }],
+        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: maxTokens } }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Gemini 호출 실패 (HTTP ${response.status})`);
+    const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought).map(p => p.text ?? '').join('').trim();
+    if (!text) throw new Error('Gemini 응답이 비어 있어요.');
+    return text;
+  };
+}
+
 // 영상·음성은 Gemini만 직접 읽을 수 있다. 키가 있을 때만 릴스 영상 분석에 쓴다.
-export function createGeminiVideoReader({ apiKey, model = 'gemini-2.5-flash', fetchImpl = fetch, timeout = 90000 }) {
+export function createGeminiVideoReader({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 90000 }) {
   return async ({ prompt, video, mediaType, signal }) => {
     const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
@@ -390,9 +412,11 @@ function splitBytes(text) {
 
 // 환경변수로 실제 구성 요소를 묶는다. 키가 없으면 null을 돌려 기존 고정 답장을 유지한다.
 export function factCheckerFromEnv(env = process.env, { fetchImpl = fetch, resolve = lookup, log, fetchMedia } = {}) {
-  if (!env.CONTINUUM_API_KEY) return null;
-  const model = createAnthropicModel({ baseUrl: env.CONTINUUM_BASE_URL || 'https://api.console.lablup.ai/anthropic',
-    apiKey: env.CONTINUUM_API_KEY, model: env.CONTINUUM_MODEL || 'DeepSeek-V4.1-Flash-B300', fetchImpl });
+  if (!env.GEMINI_API_KEY && !env.CONTINUUM_API_KEY) return null;
+  const model = env.GEMINI_API_KEY
+    ? createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, fetchImpl })
+    : createAnthropicModel({ baseUrl: env.CONTINUUM_BASE_URL || 'https://api.console.lablup.ai/anthropic',
+      apiKey: env.CONTINUUM_API_KEY, model: env.CONTINUUM_MODEL || 'DeepSeek-V4.1-Flash-B300', fetchImpl });
   const readVideo = env.GEMINI_API_KEY ? createGeminiVideoReader({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, fetchImpl }) : null;
   return createFactChecker({ model, readVideo, log, search: createSearch({ fetchImpl, resolve }),
     fetchPage: url => safeFetch(url, { fetchImpl, resolve }),
