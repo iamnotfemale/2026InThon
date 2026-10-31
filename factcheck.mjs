@@ -171,26 +171,34 @@ export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch
   };
 }
 
-export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000, thinkingLevel }) {
+export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000, thinkingLevel,
+  logTiming = data => console.info('AI_TIMING', JSON.stringify(data)) }) {
   return async ({ system, content, maxTokens = 8192, signal, history = [], json = true }) => {
-    const parts = content.map(item => {
-      if (item.type === 'text') return { text: item.text };
-      if (['image', 'video'].includes(item.type) && item.source?.type === 'base64') {
-        return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
-      }
-      throw new Error('지원하지 않는 Gemini 입력 형식');
-    });
-    const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [...history, { role: 'user', parts }],
-        generationConfig: { ...(json ? { responseMimeType: 'application/json' } : {}), maxOutputTokens: maxTokens,
-          ...(thinkingLevel ? { thinkingConfig: { thinkingLevel } } : {}) } }) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`Gemini 호출 실패 (HTTP ${response.status})`);
-    const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought).map(p => p.text ?? '').join('').trim();
-    if (!text) throw new Error('Gemini 응답이 비어 있어요.');
-    return text;
+    const started = performance.now(); let ok = false;
+    try {
+      const parts = content.map(item => {
+        if (item.type === 'text') return { text: item.text };
+        if (['image', 'video'].includes(item.type) && item.source?.type === 'base64') {
+          return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
+        }
+        throw new Error('지원하지 않는 Gemini 입력 형식');
+      });
+      const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [...history, { role: 'user', parts }],
+          generationConfig: { ...(json ? { responseMimeType: 'application/json' } : {}), maxOutputTokens: maxTokens,
+            ...(thinkingLevel ? { thinkingConfig: { thinkingLevel } } : {}) } }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(`Gemini 호출 실패 (HTTP ${response.status})`);
+      const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought).map(p => p.text ?? '').join('').trim();
+      if (!text) throw new Error('Gemini 응답이 비어 있어요.');
+      ok = true;
+      return text;
+    } finally {
+      try { logTiming({ model, mode: json ? 'structured' : 'chat', ok, model_ms: Math.round(performance.now() - started) }); }
+      catch { /* Diagnostics must not change provider results. */ }
+    }
   };
 }
 

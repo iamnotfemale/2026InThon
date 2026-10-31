@@ -1,4 +1,4 @@
-// Display contract for the backend's future beauty result; no media analysis runs in the browser.
+// Shared result contract; media analysis runs only on the server.
 export function validateBeauty(value) {
   const text = (s, max = 1000) => typeof s === 'string' && s.length <= max;
   if (!value || value.version !== 1 || !['salon', 'product'].includes(value.sub)
@@ -16,7 +16,7 @@ export function validateBeauty(value) {
     try { url = new URL(link[1]); } catch { throw new Error('Invalid beauty link'); }
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Invalid beauty link');
   }
-  return { title: value.title.trim(), sub: value.sub, intro: value.intro,
+  return { version: 1, title: value.title.trim(), sub: value.sub, intro: value.intro,
     bFacts: value.bFacts.map(([k, v]) => [k, v.trim() || '미기재']), points: value.points,
     place: value.place || '', address: value.address || '주소 미기재', hours: value.hours || '운영 시간 미기재',
     links: value.links, sponsored: value.sponsored === true,

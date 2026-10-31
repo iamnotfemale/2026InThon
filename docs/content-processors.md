@@ -77,6 +77,12 @@ DM 공유 후 다섯 번째 버튼 **‘취향공간 정리’**(`content:v1:spa
 
 검증: `node --test space.test.mjs content-choices.test.mjs server.test.mjs dashboard-frontend.test.mjs`. 실제 원본으로 운영 Gemini 결과를 확인하는 작업은 아직 하지 않았다.
 
+## 미용 정리
+
+여섯 번째 버튼 **미용 정리**(`content:v1:beauty:<티켓>`)가 `beauty.mjs`로 연결된다. 제품 또는 미용실·시술을 구분해 원본 이미지·영상·본문을 한 번의 Gemini 호출로 정리한다. 실제 본문에 있는 예약·구매 URL만 허용하고 가격·효과·사용감은 작성자의 설명으로 구분한다. 협찬은 명시된 표기가 있을 때만 표시한다.
+
+완료 결과는 `factchecks`의 `topic='beauty'`, `verdict=null`, `reason=JSON.stringify({beauty,sourceUrl,contentIndex})`로 저장한다. 기존 전체 DM/개인 링크 옵션과 PC·모바일 미용 상세를 사용한다. 세부 계약과 검증은 [미용 연결 문서](beauty-backend-handoff.md)에 있다. 내 취향·캘린더의 분류는 변경하지 않았다.
+
 ## 저장·화면 연결
 
 기존 `factchecks` 테이블의 RLS와 `/items/fc<ID>` 경로를 재사용한다. 레시피는 `topic='recipe'`, `verdict=null`, `claim=요리명`, `reason=JSON.stringify({recipe,sourceUrl})`로 저장한다. v1 JSON에는 모든 구조화 필드를 보존하고 기존 뉴스 이유의 2000자 자르기를 적용하지 않는다. DB 마이그레이션과 권한 변경은 없다. 팀원이 통합 콘텐츠 스키마를 확정하면 이 임시 저장 형태를 타입 컬럼으로 이전한다.

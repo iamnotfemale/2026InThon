@@ -9,6 +9,7 @@ import { recipeProcessorFromEnv } from './recipe.mjs';
 import { contestProcessorFromEnv } from './contest.mjs';
 import { restaurantProcessorFromEnv } from './restaurant.mjs';
 import { spaceProcessorFromEnv } from './space.mjs';
+import { beautyProcessorFromEnv } from './beauty.mjs';
 
 const TTL = 30 * 60000;
 const MAX_MESSAGES = 12;
@@ -51,7 +52,7 @@ export function createChatHistory({ secret, getBlob = get, putBlob = put, delete
 }
 
 export function createDmAssistant({ model, processContent, history, choices, warn = () => console.warn('Chat history unavailable') }) {
-  return async (message, { senderId, acknowledge = async () => {} } = {}) => {
+  return async (message, { senderId, acknowledge = async () => {}, defer = task => task() } = {}) => {
     // Quick replies carry the original content ticket, not a request for ordinary chat.
     let result;
     if (message.quick_reply) {
@@ -59,7 +60,7 @@ export function createDmAssistant({ model, processContent, history, choices, war
       if (result.kind !== 'content') return result;
     } else if (isContentMessage(message)) return choices.offer(message, senderId);
     let previous = [];
-    try { previous = await history.read(senderId); } catch { warn(); }
+    if (!result) { try { previous = await history.read(senderId); } catch { warn(); } }
     const text = typeof message.text === 'string' ? message.text.trim().slice(0, 4000) : '';
     if (!result && RESET.has(text)) {
       try { await history.clear(senderId); }
@@ -77,7 +78,13 @@ export function createDmAssistant({ model, processContent, history, choices, war
       { role: 'user', parts: [{ text: text || '[릴스·게시물·이미지 공유]' }] },
       { role: 'model', parts: [{ text: summary }] },
     ];
-    try { await history.write(senderId, [...previous, ...turn]); } catch { warn(); }
+    await defer(async () => {
+      try {
+        // Content analysis does not need chat history; read it only when appending after the reply.
+        if (result.kind === 'content') previous = await history.read(senderId);
+        await history.write(senderId, [...previous, ...turn]);
+      } catch { warn(); }
+    });
     return result;
   };
 }
@@ -90,9 +97,10 @@ export function dmAssistantFromEnv({ loadAccessToken, env = process.env } = {}) 
   const contest = mediaFactCheckerFromEnv(contestProcessorFromEnv(env), { loadAccessToken, env });
   const restaurant = mediaFactCheckerFromEnv(restaurantProcessorFromEnv(env), { loadAccessToken, env });
   const space = mediaFactCheckerFromEnv(spaceProcessorFromEnv(env), { loadAccessToken, env });
+  const beauty = mediaFactCheckerFromEnv(beautyProcessorFromEnv(env), { loadAccessToken, env });
   return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: chatModel,
     thinkingLevel: chatModel === 'gemini-3.5-flash-lite' ? 'minimal' : undefined }),
-    processContent: (message, action) => (action === 'recipe' ? recipe : action === 'schedule' ? contest : action === 'restaurant' ? restaurant : action === 'space' ? space : factcheck)(message),
+    processContent: (message, action) => (action === 'recipe' ? recipe : action === 'schedule' ? contest : action === 'restaurant' ? restaurant : action === 'space' ? space : action === 'beauty' ? beauty : factcheck)(message),
     history: createChatHistory({ secret: env.META_APP_SECRET }),
     choices: createContentChoices({ secret: env.META_APP_SECRET }) });
 }

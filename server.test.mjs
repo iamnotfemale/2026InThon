@@ -474,7 +474,7 @@ test('assistant routes chat without fact-check ACK or history rows, while conten
   assert.ok(contexts.every(c => typeof c.acknowledge === 'function'));
 });
 
-test('signed content shares send five quick replies; clicks route the original post and save only actual analysis', async t => {
+test('signed content shares send six quick replies; clicks route the original post and save only actual analysis', async t => {
   const blobs = new Map(); const claims = new Set(); const sent = []; const saved = []; const processed = []; const marked = [];
   const choices = createContentChoices({ secret: 'test-secret',
     getBlob: async key => blobs.has(key) ? { stream: new Response(blobs.get(key)).body } : null,
@@ -487,25 +487,27 @@ test('signed content shares send five quick replies; clicks route the original p
     saveFactCheck: async (_sender, result) => { saved.push(result); return { id: 'saved-result' }; },
     markFactCheckSent: async id => marked.push(id),
     apiFetch: async (url, options) => { assert.ok(url.endsWith('/messages')); sent.push(JSON.parse(options.body).message); return json({ message_id: 'out' }); } });
-  for (const [index, action] of ['recipe', 'factcheck', 'schedule', 'restaurant', 'space'].entries()) {
+  for (const [index, action] of ['recipe', 'factcheck', 'schedule', 'restaurant', 'space', 'beauty'].entries()) {
     const mid = 'shared-' + action;
     await deliver(f, [incoming({ message: { mid, attachments: [{ type: 'ig_post', payload: { url: 'https://example.com/private.jpg' } }] } })]);
     await eventually(() => f.stats.replies === index * 2 + 1);
-    const offer = sent.at(-1); assert.equal(offer.quick_replies.length, 5);
+    const offer = sent.at(-1); assert.equal(offer.quick_replies.length, 6);
     assert.match(offer.quick_replies[index].payload, new RegExp(`^content:v1:${action}:`));
     await deliver(f, [incoming({ message: { mid: 'click-' + action, text: offer.quick_replies[index].title,
       quick_reply: { payload: offer.quick_replies[index].payload } } })]);
     await eventually(() => f.stats.replies === index * 2 + 2);
     assert.equal(saved.length, index + 1);
   }
-  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule', 'shared-restaurant', 'shared-space']);
+  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule', 'shared-restaurant', 'shared-space', 'shared-beauty']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
   assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
   assert.equal(sent.filter(m => m.text?.includes('일정과 장소, 필요한 조건')).length, 1, 'schedule has its own acknowledgement');
   assert.equal(sent.filter(m => m.text?.includes('가게 위치와 메뉴, 가격')).length, 1, 'restaurant has its own acknowledgement');
   assert.equal(sent.filter(m => m.text?.includes('공간 위치와 운영 정보')).length, 1, '취향공간 has its own acknowledgement');
   assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe'); assert.equal(saved[2].action, 'schedule'); assert.equal(saved[3].action, 'restaurant'); assert.equal(saved[4].action, 'space');
-  assert.deepEqual(marked, Array(5).fill('saved-result')); assert.equal(blobs.size, 0);
+  assert.equal(saved[5].action, 'beauty');
+  assert.equal(sent.filter(m => m.text?.includes('제품 정보나 시술·예약 정보')).length, 1);
+  assert.deepEqual(marked, Array(6).fill('saved-result')); assert.equal(blobs.size, 0);
 });
 
 test('chat outages get a chat error and the existing linking command still takes priority', async t => {
@@ -550,7 +552,7 @@ test('processed results keep explicit private-link mode and default to full DM o
   }
 });
 
-test('slow sender tracking does not block a chat reply; content persistence still waits for its sender row', async t => {
+test('slow sender tracking does not block full replies; content persistence still waits for its sender row', async t => {
   for (const content of [false, true]) {
     let release; let started = false; let saved = false; const sent = [];
     const gate = new Promise(resolve => { release = resolve; });
@@ -567,11 +569,31 @@ test('slow sender tracking does not block a chat reply; content persistence stil
         ...(content ? { attachments: [{ type: 'image', payload: { url: 'https://example.com/image' } }] } : { text: '안녕' }) } })]);
       await eventually(() => started);
       assert.equal(saved, false);
-      if (!content) await eventually(() => sent.includes('답장'));
-      else assert.deepEqual(sent, [FACTCHECK_ACK]);
+      await eventually(() => sent.includes('답장'));
     } finally { release(); }
     await eventually(() => f.stats.replies === 1);
     assert.equal(saved, content);
+  }
+});
+
+test('full results arrive before slow persistence; private links wait for saving and deferred work completes inside the background task',async t=>{
+  for(const mode of ['full','summary']){
+    const sent=[],tasks=[],timings=[];let release,saveStarted=false,historySaved=false;
+    const gate=new Promise(resolve=>{release=resolve;});t.after(()=>release());
+    const f=await fixture(t,{config:{accessToken:'test-token',userId:IG_ID,publicUrl:'https://inthon.yeoziphab.com'},
+      background:task=>{tasks.push(task);},logTiming:data=>timings.push(data),getDeliveryMode:async()=>mode,
+      respondToMessage:async(_message,{defer})=>{defer(async()=>{historySaved=true;});
+        return{kind:'content',status:'done',action:'beauty',messages:['미용 정리 결과']};},
+      saveFactCheck:async()=>{saveStarted=true;await gate;return{id:73};},
+      apiFetch:async(_url,options)=>{sent.push(JSON.parse(options.body).message.text);return json({message_id:'out'});}});
+    await deliver(f,[incoming({message:{mid:'private-latency-'+mode,text:'private input'}})]);
+    await eventually(()=>saveStarted);
+    assert.deepEqual(sent,mode==='full'?['미용 정리 결과']:[]);assert.equal(historySaved,false);
+    release();await Promise.all(tasks);
+    assert.equal(historySaved,true);assert.equal(f.stats.replies,1);assert.equal(timings.length,1);
+    if(mode==='summary')assert.match(sent[0],/\/items\/fc73/);
+    assert.equal(timings[0].action,'beauty');assert.equal(typeof timings[0].save_ms,'number');
+    assert.equal(typeof timings[0].result_sent_ms,'number');assert.doesNotMatch(JSON.stringify(timings),/123456789|private input|private-latency|test-token/);
   }
 });
 
@@ -618,10 +640,10 @@ test('profile lookup failures are logged and stored as Meta codes only and never
 });
 
 test('fact-check records are marked as DM-sent only after every result message is confirmed', async t => {
-  const marked = [];
+  const marked = []; let saved = 0;
   const make = failOn => fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
     factCheck: async () => ({ status: 'done', messages: ['결과 1', '결과 2'] }),
-    saveFactCheck: async () => ({ id: 5 }), markFactCheckSent: async id => { marked.push(id); },
+    saveFactCheck: async () => { saved++; return { id: 5 }; }, markFactCheckSent: async id => { marked.push(id); },
     apiFetch: async (url, options) => {
       const text = JSON.parse(options.body).message.text;
       if (text === failOn) return new Response(JSON.stringify({ error: { code: 10 } }), { status: 400 });
@@ -635,6 +657,7 @@ test('fact-check records are marked as DM-sent only after every result message i
   await deliver(failing, [incoming({ message: { mid: 'dm-fail', text: '주장' } })]);
   await eventually(() => failing.stats.replyFailures === 1);
   assert.deepEqual(marked, [5], 'a failed send must leave the record pending');
+  assert.equal(saved, 2, 'a partial DM failure must still preserve the completed analysis');
 });
 
 test('handle lookups use the Page token when available and record which token failed', async t => {
