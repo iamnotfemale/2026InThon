@@ -371,7 +371,7 @@ export default class DashboardModel extends DCLogic {
     const items = all.map(deco);
     const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0 };
     items.forEach(it => { if (counts[it.type] !== undefined) counts[it.type]++; });
-    const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && (it.type === 'recipe' || it.type === 'exhibit'));
+    const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && ['recipe','exhibit','space','contest','restaurant'].includes(it.type));
 
     // library
     const q = s.query.trim().toLowerCase();
@@ -405,10 +405,10 @@ export default class DashboardModel extends DCLogic {
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
-      d.tasteable = done && (raw.type === 'recipe' || raw.type === 'exhibit');
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
       const tOn = !!s.taste[raw.id];
       d.tasteBtnCls = 'btn' + (tOn ? ' btn-primary' : ''); d.tasteLabel = tOn ? '취향에 모음' : '취향으로 모으기'; d.tastePressed = tOn ? 'true' : 'false';
-      d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type === 'recipe' ? 'recipe' : 'exhibit' }); }); };
+      d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type }); }); };
       d.shareDisabled = !done; d.shareHint = done ? '정리 결과 공유' : '결과가 준비되면 공유할 수 있어요';
       d.shareActive = s.shares[raw.id] === 'active';
       d.isNewsOrDone = done;

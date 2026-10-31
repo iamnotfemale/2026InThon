@@ -32,7 +32,7 @@
 .calendar-page .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border)}
 .calendar-page .seg button{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease,box-shadow .2s ease}
 .calendar-page .seg button:hover{color:var(--text)}
-.calendar-page .seg .n{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.calendar-page .seg .n{font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
 .calendar-page .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}
 .calendar-page .chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:all .18s ease}
 .calendar-page .chip:hover{border-color:var(--border-strong);color:var(--text)}
@@ -178,3 +178,12 @@
 .m .calendar-page .wev .meta{font-size:9px;flex-wrap:wrap}.m .calendar-page .wc{padding:4px 1px}
 .m .calendar-page .overlay{padding:12px}.m .calendar-page .modal{max-height:calc(100dvh - 24px)}
 .m .calendar-page .modal>div:last-child{flex-wrap:wrap}.m .calendar-page .modal .tinput{font-size:16px}
+
+.calendar-page .mc.sel,.calendar-page .wc.sel{border-radius:10px}
+.calendar-page .calendar-editor>div:first-child,.calendar-page .calendar-editor>div:last-child{flex-shrink:0}
+@media(min-width:900px) and (min-height:720px){
+  .calendar-page .calendar-editor-body{display:grid!important;grid-template-columns:minmax(0,300fr) minmax(0,380fr);flex:1;min-height:0;overflow:hidden!important}
+  .calendar-page .calendar-content-list{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .calendar-page .calendar-event-form{min-width:0;gap:10px!important;overflow:hidden}
+  .calendar-page .calendar-event-form .md{height:26px}
+}

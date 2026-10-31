@@ -109,7 +109,7 @@ export default class MobileModel extends DCLogic {
     let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF) && (!s.favOnly || s.fav[i.id]));
     lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = !!q || s.typeF !== 'all' || s.statusF !== 'all' || !!s.favOnly;
-    const tasteAll = items.filter(i => s.taste[i.id] && (i.type === 'recipe' || i.type === 'exhibit'));
+    const tasteAll = items.filter(i => s.taste[i.id] && i.status === 'done' && ['recipe','exhibit','contest','restaurant'].includes(i.type));
     const tasteType = s.tab === 'taste' && s.tasteTab === 'exhibit' ? 'exhibit' : (s.tasteTab || 'recipe');
     const tasteItems = tasteAll.filter(i => i.type === tasteType).map(i => Object.assign({}, i, { remove: () => { this.setState({ taste: Object.assign({}, this.state.taste, { [i.id]: false }) }); this.toast('취향에서 뺐어요. 정리 결과는 그대로예요.'); } }));
 
@@ -120,6 +120,7 @@ export default class MobileModel extends DCLogic {
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
       d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase; d.shareDisabled = !done;

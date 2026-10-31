@@ -9,6 +9,7 @@ function fixture() {
   app.setState = update => Object.assign(app.state, typeof update === 'function' ? update(app.state) : update);
   app.state.mode = 'live';
   const calls = [];
+  app.toast = () => {};
   for (const method of ['changeDelivery', 'removeItem', 'enterLive', 'loadLive', 'openBotDm', 'checkLink', 'copy', 'signOut']) {
     app[method] = (...args) => calls.push([method, ...args]);
   }
@@ -37,6 +38,17 @@ test('mobile recipes use shared ingredients, cooking state and validated timer p
   v.startCook(); v=values(); assert.equal(v.cookOpen,true); assert.equal(v.cookPrep,true);
   v.cookNext(); assert.equal(app.state.cook.stage,'step');
   assert.equal(app.secsOf('3~5분'),0); assert.equal(app.secsOf('1분 30초'),90);
+});
+
+test('mobile contest and restaurant details can be collected into taste without admitting news',()=>{
+  const {app,values}=fixture();
+  for(const id of ['c1','m1']){
+    Object.assign(app.state,{view:'detail',detailId:id});
+    assert.equal(values().d.showExtraTasteAction,true);
+    const before=!!app.state.taste[id];
+    values().d.toggleTaste(); assert.equal(app.state.taste[id],!before);
+  }
+  app.state.detailId='n1'; assert.equal(values().d.showExtraTasteAction,false);
 });
 
 test('mobile delivery, deletion and login call the real existing actions', () => {

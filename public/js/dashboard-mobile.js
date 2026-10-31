@@ -1,6 +1,7 @@
 import MobileModel from './mobile-model.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { applyTasteOrbitValues } from './dashboard-taste.js';
+import { applyDmPreview } from './dm-preview.js';
 
 // The supplied mobile view shares the existing app's data, authentication and actions.
 export function createMobileDashboard(app) {
@@ -35,7 +36,9 @@ export function createMobileDashboard(app) {
     const v = mobile.renderVals();
     Object.assign(v, app.pageValues?.());
     applyTasteOrbitValues(v, s, app);
+    applyDmPreview(v, s, app);
     v.d.hasTips = Array.isArray(v.d.tips) && v.d.tips.length > 0;
+    v.d.showExtraTasteAction = v.d.tasteable && (v.d.isContest || v.d.isRestaurant);
     Object.assign(v, {
       isLive: live, modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',
       toggleDataMode: () => live ? app.loadLive() : app.enterLive(),

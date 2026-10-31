@@ -55,7 +55,7 @@ a{color:#0A0A0A}a:hover{color:#404040}
 .tl-dot.cur{border-color:#0A0A0A;box-shadow:0 0 0 4px rgba(10,10,10,.08)}
 .step-card{display:flex;gap:16px;padding:22px;border-radius:18px;border:1px solid var(--border);background:#FFFFFF;transition:border-color .2s ease,transform .3s cubic-bezier(.16,1,.3,1)}
 .step-card:hover{border-color:var(--border-strong);transform:translateX(4px)}
-.step-n{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-content:center;background:#0A0A0A;color:#FFFFFF;font-family:'Geist Mono',monospace;font-size:13px}
+.step-n{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-content:center;background:#0A0A0A;color:#FFFFFF;font-family:inherit;font-variant-numeric:tabular-nums;font-size:13px}
 .bub{max-width:86%;padding:11px 15px;border-radius:18px;font-size:13.5px;line-height:1.55}
 .bub.bot{align-self:flex-start;background:#F2F0EC;border-bottom-left-radius:6px}
 .bub.me{align-self:flex-end;background:#0A0A0A;color:#FFFFFF;border-bottom-right-radius:6px}

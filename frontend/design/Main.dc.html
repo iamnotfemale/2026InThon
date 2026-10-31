@@ -9,7 +9,7 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap">
 <style>
 body{margin:0}
 .app{--bg:#FAFAFA;--surface:#FFFFFF;--surface-2:#F5F5F5;--surface-3:#EBEBEB;--border:#EAEAEA;--border-strong:#D4D4D4;--text:#0A0A0A;--text-2:#404040;--muted:#666666;--accent:#0A0A0A;--accent-hover:#3A3A3A;--accent-fg:#FFFFFF;--ring:rgba(10,10,10,.08);--focus:#5E6AD2;--ok:#15803D;--ok-bg:#F0FDF4;--ok-dot:#16A34A;--warn:#A16207;--warn-bg:#FEFCE8;--err:#B91C1C;--err-bg:#FEF2F2;--info:#1D4ED8;--info-bg:#EFF6FF;--neu:#525252;--neu-bg:#F4F4F5;--shadow:0 1px 2px rgba(0,0,0,.04),0 1px 1px rgba(0,0,0,.02);--shadow-lg:0 24px 64px -16px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.04);font-family:'Geist','Noto Sans KR',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
@@ -20,7 +20,7 @@ body{margin:0}
 .app h1,.app h2,.app h3,.app p{margin:0}
 .app :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
 a{color:var(--text)}a:hover{color:var(--text-2)}
-.mono{font-family:'Geist Mono',ui-monospace,monospace;letter-spacing:0}
+.mono{font-family:inherit;font-variant-numeric:tabular-nums;letter-spacing:0}
 .muted{color:var(--muted)}
 .h1{font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-0.03em}
 .h2{font-size:15px;font-weight:600;letter-spacing:-0.01em}
@@ -148,7 +148,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .stepvis:hover .orb::before{animation-duration:4s}
 .stepvis::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:1.5px solid var(--border-strong);animation:ripple 2.6s ease-out infinite;pointer-events:none}
 .stepvis.done::after{animation:none;opacity:0}
-.stepvis-num{position:relative;font-family:'Geist Mono',monospace;font-size:48px;font-weight:600;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.18);transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
+.stepvis-num{position:relative;font-family:inherit;font-variant-numeric:tabular-nums;font-size:48px;font-weight:600;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.18);transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
 .stepvis-check{position:absolute;width:60px;height:60px;color:#fff;filter:drop-shadow(0 2px 10px rgba(0,0,0,.18));opacity:0;transform:scale(.4) rotate(-20deg);transition:opacity .25s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
 .stepvis.done .stepvis-num{opacity:0;transform:scale(.5)}
 .stepvis.done .stepvis-check{opacity:1;transform:none}
@@ -165,7 +165,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .ring{position:relative;width:128px;height:128px;flex:none}
 .ring svg{transform:rotate(-90deg);display:block}
 .ring .fg{transition:stroke-dashoffset 1s linear}
-.ring .t{position:absolute;inset:0;display:grid;place-content:center;font-family:'Geist Mono',monospace;font-size:28px;font-weight:500}
+.ring .t{position:absolute;inset:0;display:grid;place-content:center;font-family:inherit;font-variant-numeric:tabular-nums;font-size:28px;font-weight:500}
 .ring.running .t{animation:tick 1s ease-in-out infinite}
 @keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes cookIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
@@ -190,11 +190,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
 .card-flat{background:var(--surface);border:1px solid var(--border);border-radius:14px}
 .divider{height:1px;background:var(--border);border:0;margin:0}
-.kbd{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.kbd{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s ease,color .15s ease}
 .nav-item:hover{background:var(--surface-2);color:var(--text)}
 .nav-item.on{background:var(--surface-3);color:var(--text)}
-.nav-item .count{margin-left:auto;font-size:12px;color:var(--muted);font-family:'Geist Mono',monospace}
+.nav-item .count{margin-left:auto;font-size:12px;color:var(--muted);font-family:inherit;font-variant-numeric:tabular-nums}
 .badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;line-height:1;color:var(--text-2);background:var(--surface);border:1px solid var(--border)}
 .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--c,var(--muted));flex:none}
 .badge.nodot::before{display:none}
@@ -245,7 +245,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .seg button{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease,box-shadow .2s ease}
 .seg button:hover{color:var(--text)}
 .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}
-.seg .n{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.seg .n{font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
 .chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:all .18s ease}
 .chip:hover{border-color:var(--border-strong);color:var(--text)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
@@ -278,7 +278,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .field .k{font-size:12px;color:var(--muted);font-weight:500}
 .field .v{font-size:14px;font-weight:500}
 .menu-row{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-top:1px solid var(--border)}
-.menu-row .price{margin-left:auto;font-family:'Geist Mono',monospace;font-size:13.5px;font-weight:500;white-space:nowrap}
+.menu-row .price{margin-left:auto;font-family:inherit;font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:500;white-space:nowrap}
 .menu-row .price.miss{font-family:inherit;font-size:13px;color:var(--muted);font-weight:400}
 .miss{color:var(--muted);font-weight:400}
 .ing{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--border);transition:background .15s ease}
@@ -286,7 +286,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .ing .nm{flex:1;min-width:0;font-size:14px;transition:color .2s ease}
 .ing.is-done .nm{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
 .step{display:flex;gap:14px;padding:14px 16px;border-top:1px solid var(--border);transition:background .2s ease}
-.step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-content:center;font-family:'Geist Mono',monospace;font-size:12px;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);transition:all .25s ease}
+.step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-content:center;font-family:inherit;font-variant-numeric:tabular-nums;font-size:12px;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);transition:all .25s ease}
 .step.is-done .num{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .step.is-done .tx{color:var(--muted)}
 .progress{height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden}
@@ -1424,15 +1424,14 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 
   <!-- ============ SETTINGS ============ -->
   <sc-if value="{{isSettings}}" hint-placeholder-val="{{ false }}">
-    <div class="enter pad" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; flex-direction: column; gap: 24px">
-      <h1 class="h1">설정</h1>
-      <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
-        <nav aria-label="설정 메뉴" style="flex: 1 1 180px; max-width: 200px; display: flex; flex-direction: column; gap: 2px">
+    <div class="enter pad settings-page" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; flex-direction: column; gap: 24px">
+      <div class="settings-layout">
+        <aside class="settings-menu"><h1 class="h1">설정</h1><nav aria-label="설정 메뉴" style="display:flex;flex-direction:column;gap:2px">
           <a class="nav-item" href="#sec-account" style="text-decoration: none">서비스 계정</a>
           <a class="nav-item" href="#sec-instagram" style="text-decoration: none">Instagram 연결</a>
           <a class="nav-item" href="#sec-dm" style="text-decoration: none">DM 결과 받는 방식</a>
           <a class="nav-item" href="#sec-data" style="text-decoration: none">데이터 관리</a>
-        </nav>
+        </nav></aside>
         <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px; max-width: 760px">
 
           <section id="sec-account" class="card" style="overflow: hidden">
@@ -1470,7 +1469,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <div class="enter" style="display: flex; flex-direction: column; gap: 14px">
                   <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px">
                     <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: var(--surface-3); display: grid; place-content: center">
-                      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
+                      <svg class="ico instagram-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
                     </span>
                     <span style="display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0">
                       <span style="font-size: 14px; font-weight: 500">{{account}}</span>
@@ -1479,8 +1478,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                     <span class="badge s-done">연결됨</span>
                   </div>
                   <div style="display: flex; gap: 8px; flex-wrap: wrap">
-                    <button type="button" class="btn btn-primary" onClick="{{sendFromIg}}">Instagram에서 콘텐츠 보내기</button>
-                    <button type="button" class="btn" onClick="{{askChange}}">다른 계정으로 변경</button>
+                    <button type="button" class="btn btn-ghost account-change" onClick="{{askChange}}">계정 변경</button>
                     <button type="button" class="btn btn-ghost btn-danger" onClick="{{askDisconnect}}">연결 해제</button>
                   </div>
                 </div>
@@ -1633,39 +1631,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                   </button>
                 </sc-for>
               </div>
-              <sc-if value="{{isDemo}}">
-              <div style="border: 1px solid var(--border); border-radius: 14px; overflow: hidden">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2)">
-                  <span class="label">응답 예시</span>
-                  <div class="seg" role="group" aria-label="예시 유형" style="margin-left: auto; background: var(--surface)">
-                    <sc-for list="{{dmTypes}}" as="t" hint-placeholder-count="4">
-                      <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><span class="{{t.dot}}"></span>{{t.label}}</button>
-                    </sc-for>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border)">
-                  <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent); display: grid; place-content: center">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--accent-fg)" stroke-width="2.6" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"/></svg>
-                  </span>
-                  <span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-size: 13px; font-weight: 500">inthon2team</span><span class="muted" style="font-size: 11.5px">Instagram DM · 예시</span></span>
-                </div>
-                <div style="padding: 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface)">
-                  <div class="bubble me" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px">
-                    <span class="{{dmOrbCls}}" style="width: 32px; height: 32px"></span>
-                    <span style="font-size: 12.5px">공유한 게시물 · {{dmSampleTitle}}</span>
-                  </div>
-                  <sc-for list="{{dmBubbles}}" as="b" hint-placeholder-count="2">
-                    <div class="bubble bot">{{b.text}}</div>
-                  </sc-for>
-                  <div class="bubble bot" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); background: var(--surface)">
-                    <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
-                    <span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-size: 12.5px; font-weight: 500">서비스명 · 개인 결과</span><span class="muted mono" style="font-size: 11px">서비스명.app/items/••••</span></span>
-                  </div>
-                </div>
-              </div>
-              </sc-if>
+              <design-include name="dm-preview"></design-include>
             </div>
-            <sc-if value="{{isLive}}" hint-placeholder-val="{{ false }}"><div style="padding: 0 20px 20px"></div></sc-if>
           </section>
 
           <section id="sec-data" class="card" style="overflow: hidden">
@@ -2373,7 +2340,7 @@ class Component extends DCLogic {
     const items = all.map(deco);
     const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0 };
     items.forEach(it => { if (counts[it.type] !== undefined) counts[it.type]++; });
-    const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && (it.type === 'recipe' || it.type === 'exhibit'));
+    const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && ['recipe','exhibit','space','contest','restaurant'].includes(it.type));
 
     // library
     const q = s.query.trim().toLowerCase();
@@ -2407,10 +2374,10 @@ class Component extends DCLogic {
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
-      d.tasteable = done && (raw.type === 'recipe' || raw.type === 'exhibit');
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
       const tOn = !!s.taste[raw.id];
       d.tasteBtnCls = 'btn' + (tOn ? ' btn-primary' : ''); d.tasteLabel = tOn ? '취향에 모음' : '취향으로 모으기'; d.tastePressed = tOn ? 'true' : 'false';
-      d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type === 'recipe' ? 'recipe' : 'exhibit' }); }); };
+      d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type }); }); };
       d.shareDisabled = !done; d.shareHint = done ? '정리 결과 공유' : '결과가 준비되면 공유할 수 있어요';
       d.shareActive = s.shares[raw.id] === 'active';
       d.isNewsOrDone = done;

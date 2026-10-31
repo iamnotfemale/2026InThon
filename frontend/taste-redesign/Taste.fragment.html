@@ -4,7 +4,7 @@
       <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
         <div style="display: flex; flex-direction: column; gap: 6px">
           <h1 class="h1">내 취향</h1>
-          <p class="muted" style="font-size: 14px">직접 모은 레시피와 전시를 나만의 궤도에서 살펴보세요.</p>
+          <p class="muted" style="font-size: 14px">직접 모은 레시피·전시·공모전·맛집을 나만의 궤도에서 살펴보세요.</p>
         </div>
         <div class="seg" role="group" aria-label="취향 분야" style="margin-left: auto">
           <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="2">
@@ -44,23 +44,17 @@
                 </sc-if>
               </div>
             </sc-for>
-            <p class="tl-note">직접 모은 레시피·전시만 궤도에 올라가요. 빼도 원래 정리 결과는 그대로예요.</p>
+            <p class="tl-note">뉴스·정보를 제외하고 직접 모은 콘텐츠가 궤도에 올라가요. 빼도 원래 정리 결과는 그대로예요.</p>
           </div>
 
           <div class="orbit-stage" role="group" aria-label="내 취향 궤도">
             <span class="os-glow" aria-hidden="true"></span>
-            <span class="os-line l-c" aria-hidden="true"></span>
-            <span class="os-line l-b" aria-hidden="true"></span>
-            <span class="os-line l-a" aria-hidden="true"></span>
-            <span class="{{labelBCls}}" aria-hidden="true"><span class="dot t-exhibit"></span>전시·공간</span>
-            <span class="{{labelACls}}" aria-hidden="true"><span class="dot t-recipe"></span>레시피</span>
-
-            <div class="orbit orbit-c" aria-hidden="true">
-              <span class="dust a30 rC"></span><span class="dust a135 rC"></span><span class="dust a210 rC"></span><span class="dust a300 rC"></span>
-            </div>
-            <div class="{{orbitBCls}}">
-              <span class="comet a195 rB" aria-hidden="true"></span>
-              <sc-for list="{{orbitB}}" as="p" hint-placeholder-count="2">
+            <span class="os-line l-outer" aria-hidden="true"></span>
+            <sc-for list="{{tasteOrbits}}" as="ring">
+              <span class="{{ring.lineCls}}" aria-hidden="true"></span>
+              <span class="{{ring.labelCls}}" aria-hidden="true"><span class="{{ring.dot}}"></span>{{ring.label}}</span>
+              <div class="{{ring.cls}}">
+              <sc-for list="{{ring.planets}}" as="p" hint-placeholder-count="2">
                 <span class="{{p.cls}}"><span class="pl-up"><span class="pl-spin">
                   <button type="button" class="{{p.btnCls}}" aria-label="{{p.aria}}" aria-pressed="{{p.selPressed}}" onClick="{{p.select}}">
                     <span class="pl-orb"><span class="{{p.orbCls}}" style="width: 100%; height: 100%"></span></span>
@@ -68,18 +62,8 @@
                   </button>
                 </span></span></span>
               </sc-for>
-            </div>
-            <div class="{{orbitACls}}">
-              <span class="comet a285 rA" aria-hidden="true"></span>
-              <sc-for list="{{orbitA}}" as="p" hint-placeholder-count="3">
-                <span class="{{p.cls}}"><span class="pl-up"><span class="pl-spin">
-                  <button type="button" class="{{p.btnCls}}" aria-label="{{p.aria}}" aria-pressed="{{p.selPressed}}" onClick="{{p.select}}">
-                    <span class="pl-orb"><span class="{{p.orbCls}}" style="width: 100%; height: 100%"></span></span>
-                    <span class="pl-label">{{p.title}}</span>
-                  </button>
-                </span></span></span>
-              </sc-for>
-            </div>
+              </div>
+            </sc-for>
 
             <div class="os-core">
               <span class="os-wave" aria-hidden="true"></span>
@@ -94,7 +78,7 @@
         <div class="card" style="padding: 44px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
           <span class="orb o-unknown" style="width: 44px; height: 44px"></span>
           <h2 class="h2">아직 모아둔 취향이 없어요.</h2>
-          <p class="muted" style="font-size: 13.5px">레시피나 전시 상세에서 ‘취향으로 모으기’를 눌러보세요.</p>
+          <p class="muted" style="font-size: 13.5px">레시피·전시·공모전·맛집 상세에서 ‘취향으로 모으기’를 눌러보세요.</p>
         </div>
       </sc-if>
 

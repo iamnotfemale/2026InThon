@@ -5,6 +5,7 @@ import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { applyTasteOrbitValues } from './dashboard-taste.js';
 import { createCalendarDashboard } from './dashboard-calendar.js';
+import { applyDmPreview } from './dm-preview.js';
 import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
@@ -363,7 +364,7 @@ class DashboardApp extends DashboardModel {
       pick: () => (live ? this.setState({ demoOpen: false }) : this.enterLive()),
     }]);
     Object.assign(v, this.pageValues());
-    return applyTasteOrbitValues(live ? applyIndexValues(applyLiveMode(v, s, this), s, this) : v, s, this);
+    return applyDmPreview(applyTasteOrbitValues(live ? applyIndexValues(applyLiveMode(v, s, this), s, this) : v, s, this), s, this);
   }
   pageValues() {
     const isCalendar = this.state.view === 'calendar';

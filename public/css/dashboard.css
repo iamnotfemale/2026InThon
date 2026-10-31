@@ -8,7 +8,7 @@ body{margin:0}
 .app h1,.app h2,.app h3,.app p{margin:0}
 .app :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
 a{color:var(--text)}a:hover{color:var(--text-2)}
-.mono{font-family:'Geist Mono',ui-monospace,monospace;letter-spacing:0}
+.mono{font-family:inherit;font-variant-numeric:tabular-nums;letter-spacing:0}
 .muted{color:var(--muted)}
 .h1{font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-0.03em}
 .h2{font-size:15px;font-weight:600;letter-spacing:-0.01em}
@@ -136,7 +136,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .stepvis:hover .orb::before{animation-duration:4s}
 .stepvis::after{content:'';position:absolute;inset:-12px;border-radius:50%;border:1.5px solid var(--border-strong);animation:ripple 2.6s ease-out infinite;pointer-events:none}
 .stepvis.done::after{animation:none;opacity:0}
-.stepvis-num{position:relative;font-family:'Geist Mono',monospace;font-size:48px;font-weight:600;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.18);transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
+.stepvis-num{position:relative;font-family:inherit;font-variant-numeric:tabular-nums;font-size:48px;font-weight:600;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.18);transition:opacity .25s ease,transform .35s cubic-bezier(.34,1.56,.64,1)}
 .stepvis-check{position:absolute;width:60px;height:60px;color:#fff;filter:drop-shadow(0 2px 10px rgba(0,0,0,.18));opacity:0;transform:scale(.4) rotate(-20deg);transition:opacity .25s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
 .stepvis.done .stepvis-num{opacity:0;transform:scale(.5)}
 .stepvis.done .stepvis-check{opacity:1;transform:none}
@@ -153,7 +153,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .ring{position:relative;width:128px;height:128px;flex:none}
 .ring svg{transform:rotate(-90deg);display:block}
 .ring .fg{transition:stroke-dashoffset 1s linear}
-.ring .t{position:absolute;inset:0;display:grid;place-content:center;font-family:'Geist Mono',monospace;font-size:28px;font-weight:500}
+.ring .t{position:absolute;inset:0;display:grid;place-content:center;font-family:inherit;font-variant-numeric:tabular-nums;font-size:28px;font-weight:500}
 .ring.running .t{animation:tick 1s ease-in-out infinite}
 @keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes cookIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
@@ -178,11 +178,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
 .card-flat{background:var(--surface);border:1px solid var(--border);border-radius:14px}
 .divider{height:1px;background:var(--border);border:0;margin:0}
-.kbd{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.kbd{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s ease,color .15s ease}
 .nav-item:hover{background:var(--surface-2);color:var(--text)}
 .nav-item.on{background:var(--surface-3);color:var(--text)}
-.nav-item .count{margin-left:auto;font-size:12px;color:var(--muted);font-family:'Geist Mono',monospace}
+.nav-item .count{margin-left:auto;font-size:12px;color:var(--muted);font-family:inherit;font-variant-numeric:tabular-nums}
 .badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;line-height:1;color:var(--text-2);background:var(--surface);border:1px solid var(--border)}
 .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--c,var(--muted));flex:none}
 .badge.nodot::before{display:none}
@@ -233,7 +233,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .seg button{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease,box-shadow .2s ease}
 .seg button:hover{color:var(--text)}
 .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}
-.seg .n{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.seg .n{font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted)}
 .chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:all .18s ease}
 .chip:hover{border-color:var(--border-strong);color:var(--text)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
@@ -266,7 +266,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .field .k{font-size:12px;color:var(--muted);font-weight:500}
 .field .v{font-size:14px;font-weight:500}
 .menu-row{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-top:1px solid var(--border)}
-.menu-row .price{margin-left:auto;font-family:'Geist Mono',monospace;font-size:13.5px;font-weight:500;white-space:nowrap}
+.menu-row .price{margin-left:auto;font-family:inherit;font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:500;white-space:nowrap}
 .menu-row .price.miss{font-family:inherit;font-size:13px;color:var(--muted);font-weight:400}
 .miss{color:var(--muted);font-weight:400}
 .ing{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--border);transition:background .15s ease}
@@ -274,7 +274,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .ing .nm{flex:1;min-width:0;font-size:14px;transition:color .2s ease}
 .ing.is-done .nm{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border-strong)}
 .step{display:flex;gap:14px;padding:14px 16px;border-top:1px solid var(--border);transition:background .2s ease}
-.step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-content:center;font-family:'Geist Mono',monospace;font-size:12px;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);transition:all .25s ease}
+.step .num{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-content:center;font-family:inherit;font-variant-numeric:tabular-nums;font-size:12px;font-weight:500;border:1px solid var(--border-strong);background:var(--surface);transition:all .25s ease}
 .step.is-done .num{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .step.is-done .tx{color:var(--muted)}
 .progress{height:4px;border-radius:999px;background:var(--surface-3);overflow:hidden}

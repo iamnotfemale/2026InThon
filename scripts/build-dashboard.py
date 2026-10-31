@@ -62,7 +62,7 @@ def compile_page(source_path, name, model_name, output):
     source = (ROOT / source_path).read_text(encoding="utf-8")
     style = re.search(r"<style>(.*?)</style>", source, re.S).group(1)
     markup = re.search(r"</helmet>(.*?)</x-dc>", source, re.S).group(1)
-    for include, path in [('taste', 'frontend/taste-redesign/Taste.fragment.html'), ('calendar', 'frontend/calendar/Calendar.dc.html')]:
+    for include, path in [('taste', 'frontend/taste-redesign/Taste.fragment.html'), ('calendar', 'frontend/calendar/Calendar.dc.html'), ('dm-preview', 'frontend/design/DmPreview.fragment.html')]:
         if f'<design-include name="{include}"></design-include>' not in markup:
             continue
         fragment = (ROOT / path).read_text(encoding='utf-8')
@@ -114,6 +114,7 @@ def compile_page(source_path, name, model_name, output):
 '''
     shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts)
     if name == 'dashboard':
+        shell = shell.replace('name="referrer" content="no-referrer"', 'name="referrer" content="strict-origin-when-cross-origin"')
         shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n  <link rel="stylesheet" href="/css/taste.css">\n  <link rel="stylesheet" href="/css/calendar.css">\n</head>')
     if output:
         (public / output).write_text(shell, encoding="utf-8")
