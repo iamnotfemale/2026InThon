@@ -390,3 +390,41 @@ test('fact-check results are saved per sender, including outages, and save failu
   assert.deepEqual(saved, [['123456789', 'done', 'refuted'], ['123456789', 'failed', undefined]]);
   assert.deepEqual(sent, [FACTCHECK_ACK, '결과', FACTCHECK_ACK, FACTCHECK_FAILED]);
 });
+
+test('missing handles are backfilled during a fact-check, known handles are not looked up again', async t => {
+  const lookups = []; const stored = []; let known = null;
+  const options = { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => ({ status: 'done', messages: ['결과'] }),
+    trackSender: async () => ({ username: known }),
+    setUsername: async (id, username) => { stored.push([id, username]); known = username; },
+    apiFetch: async url => {
+      if (url.includes('fields=username')) { lookups.push(url); return json({ id: '123456789', username: 'tester.one' }); }
+      return json({ message_id: 'm' });
+    } };
+  const f = await fixture(t, options);
+  await deliver(f, [incoming({ message: { mid: 'bf-1', text: '주장' } })]);
+  await eventually(() => f.stats.replies === 1);
+  await deliver(f, [incoming({ message: { mid: 'bf-2', text: '주장' } })]);
+  await eventually(() => f.stats.replies === 2);
+  assert.equal(lookups.length, 1);
+  assert.deepEqual(stored, [['123456789', 'tester.one']]);
+});
+
+test('profile lookup failures are logged as Meta codes only and never block the link reply', async t => {
+  const warnings = []; const sent = []; const issued = [];
+  t.mock.method(console, 'warn', (...args) => warnings.push(args.join(' ')));
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    trackSender: async () => ({ username: null }),
+    issueLinkToken: async args => { issued.push(args); return 'e'.repeat(64); },
+    apiFetch: async (url, options) => {
+      if (url.includes('fields=username')) return new Response(JSON.stringify({ error: { code: 100, error_subcode: 33,
+        type: 'GraphMethodException', message: 'Object with ID 123456789 does not exist' } }), { status: 400 });
+      sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' });
+    } });
+  await deliver(f, [incoming({ message: { mid: 'lk-1', text: '연결' } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(issued, [{ igsid: '123456789', username: undefined }]);
+  assert.equal(sent.length, 1);
+  assert.deepEqual(warnings, ['Instagram profile lookup failed: Meta API 요청 실패 (HTTP 400, code 100, subcode 33, GraphMethodException)']);
+  assert.ok(!warnings.join().includes('123456789'), 'sender IDs must not be logged');
+});

@@ -16,11 +16,12 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
   // New sb_secret_ keys are not JWTs and go only in apikey; legacy service_role JWTs also need Authorization.
   if (!key.startsWith('sb_')) headers.Authorization = `Bearer ${key}`;
 
-  const request = async (method, path, body, prefer) => {
+  // returning: ask PostgREST for the written rows (return=representation) and parse them.
+  const request = async (method, path, body, prefer, returning = false) => {
+    const preferences = [returning ? 'return=representation' : 'return=minimal', ...(prefer ? [prefer] : [])].join(',');
     const res = await fetchImpl(base + path, { method, body: JSON.stringify(body),
-      headers: prefer ? { ...headers, Prefer: `${headers.Prefer},${prefer}` } : headers,
-      signal: AbortSignal.timeout(timeoutMs) });
-    if (res.ok) return null;
+      headers: { ...headers, Prefer: preferences }, signal: AbortSignal.timeout(timeoutMs) });
+    if (res.ok) return returning ? res.json() : null;
     let detail = {};
     try { detail = await res.json(); } catch {}
     // Never include the request body or key in errors.
@@ -31,9 +32,13 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
   const checkKey = key => { if (!/^[a-f0-9]{64}$/.test(key)) throw new Error('Invalid reply key'); };
   const checkSender = igsid => { if (typeof igsid !== 'string' || !IGSID.test(igsid)) throw new Error('Invalid sender id'); };
   // Insert the sender, or refresh last_seen_at (and username when known) if it already exists.
-  const upsertSender = (igsid, username) => request('POST', '/ig_accounts?on_conflict=igsid',
-    { igsid, last_seen_at: new Date(now()).toISOString(), ...(USERNAME.test(username ?? '') ? { username } : {}) },
-    'resolution=merge-duplicates');
+  // Returns the stored row's username (null until known).
+  const upsertSender = async (igsid, username) => {
+    const rows = await request('POST', '/ig_accounts?on_conflict=igsid&select=username',
+      { igsid, last_seen_at: new Date(now()).toISOString(), ...(USERNAME.test(username ?? '') ? { username } : {}) },
+      'resolution=merge-duplicates', true);
+    return { username: Array.isArray(rows) ? rows[0]?.username ?? null : null };
+  };
 
   return {
     record: ({ receivedAt, messages, entries }) =>
@@ -55,10 +60,16 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       await request('PATCH', `/dm_replies?key=eq.${key}`, { status, sent_at: at });
     },
 
-    // Every Instagram account that DMs the bot, keyed by its Instagram-scoped ID.
+    // Every Instagram account that DMs the bot, keyed by its Instagram-scoped ID. Resolves to { username }.
     async trackSender(igsid) {
       checkSender(igsid);
-      await upsertSender(igsid);
+      return upsertSender(igsid);
+    },
+    // Fills in the handle once Meta returns it; earlier lookups may have failed.
+    async setUsername(igsid, username) {
+      checkSender(igsid);
+      if (!USERNAME.test(username ?? '')) throw new Error('Invalid username');
+      await request('PATCH', `/ig_accounts?igsid=eq.${igsid}`, { username });
     },
     // Returns a one-time token for the web link page. Only its SHA-256 hash is stored.
     async issueLinkToken({ igsid, username }) {

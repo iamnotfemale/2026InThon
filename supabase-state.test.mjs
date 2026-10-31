@@ -66,12 +66,12 @@ test('supabase errors fail closed without leaking the key, and invalid input is 
 
 test('senders are upserted, link tokens store only a hash with a 10-minute expiry, and fact-checks keep no DM text', async () => {
   const calls = [];
-  const fetchImpl = async (url, init) => { calls.push({ url, ...init, body: JSON.parse(init.body) }); return new Response(null, { status: 201 }); };
+  const fetchImpl = async (url, init) => { calls.push({ url, ...init, body: JSON.parse(init.body) }); return init.headers.Prefer.includes("return=representation") ? new Response("[{\"username\":null}]", { status: 201 }) : new Response(null, { status: 201 }); };
   const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl, now: () => Date.parse('2026-10-31T00:00:00Z') });
 
   await state.trackSender('123');
-  assert.equal(calls[0].url, 'https://x.supabase.co/rest/v1/ig_accounts?on_conflict=igsid');
-  assert.equal(calls[0].headers.Prefer, 'return=minimal,resolution=merge-duplicates');
+  assert.equal(calls[0].url, 'https://x.supabase.co/rest/v1/ig_accounts?on_conflict=igsid&select=username');
+  assert.equal(calls[0].headers.Prefer, 'return=representation,resolution=merge-duplicates');
   assert.deepEqual(calls[0].body, { igsid: '123', last_seen_at: '2026-10-31T00:00:00.000Z' });
 
   const token = await state.issueLinkToken({ igsid: '123', username: 'tester.one' });
@@ -97,4 +97,21 @@ test('senders are upserted, link tokens store only a hash with a 10-minute expir
 
   await assert.rejects(state.trackSender('../1'), /Invalid sender id/);
   await assert.rejects(state.saveFactCheck('abc', {}), /Invalid sender id/);
+});
+
+test('trackSender reports the stored handle and setUsername fills it in only with a valid handle', async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, method: init.method, body: JSON.parse(init.body) });
+    return init.method === 'POST' ? new Response('[{"username":"tester.one"}]', { status: 201 }) : new Response(null, { status: 204 });
+  };
+  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl });
+  assert.deepEqual(await state.trackSender('123'), { username: 'tester.one' });
+  await state.setUsername('123', 'new.handle');
+  assert.equal(calls[1].method, 'PATCH');
+  assert.equal(calls[1].url, 'https://x.supabase.co/rest/v1/ig_accounts?igsid=eq.123');
+  assert.deepEqual(calls[1].body, { username: 'new.handle' });
+  await assert.rejects(state.setUsername('123', 'bad name'), /Invalid username/);
+  await assert.rejects(state.setUsername('1&x=1', 'ok'), /Invalid sender id/);
+  assert.equal(calls.length, 2);
 });
