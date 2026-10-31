@@ -1,7 +1,7 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 
-export const BOT_DM_URL = 'https://ig.me/m/inthon2team';
+export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
 const PENDING_GRACE_MS = 10 * 60 * 1000;
 
@@ -83,7 +83,7 @@ export function applyLiveMode(v, s, app) {
   Object.assign(v, {
     isDemo: false, isLive: true, modeBadge: '내 데이터', scenarioLabel: '내 실제 데이터', email: s.email,
     modeNote: '로그인한 계정의 실제 데이터를 보고 있어요. 위 데모 시나리오를 고르면 데모로 바뀌어요.',
-    connectDesc: '@inthon2team에 ‘연결’을 보내면 답장으로 온 링크에서 연결돼요. 연결하면 이 계정으로 전에 보낸 콘텐츠도 함께 보여요.',
+    connectDesc: '@dimi_in에 ‘연결’을 보내면 답장으로 온 링크에서 연결돼요. 연결하면 이 계정으로 전에 보낸 콘텐츠도 함께 보여요.',
     dmModeDesc: '지금은 정리 결과 전체를 DM으로 보내요. 받는 방식 선택은 준비 중이에요.',
     simulateDm: () => {}, simDisabled: true, simHint: '데모 시나리오에서만 쓸 수 있어요',
     sendFromIg: () => app.openBotDm(), openIgDm: () => app.openBotDm(),
@@ -98,7 +98,7 @@ export function applyLiveMode(v, s, app) {
     flowExpired: false, flowConflict: false,
     startCode: () => app.showLinkGuide(), askChange: () => app.setState({ liveGuide: true }),
     cancelFlow: () => app.setState({ liveGuide: false }),
-    copyLinkWord: () => app.copy('연결', '‘연결’을 복사했어요. @inthon2team 대화창에 붙여 넣어 보내 주세요.'),
+    copyLinkWord: () => app.copy('연결', '‘연결’을 복사했어요. @dimi_in 대화창에 붙여 넣어 보내 주세요.'),
     checkLink: () => app.checkLink(),
     connModalDesc: s.connModal === 'disconnect'
       ? '해제하면 ' + s.account + '에서 보낸 콘텐츠가 이 대시보드에 보이지 않아요. 기록은 지워지지 않고, 다시 연결하면 돌아와요.'

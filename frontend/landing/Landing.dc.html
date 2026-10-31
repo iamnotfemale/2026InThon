@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서비스 소개 랜딩</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+KR:wght@400;500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+html{scroll-behavior:smooth}
+.lp{--bg:#FAFAFA;--surface:#FFFFFF;--surface-2:#F5F5F5;--surface-3:#EBEBEB;--border:#EAEAEA;--border-strong:#D4D4D4;--text:#0A0A0A;--text-2:#404040;--muted:#666666;font-family:'Geist','Noto Sans KR',system-ui,sans-serif;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;letter-spacing:-0.005em;line-height:1.5;overflow-x:hidden}
+.lp *,.lp *::before,.lp *::after{box-sizing:border-box}
+.lp h1,.lp h2,.lp h3,.lp p{margin:0}
+a{color:#0A0A0A}a:hover{color:#404040}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:14px;font-weight:500;color:var(--text);text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .12s ease,box-shadow .2s ease}
+.btn:hover{background:var(--surface-2);border-color:var(--border-strong);color:var(--text)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#0A0A0A;border-color:#0A0A0A;color:#FFFFFF}
+.btn-primary:hover{background:#2A2A2A;border-color:#2A2A2A;color:#FFFFFF;box-shadow:0 0 0 4px rgba(10,10,10,.08),0 10px 24px -10px rgba(0,0,0,.45)}
+.btn-primary svg{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.btn-primary:hover svg{transform:translateX(3px)}
+.btn-ghost{background:transparent;border-color:transparent}
+.btn-ghost:hover{background:rgba(10,10,10,.05);border-color:transparent}
+.btn-lg{height:52px;padding:0 26px;font-size:15.5px}
+.navlink{font-size:14px;color:var(--text-2);text-decoration:none;padding:8px 4px;transition:color .15s ease}
+.navlink:hover{color:var(--text)}
+.kicker{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.06);font-size:13px;color:var(--text-2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.kicker i{width:7px;height:7px;border-radius:50%;background:#F08A1C;display:block}
+.eyebrow{font-size:14px;font-weight:500;color:var(--muted)}
+.h-xl{font-family:'Noto Sans KR','Geist',sans-serif;font-size:clamp(44px,6.4vw,84px);line-height:1.12;font-weight:700;letter-spacing:-0.05em}
+.h-lg{font-family:'Noto Sans KR','Geist',sans-serif;font-size:clamp(34px,4.2vw,54px);line-height:1.18;font-weight:700;letter-spacing:-0.045em}
+.lead{font-size:clamp(16px,1.6vw,19px);line-height:1.75;color:var(--muted)}
+.orb{position:absolute;display:block;border-radius:50%;overflow:hidden;isolation:isolate;animation:blob 9s ease-in-out infinite}
+.orb::before{content:'';position:absolute;inset:-40%;filter:blur(14px) saturate(1.1);animation:swirl 13s ease-in-out infinite}
+.orb::after{content:'';position:absolute;inset:-12%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,255,255,0) 46%)}
+.orb.inline{position:relative;flex:none}
+.o-recipe::before{background:radial-gradient(circle at 28% 32%,#FDE68A 0,transparent 38%),radial-gradient(circle at 72% 64%,#FB7185 0,transparent 42%),conic-gradient(from 20deg,#FDBA74,#FB7185,#FDE68A,#F97316,#FDBA74)}
+.o-news::before{background:radial-gradient(circle at 30% 30%,#BAE6FD 0,transparent 38%),radial-gradient(circle at 70% 62%,#6366F1 0,transparent 42%),conic-gradient(from 90deg,#93C5FD,#6366F1,#BAE6FD,#3B82F6,#93C5FD)}
+.o-exhibit::before{background:radial-gradient(circle at 30% 30%,#FBCFE8 0,transparent 38%),radial-gradient(circle at 70% 64%,#A78BFA 0,transparent 42%),conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
+.o-contest::before{background:radial-gradient(circle at 30% 30%,#FDE047 0,transparent 38%),radial-gradient(circle at 70% 62%,#34D399 0,transparent 42%),conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
+.o-news{animation-duration:11s;animation-delay:-3s}.o-exhibit{animation-duration:10s;animation-delay:-6s;animation-direction:reverse}.o-contest{animation-duration:8s;animation-delay:-2s}
+.soft{filter:blur(2px);opacity:.9}
+.hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.mesh{position:absolute;border-radius:50%;filter:blur(70px);opacity:.75;animation:drift 18s ease-in-out infinite alternate}
+.mascot{transform-origin:50% 90%;filter:drop-shadow(0 18px 24px rgba(120,80,30,.18));transition:transform .3s ease}
+.mascot:hover{animation:squish .6s cubic-bezier(.34,1.56,.64,1)}
+.frame{position:relative;padding:7px;border-radius:24px;background:linear-gradient(135deg,#FDBA74 0%,#F0ABFC 48%,#93C5FD 100%);box-shadow:0 40px 80px -40px rgba(80,60,120,.45)}
+.window{border-radius:18px;background:#FFFFFF;overflow:hidden;border:1px solid rgba(0,0,0,.06)}
+.mini-nav{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:8px;font-size:12.5px;color:var(--text-2)}
+.mini-nav.on{background:var(--surface-3);color:var(--text);font-weight:500}
+.mini-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#FFFFFF}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-2)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none;display:block}
+.bento{position:relative;display:flex;flex-direction:column;gap:14px;padding:28px;border-radius:24px;background:#FFFFFF;border:1px solid var(--border);overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s ease,border-color .2s ease}
+.bento:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:0 24px 48px -28px rgba(0,0,0,.25)}
+.bento .vis{margin-top:auto;border:1px solid var(--border);border-radius:16px;background:var(--bg);padding:18px}
+.chip{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:#FFFFFF;font-size:12px;font-weight:500;color:var(--text-2)}
+.tl-row{display:flex;align-items:flex-start;gap:12px;padding:8px 0}
+.tl-dot{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border-strong);flex:none;margin-top:1px;display:grid;place-content:center;background:#FFFFFF}
+.tl-dot.done{background:#0A0A0A;border-color:#0A0A0A}
+.tl-dot.cur{border-color:#0A0A0A;box-shadow:0 0 0 4px rgba(10,10,10,.08)}
+.step-card{display:flex;gap:16px;padding:22px;border-radius:18px;border:1px solid var(--border);background:#FFFFFF;transition:border-color .2s ease,transform .3s cubic-bezier(.16,1,.3,1)}
+.step-card:hover{border-color:var(--border-strong);transform:translateX(4px)}
+.step-n{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-content:center;background:#0A0A0A;color:#FFFFFF;font-family:'Geist Mono',monospace;font-size:13px}
+.bub{max-width:86%;padding:11px 15px;border-radius:18px;font-size:13.5px;line-height:1.55}
+.bub.bot{align-self:flex-start;background:#F2F0EC;border-bottom-left-radius:6px}
+.bub.me{align-self:flex-end;background:#0A0A0A;color:#FFFFFF;border-bottom-right-radius:6px}
+.trust{display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:20px;border:1px solid var(--border);background:#FFFFFF}
+.trust-ic{width:40px;height:40px;border-radius:12px;display:grid;place-content:center;background:var(--surface-2);color:var(--text)}
+.faq{border-top:1px solid var(--border)}
+.faq summary{list-style:none;display:flex;align-items:center;gap:12px;padding:22px 4px;font-size:17px;font-weight:600;letter-spacing:-0.02em;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary svg{margin-left:auto;transition:transform .3s cubic-bezier(.16,1,.3,1);color:var(--muted);flex:none}
+.faq[open] summary svg{transform:rotate(45deg)}
+.faq p{padding:0 4px 22px;font-size:15px;line-height:1.75;color:var(--muted);max-width:760px;animation:enter .35s cubic-bezier(.16,1,.3,1) both}
+.cta-band{position:relative;overflow:hidden;background:linear-gradient(180deg,#EEF0FF 0%,#F6F1FF 40%,#FFF4EA 100%)}
+.big-orb{position:absolute;border-radius:50%;overflow:hidden;isolation:isolate;animation:blob 10s ease-in-out infinite}
+.big-orb::before{content:'';position:absolute;inset:-30%;filter:blur(18px);animation:swirl 16s ease-in-out infinite}
+.enter{animation:enter .7s cubic-bezier(.16,1,.3,1) both}
+.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.34s}
+:focus-visible{outline:2px solid #5E6AD2;outline-offset:3px;border-radius:10px}
+@keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes blob{0%,100%{border-radius:50% 50% 50% 50% / 50% 50% 50% 50%;transform:rotate(0deg) scale(1)}25%{border-radius:58% 42% 47% 53% / 45% 57% 43% 55%;transform:rotate(8deg) scale(1.04,.97)}50%{border-radius:43% 57% 61% 39% / 58% 42% 58% 42%;transform:rotate(-6deg) scale(.97,1.04)}75%{border-radius:55% 45% 40% 60% / 41% 59% 49% 51%;transform:rotate(4deg) scale(1.03,1)}}
+@keyframes swirl{0%{transform:rotate(0deg) translate(0,0) scale(1)}25%{transform:rotate(95deg) translate(7%,-5%) scale(1.12)}50%{transform:rotate(170deg) translate(-4%,6%) scale(.94)}75%{transform:rotate(265deg) translate(-7%,-3%) scale(1.08)}100%{transform:rotate(360deg) translate(0,0) scale(1)}}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,-30px) scale(1.12)}}
+@keyframes squish{0%{transform:scale(1)}30%{transform:scale(1.08,.9)}60%{transform:scale(.96,1.05)}100%{transform:scale(1)}}
+@media (max-width:860px){.hide-sm{display:none !important}.hero-chars{display:none}}
+@media (prefers-reduced-motion:reduce){.lp *,.lp *::before,.lp *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+</style>
+</helmet>
+<div class="lp">
+
+  <!-- NAV -->
+  <header style="position: relative; z-index: 5; border-bottom: 1px solid rgba(0,0,0,.06); background: rgba(250,250,250,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px)">
+    <div class="wrap" style="display: flex; align-items: center; gap: 24px; height: 68px">
+      <a href="#top" style="display: inline-flex; align-items: center; gap: 10px; text-decoration: none">
+        <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #0A0A0A; display: grid; place-content: center">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"></path></svg>
+        </span>
+        <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.03em; color: #0A0A0A">서비스명</span>
+      </a>
+      <nav class="hide-sm" aria-label="랜딩 메뉴" style="display: flex; gap: 26px; margin: 0 auto">
+        <a class="navlink" href="#features">기능</a>
+        <a class="navlink" href="#how">사용법</a>
+        <a class="navlink" href="#trust">안심 포인트</a>
+        <a class="navlink" href="#faq">자주 묻는 질문</a>
+      </nav>
+      <div style="display: flex; gap: 6px; align-items: center; margin-left: auto">
+        <a class="btn btn-ghost" href="Main.dc.html">로그인</a>
+        <a class="btn btn-primary" href="Signup.dc.html">회원가입
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section id="top" style="position: relative; overflow: hidden; padding: 96px 0 0">
+    <div class="hero-bg" aria-hidden="true">
+      <span class="mesh" style="width: 620px; height: 520px; left: -120px; top: -60px; background: #FDBA74"></span>
+      <span class="mesh" style="width: 560px; height: 480px; right: -80px; top: -40px; background: #C4B5FD; animation-delay: -6s"></span>
+      <span class="mesh" style="width: 520px; height: 420px; left: 34%; top: 220px; background: #BAE6FD; animation-delay: -11s"></span>
+      <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 260px; background: linear-gradient(180deg, rgba(250,250,250,0), #FAFAFA)"></span>
+    </div>
+
+    <div class="wrap" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px">
+      <span class="kicker enter"><i></i>인스타그램 DM으로 쓰는 콘텐츠 도우미</span>
+      <h1 class="h-xl enter d1">보내두면,<br>다시 쓸 수 있게.</h1>
+      <p class="lead enter d2" style="max-width: 640px">릴스와 게시물을 DM으로 보내세요.<br>레시피는 정리하고, 뉴스는 확인하고, 전시와 공모전은 필요한 정보를 모아드려요.</p>
+      <div class="enter d3" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding-top: 6px">
+        <a class="btn btn-primary btn-lg" href="Signup.dc.html">시작하기
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#how">어떻게 사용하나요?
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m6 13 6 6 6-6"></path></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- product shot + characters -->
+    <div class="wrap enter d4" style="position: relative; margin-top: 72px; max-width: 1180px">
+      <div class="hero-chars" aria-hidden="true">
+        <span class="orb o-news soft" style="width: 150px; height: 150px; left: -30px; top: 120px; z-index: 0"></span>
+        <span class="orb o-contest" style="width: 84px; height: 84px; left: 90px; top: 330px; z-index: 3"></span>
+        <span class="orb o-exhibit soft" style="width: 170px; height: 170px; right: -40px; top: 60px; z-index: 0"></span>
+        <span class="orb o-recipe" style="width: 96px; height: 96px; right: 70px; top: 300px; z-index: 3"></span>
+        <img class="mascot" src="./assets/643336e9e4b4897d48e1aefd9715f721.png" alt="" style="position: absolute; left: 40px; top: -96px; width: 210px; z-index: 4; transform: rotate(-6deg)">
+      </div>
+      <div class="frame" style="position: relative; z-index: 2; margin: 0 60px">
+        <div class="window">
+          <div style="display: flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--border); background: #FAFAFA">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
+            <span class="hide-sm" style="margin: 0 auto; font-family: 'Geist Mono', monospace; font-size: 11.5px; color: #8A8A8A">서비스명.app/home</span>
+          </div>
+          <div style="display: flex; min-height: 440px">
+            <div class="hide-sm" style="width: 200px; flex: none; border-right: 1px solid var(--border); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; background: #FAFAFA; text-align: left">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px">
+                <span style="width: 20px; height: 20px; border-radius: 6px; background: #0A0A0A"></span>
+                <span style="font-size: 13px; font-weight: 700">서비스명</span>
+              </div>
+              <span class="mini-nav on">홈</span>
+              <span class="mini-nav">내 콘텐츠<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A8A8A">11</span></span>
+              <span class="mini-nav">내 취향<span style="margin-left: auto; font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A8A8A">3</span></span>
+              <span style="font-size: 11px; color: #8A8A8A; padding: 14px 10px 6px">유형</span>
+              <span class="mini-nav"><span class="dot" style="background: #F97316"></span>레시피</span>
+              <span class="mini-nav"><span class="dot" style="background: #3B82F6"></span>뉴스·정보</span>
+              <span class="mini-nav"><span class="dot" style="background: #A855F7"></span>전시·팝업</span>
+              <span class="mini-nav"><span class="dot" style="background: #22C55E"></span>공모전·대외활동</span>
+            </div>
+            <div style="flex: 1; min-width: 0; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; text-align: left">
+              <span style="font-size: 20px; font-weight: 600; letter-spacing: -0.03em">안녕하세요, 지민님</span>
+              <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px">
+                <img src="./assets/643336e9e4b4897d48e1aefd9715f721.png" alt="" style="width: 40px">
+                <span style="display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0">
+                  <span style="font-size: 11.5px; color: #15803D; display: inline-flex; align-items: center; gap: 6px"><span class="dot" style="background: #16A34A"></span>@jimin.daily 연결됨</span>
+                  <span style="font-size: 13px; font-weight: 500">보던 게시물·릴스를 @inthon2team에 공유하세요</span>
+                </span>
+                <span class="hide-sm" style="height: 28px; padding: 0 12px; border-radius: 8px; background: #0A0A0A; color: #FFFFFF; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center">Instagram에서 보내기</span>
+              </div>
+              <span style="font-size: 13px; font-weight: 600">최근 정리된 콘텐츠</span>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px">
+                <div class="mini-card">
+                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-recipe" style="width: 44px; height: 44px"></span></div>
+                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #F97316"></span>레시피</span><span style="font-size: 12.5px; font-weight: 500">15분 매콤 두부면</span><span style="font-size: 11px; color: #8A8A8A">조리 15분 · 재료 5개</span></div>
+                </div>
+                <div class="mini-card">
+                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-news" style="width: 44px; height: 44px"></span></div>
+                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #3B82F6"></span>뉴스·정보</span><span style="font-size: 12.5px; font-weight: 500">청년 교통비 지원 주장</span><span style="font-size: 11px; color: #8A8A8A">판단 · 오해의 소지</span></div>
+                </div>
+                <div class="mini-card">
+                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-exhibit" style="width: 44px; height: 44px"></span></div>
+                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #A855F7"></span>전시·팝업</span><span style="font-size: 12.5px; font-weight: 500">빛의 방 — 가상 전시</span><span style="font-size: 11px; color: #8A8A8A">10.10 – 12.20</span></div>
+                </div>
+                <div class="mini-card">
+                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-contest" style="width: 44px; height: 44px"></span></div>
+                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #22C55E"></span>공모전</span><span style="font-size: 12.5px; font-weight: 500">생활 아이디어 공모전</span><span style="font-size: 11px; color: #8A8A8A">마감 11.14 · D-14</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="position: relative; z-index: 2; text-align: center; font-size: 12.5px; color: #8A8A8A; margin-top: 16px">화면 속 콘텐츠는 예시예요</p>
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section style="padding: 140px 0 40px">
+    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-end">
+      <div style="flex: 999 1 520px; display: flex; flex-direction: column; gap: 18px">
+        <span class="eyebrow">저장만 하고 잊어버리지 않도록</span>
+        <h2 class="h-lg">저장은 쉽게,<br>다시 쓰기는 더 쉽게.</h2>
+      </div>
+      <p class="lead" style="flex: 1 1 360px">레시피는 너무 빨리 지나가고, 카드뉴스는 사실인지 헷갈리고, 전시와 공모전은 언제까지인지 다시 찾아야 하죠. 보낸 콘텐츠를 종류에 맞게 정리해 한곳에 모아드려요.</p>
+    </div>
+  </section>
+
+  <!-- FEATURES BENTO -->
+  <section id="features" style="padding: 40px 0 120px">
+    <div class="wrap" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); gap: 16px">
+
+      <article class="bento">
+        <span class="orb o-recipe" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
+        <span class="eyebrow">01 · 레시피</span>
+        <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">빨리 지나간 레시피도<br>한 단계씩 따라 하기</h3>
+        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">재료·분량과 조리 순서를 정리하고, 조리 모드에서 타이머와 함께 안내해요.</p>
+        <div class="vis">
+          <div class="tl-row"><span class="tl-dot done"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; color: var(--muted)">두부면을 찬물에 헹궈 물기를 빼요.</span><span style="font-size: 12px; color: #8A8A8A">두부면</span></span></div>
+          <div class="tl-row"><span class="tl-dot cur"></span><span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 14px; font-weight: 600">팬에 대파를 볶아 파기름을 내요.</span><span style="font-size: 12px; color: #8A8A8A">중불 · 2분 · 대파</span></span><span class="chip">02:00</span></div>
+          <div class="tl-row"><span class="tl-dot"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px">불을 끄고 고춧가루와 간장을 넣어요.</span><span style="font-size: 12px; color: #8A8A8A">고춧가루 · 간장</span></span></div>
+        </div>
+      </article>
+
+      <article class="bento">
+        <span class="orb o-news" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
+        <span class="eyebrow">02 · 뉴스·정보</span>
+        <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">사실인지,<br>근거와 함께 확인하기</h3>
+        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">주장 하나를 골라 판단하고, 원본과 같은 점·다른 점과 출처를 함께 보여줘요. 근거가 부족하면 판단을 유보해요.</p>
+        <div class="vis" style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap">
+          <div style="position: relative; width: 150px; height: 130px; flex: none">
+            <svg viewBox="0 0 200 172" width="150" height="129" aria-hidden="true">
+              <defs><linearGradient id="lp-gauge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#EF4444"></stop><stop offset=".3" stop-color="#F97316"></stop><stop offset=".5" stop-color="#FACC15"></stop><stop offset=".72" stop-color="#84CC16"></stop><stop offset="1" stop-color="#22C55E"></stop></linearGradient></defs>
+              <path d="M 44.85 155.15 A 78 78 0 1 1 155.15 155.15" fill="none" stroke="url(#lp-gauge)" stroke-width="16"></path>
+              <path d="M37.18 73.98 L18.70 66.32 M100 32 L100 12 M162.82 73.98 L181.30 66.32" stroke="#FAFAFA" stroke-width="3"></path>
+              <g transform="rotate(-33.75 100 100)"><path d="M100 8 L93 33 L107 33 Z" fill="#0A0A0A" stroke="#FAFAFA" stroke-width="2" stroke-linejoin="round"></path></g>
+            </svg>
+            <span style="position: absolute; left: 0; right: 0; top: 62px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: -0.03em">오해의 소지</span>
+          </div>
+          <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px">
+            <span style="display: flex; align-items: center; gap: 10px"><svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#30A46C"></circle><path d="m6.3 10.2 2.5 2.5 4.9-5.1" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: #8A8A8A; width: 64px">지원 금액</span><b style="font-weight: 600">공고와 같아요</b></span>
+            <span style="display: flex; align-items: center; gap: 10px"><svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#E5484D"></circle><path d="M7.2 7.2l5.6 5.6M12.8 7.2l-5.6 5.6" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"></path></svg><span style="color: #8A8A8A; width: 64px">지원 대상</span><b style="font-weight: 600">조건 충족자만</b></span>
+            <span style="display: flex; align-items: center; gap: 10px"><svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="#D4D4D4" stroke-width="1.6" stroke-dasharray="2.2 2.1"></circle><circle cx="10" cy="10" r="2" fill="#D4D4D4"></circle></svg><span style="color: #8A8A8A; width: 64px">신청 조건</span><b style="font-weight: 600">원본에 없어요</b></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="bento">
+        <span class="orb o-exhibit" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
+        <span class="eyebrow">03 · 전시·팝업</span>
+        <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">가는 데 필요한 것만<br>한 장에</h3>
+        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">기간·운영 시간·장소·비용과 공식 예약 링크까지. 예약은 공식 페이지에서 직접 해요.</p>
+        <div class="vis" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 0; overflow: hidden">
+          <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)"><span style="font-size: 11.5px; color: #8A8A8A">개최 기간</span><span style="font-size: 14px; font-weight: 500">10.10 – 12.20</span></div>
+          <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--border)"><span style="font-size: 11.5px; color: #8A8A8A">운영 시간</span><span style="font-size: 14px; font-weight: 500">화–일 10:00 – 19:00</span></div>
+          <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border)"><span style="font-size: 11.5px; color: #8A8A8A">장소</span><span style="font-size: 14px; font-weight: 500">가상 미술관 2층</span></div>
+          <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11.5px; color: #8A8A8A">예약</span><span style="font-size: 14px; font-weight: 500">공식 페이지</span></span><span class="chip">열기 ↗</span></div>
+        </div>
+      </article>
+
+      <article class="bento">
+        <span class="orb o-contest" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
+        <span class="eyebrow">04 · 공모전·대외활동</span>
+        <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">마감과 준비물부터<br>먼저 보이게</h3>
+        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">지원 조건·마감 일시·제출물·절차를 정리하고 공식 공고로 바로 연결해요.</p>
+        <div class="vis" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 2px; padding-right: 20px; border-right: 1px solid var(--border)">
+            <span style="font-size: 11.5px; color: #8A8A8A">접수 마감</span>
+            <span style="font-family: 'Geist Mono', monospace; font-size: 34px; font-weight: 500; letter-spacing: -0.04em">D-14</span>
+            <span style="font-size: 12px; color: var(--text-2)">11.14 (토) 18:00</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13.5px">
+            <span style="display: flex; gap: 8px; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A8A8A">01</span>아이디어 기획서 (PDF)</span>
+            <span style="display: flex; gap: 8px; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A8A8A">02</span>3분 소개 영상</span>
+            <span style="display: flex; gap: 8px; align-items: center"><span style="font-family: 'Geist Mono', monospace; font-size: 11px; color: #8A8A8A">03</span>팀원 재학증명서</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" style="padding: 120px 0; background: #FFFFFF; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 56px; align-items: center">
+      <div style="flex: 1 1 440px; display: flex; flex-direction: column; gap: 28px">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <span class="eyebrow">사용법</span>
+          <h2 class="h-lg">DM 하나면<br>정리 끝.</h2>
+          <p class="lead">따로 앱을 열 필요 없이, 보던 그 자리에서 공유만 하면 돼요.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div class="step-card"><span class="step-n">1</span><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 600">Instagram 계정 연결</span><span style="font-size: 14px; color: var(--muted)">연결 코드를 DM으로 보내 내 계정임을 확인해요.</span></span></div>
+          <div class="step-card"><span class="step-n">2</span><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 600">@inthon2team에 공유</span><span style="font-size: 14px; color: var(--muted)">보던 게시물·릴스를 DM으로 보내요.</span></span></div>
+          <div class="step-card"><span class="step-n">3</span><span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 600">결과 확인</span><span style="font-size: 14px; color: var(--muted)">DM으로 요약을 받고, 자세한 건 내 페이지에서 봐요.</span></span></div>
+        </div>
+      </div>
+      <div style="flex: 1 1 420px; position: relative">
+        <span class="orb o-recipe soft" aria-hidden="true" style="width: 120px; height: 120px; right: -20px; top: -40px"></span>
+        <span class="orb o-news soft" aria-hidden="true" style="width: 90px; height: 90px; left: -24px; bottom: 30px"></span>
+        <div style="position: relative; border-radius: 28px; border: 1px solid var(--border); background: #FFFFFF; box-shadow: 0 30px 60px -36px rgba(0,0,0,.3); overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border)">
+            <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: #0A0A0A; display: grid; place-content: center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"></path></svg></span>
+            <span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-size: 14px; font-weight: 600">inthon2team</span><span style="font-size: 12px; color: #8A8A8A">Instagram DM · 예시</span></span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 20px">
+            <div class="bub me" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px"><span class="orb inline o-recipe" style="width: 34px; height: 34px"></span>공유한 릴스</div>
+            <div class="bub bot">콘텐츠를 받았어요. 내용을 확인해 정리해드릴게요.</div>
+            <div class="bub bot">15분 매콤 두부면 레시피를 정리했어요.<br>재료: 두부면, 대파, 고춧가루, 간장, 참기름<br>조리: 약 15분 (준비 5분 · 조리 10분)</div>
+            <div class="bub bot" style="display: flex; align-items: center; gap: 10px; background: #FFFFFF; border: 1px solid var(--border)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0A0A0A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
+              <span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-weight: 600">재료 분량과 조리 순서 보기</span><span style="font-size: 11.5px; color: #8A8A8A">서비스명 · 내 결과 페이지</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section id="trust" style="padding: 120px 0 80px">
+    <div class="wrap" style="display: flex; flex-direction: column; gap: 40px">
+      <div style="display: flex; flex-direction: column; gap: 14px; max-width: 640px">
+        <span class="eyebrow">안심 포인트</span>
+        <h2 class="h-lg">내 계정은 그대로,<br>보낸 것만 정리해요.</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
+        <div class="trust">
+          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+          <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">비밀번호를 묻지 않아요</span>
+          <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">연결 코드를 DM으로 보내는 방식으로만 계정을 확인해요.</span>
+        </div>
+        <div class="trust">
+          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4z"></path><path d="M22 2 11 13"></path></svg></span>
+          <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">보낸 콘텐츠만 처리해요</span>
+          <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">다른 대화나 저장함, 시청 기록은 가져오지 않아요.</span>
+        </div>
+        <div class="trust">
+          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg></span>
+          <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">공유는 내가 정할 때만</span>
+          <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">결과는 기본적으로 나만 봐요. 공유 링크는 직접 만들고 언제든 종료할 수 있어요.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" style="padding: 40px 0 140px">
+    <div class="wrap" style="display: flex; flex-wrap: wrap; gap: 40px">
+      <div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 14px">
+        <span class="eyebrow">자주 묻는 질문</span>
+        <h2 class="h-lg" style="font-size: clamp(30px, 3.4vw, 42px)">궁금한 점이<br>있나요?</h2>
+      </div>
+      <div style="flex: 999 1 560px; border-bottom: 1px solid var(--border)">
+        <details class="faq" open="open">
+          <summary>Instagram 계정을 연결하면 무엇을 볼 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>어느 계정에서 보낸 콘텐츠인지 확인하는 데만 쓰여요. 봇이 내 계정으로 게시하거나 다른 대화를 읽지 않아요.</p>
+        </details>
+        <details class="faq">
+          <summary>팩트체크 결과는 어떻게 정해지나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>게시물 전체가 아니라 주장 하나를 골라 판단해요. 근거 자료와 확인 시점을 함께 보여주고, 근거가 부족하면 결론 대신 ‘판단 유보’로 알려드려요.</p>
+        </details>
+        <details class="faq">
+          <summary>예약이나 지원도 대신 해주나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>아니요. 확인된 공식 예약·신청 페이지로 이동하는 것까지 도와드려요. 실제 예약과 지원은 공식 페이지에서 직접 진행해요.</p>
+        </details>
+        <details class="faq">
+          <summary>DM으로 결과를 다 받을 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>설정에서 ‘핵심 요약과 링크’ 또는 ‘DM에서 전체 보기’를 고를 수 있어요. 어떤 방식이든 자세한 결과는 내 페이지에 남아요.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="cta-band" style="padding: 130px 0 0">
+    <div class="wrap" style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 24px">
+      <h2 class="h-xl" style="font-size: clamp(40px, 5.2vw, 68px)">지금 DM으로<br>보내보세요.</h2>
+      <p class="lead">보내둔 콘텐츠는 내 페이지에 모여 언제든 다시 찾아볼 수 있어요.</p>
+      <a class="btn btn-primary btn-lg" href="Signup.dc.html" style="margin-top: 4px">시작하기
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+      </a>
+    </div>
+    <div aria-hidden="true" style="position: relative; height: 340px; margin-top: 40px">
+      <span class="big-orb o-contest" style="width: 360px; height: 360px; left: -60px; top: 120px"></span>
+      <span class="big-orb o-exhibit" style="width: 420px; height: 420px; left: 18%; top: 150px; animation-delay: -3s"></span>
+      <span class="big-orb o-news" style="width: 400px; height: 400px; left: 46%; top: 130px; animation-delay: -5s; animation-direction: reverse"></span>
+      <span class="big-orb o-recipe" style="width: 380px; height: 380px; right: -50px; top: 110px; animation-delay: -7s"></span>
+      <img class="mascot" src="./assets/643336e9e4b4897d48e1aefd9715f721.png" alt="" style="position: absolute; left: 50%; top: 10px; width: 280px; margin-left: -140px; z-index: 3">
+    </div>
+    <footer style="position: relative; z-index: 4; background: rgba(255,255,255,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid rgba(0,0,0,.06)">
+      <div class="wrap" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; padding-top: 28px; padding-bottom: 28px">
+        <span style="display: inline-flex; align-items: center; gap: 8px">
+          <span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 6px; background: #0A0A0A; display: grid; place-content: center"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"></path></svg></span>
+          <span style="font-size: 14px; font-weight: 700">서비스명</span>
+        </span>
+        <span style="font-size: 13px; color: var(--muted)">© 2026 서비스명</span>
+        <span style="margin-left: auto; display: flex; gap: 20px; font-size: 13px">
+          <a class="navlink" href="#top">이용약관</a>
+          <a class="navlink" href="#top">개인정보처리방침</a>
+          <a class="navlink" href="#top">@inthon2team</a>
+        </span>
+      </div>
+    </footer>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":4700}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

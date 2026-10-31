@@ -14,11 +14,11 @@
     { "source": "/auth/start", "destination": "/api/instagram" },
     { "source": "/auth/instagram/callback", "destination": "/api/instagram" },
     { "source": "/auth/result", "destination": "/api/instagram" },
-    { "source": "/home", "destination": "/" },
-    { "source": "/library", "destination": "/" },
-    { "source": "/taste", "destination": "/" },
-    { "source": "/settings", "destination": "/" },
-    { "source": "/items/:id", "destination": "/" }
+    { "source": "/home", "destination": "/dashboard" },
+    { "source": "/library", "destination": "/dashboard" },
+    { "source": "/taste", "destination": "/dashboard" },
+    { "source": "/settings", "destination": "/dashboard" },
+    { "source": "/items/:id", "destination": "/dashboard" }
   ],
   "headers": [
     {

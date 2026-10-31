@@ -1,8 +1,5 @@
 import { h, Component } from './vendor/preact.module.js';
 
-const response = await fetch('/data/dashboard-template.json');
-if (!response.ok) throw new Error('Dashboard template unavailable');
-const template = await response.json();
 const token = /^\s*{{\s*([\w.]+)\s*}}\s*$/;
 const lookup = (scope, path) => path === 'true' ? true : path === 'false' ? false
   : path.split('.').reduce((value, key) => value?.[key], scope);
@@ -36,5 +33,5 @@ export function renderNodes(nodes, scope, state, prefix = '') {
 }
 
 export class DCLogic extends Component {
-  render() { return renderNodes(template, this.renderVals(), this.state); }
+  render() { return renderNodes(this.props.template, this.renderVals(), this.state); }
 }
