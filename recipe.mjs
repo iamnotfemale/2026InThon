@@ -123,8 +123,8 @@ export function createRecipeProcessor({ model, listModel, fetchMedia = (url, max
       const intro = [`이 게시물에서 레시피 ${parts.length}개를 찾아 하나씩 정리했어요: ${parts.map(p => p.recipe.title).join(', ')}`,
         failedTitles.length && `정리하지 못한 레시피: ${failedTitles.join(', ')}. 잠시 후 다시 보내주시면 다시 살펴볼게요.`,
         skipped.length && `한 번에 ${MAX_RECIPES}개까지 정리해요. 남은 레시피: ${skipped.join(', ')}`].filter(Boolean).join('\n');
-      // 서버는 parts를 레시피 한 건씩 따로 저장하고, 각 레시피의 DM을 차례로 보낸다.
-      return {...parts[0], parts, messages:[...splitBytes(intro), ...parts.flatMap(p => p.messages)]};
+      // 서버는 parts를 레시피 한 건씩 따로 저장하고, 받는 방식과 관계없이 intro와 레시피별 링크만 보낸다(저장 실패 시 전체 DM).
+      return {...parts[0], parts, intro:splitBytes(intro), messages:[...splitBytes(intro), ...parts.flatMap(p => p.messages)]};
     } catch (error) { logFailure('result', error); return {status:'failed',messages:['레시피 정리를 마치지 못했어요. 잠시 후 콘텐츠를 다시 보내주세요.']}; }
     finally { input.images.length = 0; input.videos.length = 0; }
   };

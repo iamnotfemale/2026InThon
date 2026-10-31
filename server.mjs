@@ -201,7 +201,10 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
             }
           }
           let messages = result.messages;
-          if (savedIds.length && config.publicUrl && getDeliveryMode) {
+          // Several recipes would be dozens of DMs in full mode, so a collection always gets one link per recipe.
+          if (parts.length > 1 && savedIds.length === parts.length && config.publicUrl) {
+            messages = [...(Array.isArray(result.intro) ? result.intro : []), ...savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part))];
+          } else if (savedIds.length && config.publicUrl && getDeliveryMode) {
             let mode = 'full';
             try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
             if (mode === 'summary' && savedIds.length === parts.length) messages = savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part));
