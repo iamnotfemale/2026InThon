@@ -170,7 +170,7 @@ export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch
   };
 }
 
-export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000 }) {
+export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 60000, thinkingLevel }) {
   return async ({ system, content, maxTokens = 8192, signal, history = [], json = true }) => {
     const parts = content.map(item => {
       if (item.type === 'text') return { text: item.text };
@@ -183,7 +183,8 @@ export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImp
       method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [...history, { role: 'user', parts }],
-        generationConfig: { ...(json ? { responseMimeType: 'application/json' } : {}), maxOutputTokens: maxTokens } }) });
+        generationConfig: { ...(json ? { responseMimeType: 'application/json' } : {}), maxOutputTokens: maxTokens,
+          ...(thinkingLevel ? { thinkingConfig: { thinkingLevel } } : {}) } }) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(`Gemini 호출 실패 (HTTP ${response.status})`);
     const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought).map(p => p.text ?? '').join('').trim();

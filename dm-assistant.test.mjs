@@ -51,12 +51,13 @@ test('history outages allow stateless replies; reset failures are not reported a
 });
 test('Gemini chat sends previous roles and plain-text output while retaining provider cancellation', async () => {
   let sent;
-  const model = createGeminiModel({ apiKey: 'fake', fetchImpl: async (_url, options) => {
+  const model = createGeminiModel({ apiKey: 'fake', thinkingLevel: 'minimal', fetchImpl: async (_url, options) => {
     sent = JSON.parse(options.body); return Response.json({ candidates: [{ content: { parts: [{ text: '기억해요.' }] } }] });
   } });
   const history = [{ role: 'user', parts: [{ text: '내 이름은 민이야' }] }, { role: 'model', parts: [{ text: '반가워요.' }] }];
   assert.equal(await model({ system: '대화', content: [{ type: 'text', text: '내 이름이 뭐야?' }], json: false, history }), '기억해요.');
   assert.equal(sent.contents.length, 3); assert.equal(sent.generationConfig.responseMimeType, undefined);
+  assert.equal(sent.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
   assert.equal(dmAssistantFromEnv({ env: {} }), undefined);
 });
 test('long chat replies split safely at Unicode boundaries and preserve the entire message', () => {

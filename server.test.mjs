@@ -433,6 +433,28 @@ test('chat outages get a chat error and the existing linking command still takes
   assert.equal(calls, 1); assert.match(sent.at(-1), /구글로 로그인/);
 });
 
+test('slow sender tracking does not block a chat reply; content persistence still waits for its sender row', async t => {
+  for (const content of [false, true]) {
+    let release; let started = false; let saved = false; const sent = [];
+    const gate = new Promise(resolve => { release = resolve; });
+    const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+      trackSender: () => gate,
+      respondToMessage: async () => { started = true; return { status: 'done', messages: ['답장'] }; },
+      saveFactCheck: async () => { saved = true; },
+      apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); } });
+    try {
+      await deliver(f, [incoming({ message: { mid: 'tracking-' + content,
+        ...(content ? { attachments: [{ type: 'image', payload: { url: 'https://example.com/image' } }] } : { text: '안녕' }) } })]);
+      await eventually(() => started);
+      assert.equal(saved, false);
+      if (!content) await eventually(() => sent.includes('답장'));
+      else assert.deepEqual(sent, [FACTCHECK_ACK]);
+    } finally { release(); }
+    await eventually(() => f.stats.replies === 1);
+    assert.equal(saved, content);
+  }
+});
+
 test('missing handles are backfilled during a fact-check, known handles are not looked up again', async t => {
   const lookups = []; const stored = []; let known = null;
   const options = { config: { accessToken: 'test-token', userId: IG_ID },

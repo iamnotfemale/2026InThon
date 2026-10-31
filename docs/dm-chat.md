@@ -18,7 +18,7 @@
 - `api/instagram.mjs` → `dmAssistantFromEnv` → `createDmAssistant`.
 - `server.mjs`의 새 `respondToMessage(message, { senderId })` 경로가 텍스트와 콘텐츠를 분기한다. 기존 `factCheck` 주입도 그대로 지원한다.
 - 일반 대화 응답을 Supabase 팩트체크 이력으로 저장하지 않는다. 발신자 추적·계정 연결·프로필 조회 보완은 기존 팀원 코드를 유지한다.
-- `GEMINI_API_KEY`와 `GEMINI_MODEL`을 그대로 사용한다. 새 키나 서비스가 필요하지 않다. Gemini가 없는 Continuum-only 구성은 기존 콘텐츠 처리로 동작한다.
+- `GEMINI_API_KEY`를 그대로 사용한다. 일반 채팅 기본 모델은 `gemini-3.5-flash-lite`와 `minimal` 사고 설정이다. `GEMINI_CHAT_MODEL`로 별도 모델을 지정할 수 있다. 콘텐츠 분석은 기존 `GEMINI_MODEL`(기본 `gemini-3.8-flash`)을 사용한다. 새 키나 서비스가 필요하지 않다. Gemini가 없는 Continuum-only 구성은 기존 콘텐츠 처리로 동작한다.
 - 메시지는 UTF-8 900바이트 단위로 나누고 이모지의 surrogate pair를 분리하지 않는다. 모델 오류는 일반 대화용 재시도 안내를 보낸다.
 
 ## 최근 대화 맥락
@@ -43,4 +43,9 @@
 - 일반 대화/콘텐츠/계정 연결 분기, 오류 응답, 사용자 분리·암호화·맥락 제한·만료·초기화, 이모지 분할을 테스트했다.
 - 실제 Gemini와 비공개 클라우드 맥락으로 2회 대화를 수행하고, 첫 메시지의 테스트 코드를 두 번째 답변에서 기억하는 것과 초기화 후 맥락이 없는 것을 확인했다. 이 검증은 Instagram DM을 발송하지 않았다.
 - 실제 릴스의 Meta CDN MP4 URL만 넣은 입력으로도 원본 페이지 조회 없이 Gemini 영상 분석까지 `done`을 확인했다. API 요청 3회, 저장한 미디어 파일 0개였다. 이는 실제 CDN 파일로 테스트한 것이며, 새 웹훅 수신 건에서 같은 형식을 관찰했다는 뜻은 아니다.
-- 전체 Node 테스트 77개, Python 테스트 13개가 통과했다. 배포 후 실제 Instagram DM 답장은 별도 확인이 필요하다.
+- 사용자가 실제 Instagram DM에서 일반 대화와 앞선 질문 기억이 정상 동작한다고 확인했다.
+- 응답 속도 개선: 같은 짧은 인사 요청을 각 2회 호출해 모델 응답 평균을 비교했다. 3.8 Flash 기본 5,431ms, 3.8 Flash low 4,388ms, 3.5 Flash-Lite minimal 932ms였다. 이는 로컬에서 잰 모델 호출 시간이며 Meta DM 전달·콜드 스타트·저장소 시간은 포함하지 않는다. 일반 채팅만 Flash-Lite로 전환하고 실제 2회 대화·클라우드 맥락 유지·초기화를 다시 검증했다.
+- 사용자 추적 저장은 모델 응답과 병렬로 수행한다. 계정 연결 링크와 콘텐츠 결과의 외래키 저장에는 사용자 행이 준비될 때까지 기다린다. 전송 후에도 저장 작업 완료를 기다려 서버리스 종료로 작업을 잃지 않는다.
+- 전체 Node 테스트 78개, Python 테스트 13개가 통과했다. 속도 개선 후 실제 Instagram DM의 최종 소요 시간은 아직 별도 측정하지 않았다.
+
+모델 설정 근거: [Gemini 3.5 Flash-Lite](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite), [사고 수준 설정](https://ai.google.dev/gemini-api/docs/generate-content/thinking).

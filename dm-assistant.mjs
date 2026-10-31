@@ -72,7 +72,9 @@ export function createDmAssistant({ model, processContent, history, warn = () =>
 
 export function dmAssistantFromEnv({ loadAccessToken, env = process.env } = {}) {
   if (!env.GEMINI_API_KEY) return undefined;
-  return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined }),
+  const chatModel = env.GEMINI_CHAT_MODEL || 'gemini-3.5-flash-lite';
+  return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: chatModel,
+    thinkingLevel: chatModel === 'gemini-3.5-flash-lite' ? 'minimal' : undefined }),
     processContent: mediaFactCheckerFromEnv(factCheckerFromEnv(env), { loadAccessToken, env }),
     history: createChatHistory({ secret: env.META_APP_SECRET }) });
 }

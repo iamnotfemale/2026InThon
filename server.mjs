@@ -124,7 +124,9 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         // Storage problems must not stop the reply itself; they only cost history.
         const quietly = async (task, label) => { try { await task(); } catch { stats.lastError = label; } };
         let knownUsername = null;
-        if (trackSender) await quietly(async () => { knownUsername = (await trackSender(sender))?.username ?? null; }, '발신자 기록 실패');
+        const tracking = trackSender
+          ? quietly(async () => { knownUsername = (await trackSender(sender))?.username ?? null; }, '발신자 기록 실패')
+          : Promise.resolve();
         // The handle is only for display; linking and replies work without it. Failures are kept as codes only
         // (Vercel log + ig_accounts.username_lookup_error), never Meta's error text, which can contain user IDs.
         const lookupUsername = async () => {
@@ -142,6 +144,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         };
         const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
         if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
+          await tracking;
           const username = knownUsername ?? await lookupUsername();
           let text;
           try { text = linkMessage(`${config.publicUrl}/link#token=${await issueLinkToken({ igsid: sender, username })}`); }
@@ -150,16 +153,20 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         } else if (respondToMessage || factCheck) {
           const content = !respondToMessage || isContentMessage(m.message);
           // Backfill a missing handle alongside the AI response, without delaying the reply.
-          const backfill = trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null;
+          const backfill = tracking.then(() => trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null);
           if (content) await send(FACTCHECK_ACK);
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, { senderId: sender }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
-          if (content && saveFactCheck) await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
+          if (content && saveFactCheck) {
+            await tracking; // The sender row must exist before writing a content result with its foreign key.
+            await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
+          }
           for (const text of result.messages) await send(text);
           await backfill;
         } else await send('안녕?');
+        await tracking;
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
       } catch (error) {
