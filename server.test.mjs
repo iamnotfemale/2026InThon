@@ -552,7 +552,7 @@ test('processed results keep explicit private-link mode and default to full DM o
   }
 });
 
-test('slow sender tracking does not block a chat reply; content persistence still waits for its sender row', async t => {
+test('slow sender tracking does not block full replies; content persistence still waits for its sender row', async t => {
   for (const content of [false, true]) {
     let release; let started = false; let saved = false; const sent = [];
     const gate = new Promise(resolve => { release = resolve; });
@@ -569,11 +569,31 @@ test('slow sender tracking does not block a chat reply; content persistence stil
         ...(content ? { attachments: [{ type: 'image', payload: { url: 'https://example.com/image' } }] } : { text: '안녕' }) } })]);
       await eventually(() => started);
       assert.equal(saved, false);
-      if (!content) await eventually(() => sent.includes('답장'));
-      else assert.deepEqual(sent, [FACTCHECK_ACK]);
+      await eventually(() => sent.includes('답장'));
     } finally { release(); }
     await eventually(() => f.stats.replies === 1);
     assert.equal(saved, content);
+  }
+});
+
+test('full results arrive before slow persistence; private links wait for saving and deferred work completes inside the background task',async t=>{
+  for(const mode of ['full','summary']){
+    const sent=[],tasks=[],timings=[];let release,saveStarted=false,historySaved=false;
+    const gate=new Promise(resolve=>{release=resolve;});t.after(()=>release());
+    const f=await fixture(t,{config:{accessToken:'test-token',userId:IG_ID,publicUrl:'https://inthon.yeoziphab.com'},
+      background:task=>{tasks.push(task);},logTiming:data=>timings.push(data),getDeliveryMode:async()=>mode,
+      respondToMessage:async(_message,{defer})=>{defer(async()=>{historySaved=true;});
+        return{kind:'content',status:'done',action:'beauty',messages:['미용 정리 결과']};},
+      saveFactCheck:async()=>{saveStarted=true;await gate;return{id:73};},
+      apiFetch:async(_url,options)=>{sent.push(JSON.parse(options.body).message.text);return json({message_id:'out'});}});
+    await deliver(f,[incoming({message:{mid:'private-latency-'+mode,text:'private input'}})]);
+    await eventually(()=>saveStarted);
+    assert.deepEqual(sent,mode==='full'?['미용 정리 결과']:[]);assert.equal(historySaved,false);
+    release();await Promise.all(tasks);
+    assert.equal(historySaved,true);assert.equal(f.stats.replies,1);assert.equal(timings.length,1);
+    if(mode==='summary')assert.match(sent[0],/\/items\/fc73/);
+    assert.equal(timings[0].action,'beauty');assert.equal(typeof timings[0].save_ms,'number');
+    assert.equal(typeof timings[0].result_sent_ms,'number');assert.doesNotMatch(JSON.stringify(timings),/123456789|private input|private-latency|test-token/);
   }
 });
 
@@ -620,10 +640,10 @@ test('profile lookup failures are logged and stored as Meta codes only and never
 });
 
 test('fact-check records are marked as DM-sent only after every result message is confirmed', async t => {
-  const marked = [];
+  const marked = []; let saved = 0;
   const make = failOn => fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
     factCheck: async () => ({ status: 'done', messages: ['결과 1', '결과 2'] }),
-    saveFactCheck: async () => ({ id: 5 }), markFactCheckSent: async id => { marked.push(id); },
+    saveFactCheck: async () => { saved++; return { id: 5 }; }, markFactCheckSent: async id => { marked.push(id); },
     apiFetch: async (url, options) => {
       const text = JSON.parse(options.body).message.text;
       if (text === failOn) return new Response(JSON.stringify({ error: { code: 10 } }), { status: 400 });
@@ -637,6 +657,7 @@ test('fact-check records are marked as DM-sent only after every result message i
   await deliver(failing, [incoming({ message: { mid: 'dm-fail', text: '주장' } })]);
   await eventually(() => failing.stats.replyFailures === 1);
   assert.deepEqual(marked, [5], 'a failed send must leave the record pending');
+  assert.equal(saved, 2, 'a partial DM failure must still preserve the completed analysis');
 });
 
 test('handle lookups use the Page token when available and record which token failed', async t => {
@@ -663,4 +684,34 @@ test('handle lookups use the Page token when available and record which token fa
   await eventually(() => withoutPage.stats.replies === 1);
   assert.deepEqual(auths, ['Bearer page-token-value', 'Bearer user-token-value']);
   assert.deepEqual(recorded, [{ username: 'dimi.fan' }, { error: 'user-token: HTTP 400, code 36103, OAuthException' }]);
+});
+
+test('a recipe collection saves each recipe as its own record and always sends one link per recipe', async t => {
+  for (const mode of ['summary', 'full']) {
+    const sent = []; const saved = []; const marked = []; let next = 40;
+    const part = title => ({ status: 'done', action: 'recipe', recipe: { title }, extracted: { claim: title }, messages: [title + ' 정리'] });
+    const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID, publicUrl: 'https://inthon.yeoziphab.com' },
+      factCheck: async () => ({ status: 'done', action: 'recipe', media: { sourceUrl: 'https://www.instagram.com/p/DDqP4fhTkJb/' },
+        parts: [part('두부찌개'), part('부추장')], intro: ['레시피 2개'], messages: ['레시피 2개', '두부찌개 정리', '부추장 정리'] }),
+      saveFactCheck: async (_sender, result) => { saved.push(result); return { id: next++ }; },
+      getDeliveryMode: async () => mode, markFactCheckSent: async id => marked.push(id),
+      apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'out' }); } });
+    await deliver(f, [incoming({ message: { mid: 'collection-' + mode, text: '레시피' } })]); await eventually(() => f.stats.replies === 1);
+    assert.deepEqual(saved.map(r => r.recipe.title), ['두부찌개', '부추장']);
+    assert.ok(saved.every(r => r.media.sourceUrl.endsWith('/DDqP4fhTkJb/')), 'each record keeps the source link');
+    // Both modes: the intro plus one private link per recipe, never every recipe's full text.
+    assert.equal(sent.length, 4); assert.equal(sent[1], '레시피 2개');
+    assert.match(sent[2], /두부찌개[\s\S]*\/items\/fc40/); assert.match(sent[3], /부추장[\s\S]*\/items\/fc41/);
+    assert.deepEqual(marked, [40, 41]);
+  }
+  // A failed save falls back to the full text so no recipe is lost from the DM.
+  const sent = []; let saves = 0;
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID, publicUrl: 'https://inthon.yeoziphab.com' },
+    factCheck: async () => ({ status: 'done', action: 'recipe', parts: [{ status: 'done', recipe: {} }, { status: 'done', recipe: {} }],
+      intro: ['레시피 2개'], messages: ['레시피 2개', 'A 정리', 'B 정리'] }),
+    saveFactCheck: async () => (saves++ ? null : { id: 50 }),
+    getDeliveryMode: async () => 'summary',
+    apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'out' }); } });
+  await deliver(f, [incoming({ message: { mid: 'collection-partial', text: '레시피' } })]); await eventually(() => f.stats.replies === 1);
+  assert.equal(saves, 2); assert.deepEqual(sent.slice(1), ['레시피 2개', 'A 정리', 'B 정리']);
 });

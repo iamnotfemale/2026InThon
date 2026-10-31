@@ -1,13 +1,15 @@
 // Shared beauty contract. Display fallbacks stay out of the stored result; no media analysis runs in the browser.
 export function normalizeBeauty(value, { sourceText } = {}) {
   validateBeauty(value);
+  const urls = sourceText === undefined ? null : new Set((sourceText.match(/https?:\/\/[^\s<>"\[\]]+/g) || [])
+    .map(url => url.replace(/[),.。]+$/, '')));
   const optional = key => typeof value[key] === 'string' && value[key].trim() ? value[key].trim() : null;
   return { version: 1, sub: value.sub, title: value.title.trim(), intro: value.intro.trim(),
     bFacts: value.bFacts.map(([label, fact]) => [label.trim(), fact.trim()]),
     points: value.points.map(point => point.trim()).filter(Boolean),
     place: optional('place'), address: optional('address'), hours: optional('hours'),
     // As with other processors, a model-generated URL must occur in the received text, not just look plausible.
-    links: value.links.filter(([, url]) => sourceText === undefined || sourceText.includes(url))
+    links: value.links.filter(([, url]) => urls === null || urls.has(url))
       .map(([label, url, primary]) => [label.trim(), url, Boolean(primary)]),
     sponsored: value.sponsored === true, caution: optional('caution'), linkNote: optional('linkNote') };
 }
@@ -29,7 +31,7 @@ export function validateBeauty(value) {
     try { url = new URL(link[1]); } catch { throw new Error('Invalid beauty link'); }
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Invalid beauty link');
   }
-  return { title: value.title.trim(), sub: value.sub, intro: value.intro,
+  return { version: 1, title: value.title.trim(), sub: value.sub, intro: value.intro,
     bFacts: value.bFacts.map(([k, v]) => [k, v.trim() || '미기재']), points: value.points,
     place: value.place || '', address: value.address || '주소 미기재', hours: value.hours || '운영 시간 미기재',
     links: value.links, sponsored: value.sponsored === true,

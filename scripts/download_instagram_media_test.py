@@ -2,8 +2,10 @@ import importlib.util
 import unittest
 import sys
 import tempfile
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("media", Path(__file__).with_name("download-instagram-media.py"))
@@ -12,6 +14,108 @@ spec.loader.exec_module(media)
 
 
 class MediaChecks(unittest.TestCase):
+    def test_direct_resolution_selects_the_same_combined_mp4_without_downloading(self):
+        info = {'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'protocol': 'https',
+                'url': 'https://video.example.fbcdn.net/full.mp4', 'description': '본문'}
+        ydl = MagicMock()
+        ydl.__enter__.return_value.extract_info.return_value = info
+        factory = Mock(return_value=ydl)
+        with patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=factory)}):
+            original, video = media.resolve_video('https://www.instagram.com/reel/Example/')
+        self.assertIs(original, info)
+        self.assertEqual(video['url'], info['url'])
+        self.assertEqual(factory.call_args.args[0]['format'], 'b[ext=mp4]/b')
+        ydl.__enter__.return_value.extract_info.assert_called_once_with('https://www.instagram.com/reel/Example/', download=False)
+        ydl.__enter__.return_value.process_ie_result.assert_not_called()
+
+    def test_playlists_images_separate_or_missing_tracks_and_hls_do_not_use_direct_video(self):
+        full = {'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'protocol': 'https', 'url': 'https://video.example.fbcdn.net/full.mp4'}
+        cases = [{'entries': [full, full]}, {**full, 'ext': 'jpg'}, {**full, 'acodec': 'none'},
+                 {**full, 'vcodec': 'none'}, {**full, 'acodec': None}, {**full, 'protocol': 'm3u8_native'},
+                 {**full, 'requested_formats': [full]}, {'entries': [None]}]
+        for info in cases:
+            ydl = MagicMock()
+            ydl.__enter__.return_value.extract_info.return_value = info
+            with patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=Mock(return_value=ydl))}):
+                original, video = media.resolve_video('https://www.instagram.com/p/Example/')
+            self.assertIs(original, info)
+            self.assertIsNone(video)
+
+    def test_parallel_mixed_download_keeps_every_item_in_original_order(self):
+        barrier = threading.Barrier(3, timeout=5)
+        lock = threading.Lock()
+        active = peak = 0
+        def transfer(target):
+            nonlocal active, peak
+            index = int(target.stem.split('_')[-1])
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            try:
+                if index <= 3:
+                    barrier.wait()
+                target.write_bytes(b'0000ftypisom' if target.suffix == '.mp4' else b'image')
+                return target
+            finally:
+                with lock:
+                    active -= 1
+        class YDL:
+            def __init__(self, options):
+                self.options = options
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+            def process_ie_result(self, entry, download):
+                entry['target'] = str(self.options['outtmpl']).replace('%(ext)s', 'mp4')
+                transfer(Path(entry['target']))
+                return entry
+            def prepare_filename(self, entry):
+                return entry['target']
+        entries = [{'formats': [{'url': 'https://video.example.fbcdn.net/x.mp4'}]} if index in [2, 7]
+                   else {'thumbnails': [{'url': 'https://image.example.fbcdn.net/x.jpg'}]} for index in range(1, 11)]
+        with tempfile.TemporaryDirectory() as directory, patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=YDL)}), \
+                patch.object(media, 'save_image', side_effect=lambda url, target: transfer(target.with_suffix('.jpg'))):
+            result = media.download('https://www.instagram.com/p/Example/', directory, info={'entries': entries})
+            self.assertEqual([f['index'] for f in result['files']], list(range(1, 11)))
+            self.assertEqual([f['kind'] for f in result['files']], ['video' if i in [2, 7] else 'image' for i in range(1, 11)])
+            self.assertTrue(all((Path(directory) / f['file']).is_file() for f in result['files']))
+            self.assertEqual(peak, 3)
+            self.assertEqual(active, 0)
+
+    def test_download_failure_waits_for_other_writers_and_does_not_publish_partial_manifest(self):
+        failed, blocked, release = threading.Event(), threading.Event(), threading.Event()
+        def save(url, target):
+            if target.name.endswith('01'):
+                self.assertTrue(blocked.wait(5))
+                failed.set()
+                raise OSError('transfer failed')
+            blocked.set()
+            self.assertTrue(release.wait(5))
+            target = target.with_suffix('.jpg')
+            target.write_bytes(b'image')
+            return target
+        info = {'entries': [{'thumbnails': [{'url': 'https://image.example.fbcdn.net/x.jpg'}]}] * 2}
+        with tempfile.TemporaryDirectory() as directory, patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=MagicMock())}), \
+                patch.object(media, 'save_image', side_effect=save), ThreadPoolExecutor(max_workers=1) as caller:
+            task = caller.submit(media.download, 'https://www.instagram.com/p/Example/', directory, info)
+            try:
+                self.assertTrue(failed.wait(5))
+                self.assertFalse(task.done(), 'must wait for the other transfer before returning an error')
+            finally:
+                release.set()
+            with self.assertRaises(OSError):
+                task.result(timeout=5)
+            self.assertFalse((Path(directory) / 'metadata.json').exists())
+
+    def test_missing_or_excess_entries_fail_before_any_transfer(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=MagicMock())}), \
+                patch.object(media, 'save_image') as save:
+            for entries in [[None], [{}] * 11]:
+                with self.assertRaises(ValueError):
+                    media.download('https://www.instagram.com/p/Example/', directory, info={'entries': entries}, max_entries=10)
+            save.assert_not_called()
+
     def test_reel_without_video_formats_never_succeeds_as_cover_image(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(sys.modules, {
                 "yt_dlp": SimpleNamespace(YoutubeDL=MagicMock())}):

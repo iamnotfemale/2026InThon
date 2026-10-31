@@ -52,7 +52,7 @@ export function createChatHistory({ secret, getBlob = get, putBlob = put, delete
 }
 
 export function createDmAssistant({ model, processContent, history, choices, warn = () => console.warn('Chat history unavailable') }) {
-  return async (message, { senderId, acknowledge = async () => {} } = {}) => {
+  return async (message, { senderId, acknowledge = async () => {}, defer = task => task() } = {}) => {
     // Quick replies carry the original content ticket, not a request for ordinary chat.
     let result;
     if (message.quick_reply) {
@@ -60,7 +60,7 @@ export function createDmAssistant({ model, processContent, history, choices, war
       if (result.kind !== 'content') return result;
     } else if (isContentMessage(message)) return choices.offer(message, senderId);
     let previous = [];
-    try { previous = await history.read(senderId); } catch { warn(); }
+    if (!result) { try { previous = await history.read(senderId); } catch { warn(); } }
     const text = typeof message.text === 'string' ? message.text.trim().slice(0, 4000) : '';
     if (!result && RESET.has(text)) {
       try { await history.clear(senderId); }
@@ -78,7 +78,13 @@ export function createDmAssistant({ model, processContent, history, choices, war
       { role: 'user', parts: [{ text: text || '[릴스·게시물·이미지 공유]' }] },
       { role: 'model', parts: [{ text: summary }] },
     ];
-    try { await history.write(senderId, [...previous, ...turn]); } catch { warn(); }
+    await defer(async () => {
+      try {
+        // Content analysis does not need chat history; read it only when appending after the reply.
+        if (result.kind === 'content') previous = await history.read(senderId);
+        await history.write(senderId, [...previous, ...turn]);
+      } catch { warn(); }
+    });
     return result;
   };
 }

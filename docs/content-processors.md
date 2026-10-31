@@ -46,7 +46,8 @@
 
 ## 레시피 구현
 
-- `recipe.mjs`: 프롬프트, 한 번의 Gemini 이미지·영상·본문 동시 분석, DM 렌더링.
+- `recipe.mjs`: 프롬프트, Gemini 이미지·영상·본문 동시 분석, DM 렌더링. 첫 레시피 정리와 함께 가벼운 목록 호출(`RECIPE_LIST_SYSTEM`, thinking low)로 레시피 개수를 센다. 레시피 모음 게시물이면 찾은 레시피를 개수 제한 없이(안전 상한 30개) 두 번째부터 `<focus>`로 하나씩 병렬 정리해 `parts`로 돌려주고, 서버는 레시피마다 `factchecks` 한 건씩 저장하고, 받는 방식 설정과 관계없이 안내 한 줄과 레시피별 개인 링크만 DM으로 보낸다(일부 저장이 실패하면 전체 내용 DM). 일부만 실패하면 성공한 레시피는 저장하고 첫 DM에 실패한 이름을 알린다.
+- 모델이 배열로 답하면 첫 레시피를 쓰고, 길이 제한을 넘는 문자열은 잘라서 검증한다(빈 값·누락은 그대로 실패). 실패는 `recipe_failed` 로그에 단계(`list`, `recipe_N`, `result`)와 오류 종류만 남긴다.
 - `public/js/recipe-data.js`: 서버·클라이언트 공용 v1 구조 검증. 재료40개·단계30개·팁10개로 제한한다.
 - `media-pipeline.mjs`: 기존 최대10개 원본 확보, 전체 파일 확보 실패 시 분석 중단. 준비한 원본은 모델 호출이 끝난 후 finally에서 삭제한다.
 - `content-choices.mjs`와 `dm-assistant.mjs`: 티켓의 원본과 action으로 분기. 일반 대화·팩트체크는 유지한다.
@@ -84,7 +85,7 @@ DM 공유 후 다섯 번째 버튼 **‘취향공간 정리’**(`content:v1:spa
 
 `public/js/beauty-data.js`의 저장용 정규화는 null을 보존하고, 표시 검증은 미기재 문구를 붙인다. URL은 안전한 HTTP(S)이면서 받은 메시지·본문에 있는 것만 채택한다. 저장 직전 재검증하며 `factchecks`에 `topic='beauty'`, `verdict=null`, `reason=JSON.stringify({beauty,sourceUrl,contentIndex})`를 둔다. 기존 RLS와 기본 전체 DM/개인 링크 설정을 재사용한다. 취향 모음·자동 관심 추정·캘린더에는 포함하지 않는다.
 
-계약과 오프라인 통합 검증은 [beauty-backend-handoff.md](beauty-backend-handoff.md)를 따른다. 운영 Instagram·Gemini를 이용한 새 미용 콘텐츠 확인은 아직 하지 않았다.
+계약과 오프라인 통합 검증, 기존 원격 구현의 운영 확인 기록은 [beauty-backend-handoff.md](beauty-backend-handoff.md)를 따른다. 이번 병합 버전의 운영 Instagram·Gemini 재검증은 아직 하지 않았다.
 
 ## 저장·화면 연결
 

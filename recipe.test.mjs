@@ -69,3 +69,50 @@ test('complete structured recipes survive existing Supabase storage and render t
   const messages=recipeMessages({...recipe,summary:'아주 긴 요리 설명 '.repeat(120)});
   assert.ok(messages.every(m=>Buffer.byteLength(m)<=900));
 });
+
+test('a recipe collection is organized one recipe per call and returned as separate parts', async () => {
+  const titles = ['두부찌개', '총각김치', '부추장'];
+  const calls = [];
+  const dish = title => ({ ...sample(), title, ingredients: [{ ...sample().ingredients[0], name: title + ' 재료' }],
+    steps: [{ ...sample().steps[0], uses: [title + ' 재료'] }], checks: [] });
+  const process = createRecipeProcessor({
+    listModel: async ({ system }) => { assert.match(system, /레시피가 몇 개/); return JSON.stringify({ recipes: titles.map(title => ({ title })) }); },
+    model: async ({ content }) => {
+      const focus = content.at(-1).text.match(/<focus>.*?'(.+?)'/)?.[1] ?? null; calls.push(focus);
+      if (focus === '총각김치') throw new Error('Gemini 호출 실패 (HTTP 500)');
+      return JSON.stringify(dish(focus ?? titles[0]));
+    } });
+  const warn = console.warn; const logged = []; console.warn = line => logged.push(line);
+  let result;
+  try { result = await process({ text: '레시피 모음 본문' }); } finally { console.warn = warn; }
+  assert.deepEqual(calls.sort(), [null, '부추장', '총각김치'].sort());
+  assert.equal(result.status, 'done');
+  assert.deepEqual(result.parts.map(p => p.recipe.title), ['두부찌개', '부추장']);
+  assert.ok(result.parts.every(p => p.action === 'recipe' && p.extracted.claim === p.recipe.title && p.contentIndex));
+  assert.match(result.messages[0], /레시피 2개/); assert.match(result.messages[0], /정리하지 못한 레시피: 총각김치/);
+  assert.equal(result.recipe.title, '두부찌개');
+  assert.deepEqual(logged.map(line => JSON.parse(line)), [{ event: 'recipe_failed', stage: 'recipe_2', error: 'Gemini 호출 실패 (HTTP 500)' }]);
+});
+
+test('a single recipe stays one result, and an array or overlong evidence from the model no longer fails the whole recipe', async () => {
+  const long = { ...sample(), ingredients: [{ ...sample().ingredients[0], evidence: '근거'.repeat(300) }] };
+  for (const reply of [JSON.stringify([sample(), { ...sample(), title: '다른 요리' }]), JSON.stringify(long)]) {
+    const result = await createRecipeProcessor({ model: async () => reply,
+      listModel: async () => JSON.stringify({ recipes: [{ title: '간단 우동' }] }) })({ text: '원본 조리 설명' });
+    assert.equal(result.status, 'done'); assert.equal(result.parts, undefined); assert.equal(result.recipe.title, '간단 우동');
+    assert.ok(result.recipe.ingredients[0].evidence.length <= 400);
+  }
+});
+
+test('every recipe found in a collection is organized, not only the first five', async () => {
+  const titles = Array.from({ length: 8 }, (_, i) => `요리${i + 1}`);
+  const result = await createRecipeProcessor({
+    listModel: async () => JSON.stringify({ recipes: titles.map(title => ({ title })) }),
+    model: async ({ content }) => {
+      const title = content.at(-1).text.match(/<focus>.*?'(.+?)'/)?.[1] ?? titles[0];
+      return JSON.stringify({ ...sample(), title, ingredients: [{ ...sample().ingredients[0], name: title + ' 재료' }],
+        steps: [{ ...sample().steps[0], uses: [] }], checks: [] });
+    } })({ text: '레시피 모음' });
+  assert.deepEqual(result.parts.map(p => p.recipe.title), titles);
+  assert.doesNotMatch(result.messages[0], /남은 레시피/);
+});

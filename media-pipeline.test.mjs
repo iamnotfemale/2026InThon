@@ -88,3 +88,67 @@ test('a malformed worker manifest is rejected and only its allocated prefix is c
     listBlobs: async ({ prefix: p }) => { assert.equal(p, prefix); cleaned = true; return { blobs: [] }; } });
   await assert.rejects(prepare(url), /Invalid media/); assert.equal(cleaned, true);
 });
+
+const videoUrl = 'https://video.example.cdninstagram.com/full.mp4';
+const mp4 = () => Buffer.concat([Buffer.alloc(4), Buffer.from('ftyp'), Buffer.alloc(16, 3)]);
+const direct = () => ({ sourceUrl: url, caption: '영상 본문', video: { url: videoUrl, contentType: 'video/mp4' } });
+
+test('a resolved complete MP4 skips private staging, remains available through AI and is cleared afterward', async () => {
+  for (const fail of [false, true]) {
+    const body = mp4(); let lease;
+    const prepare = createMediaPreparer({ origin: 'https://example.com', secret: 'test', uuid: () => jobId,
+      fetchImpl: async (_url, options) => {
+        assert.equal(JSON.parse(options.body).directVideo, true);
+        assert.equal(options.headers['x-inthon-media-signature'], createHmac('sha256', 'test').update('inthon-media-v1:' + options.body).digest('hex'));
+        return Response.json(direct());
+      }, fetchVideo: async value => { assert.equal(value, videoUrl); return { url: videoUrl, body }; },
+      getBlob: () => assert.fail('no private GET'), listBlobs: () => assert.fail('no private listing'), deleteBlobs: () => assert.fail('no private delete') });
+    const run = createMediaFactChecker({ resolveSource: async () => ({ status: 'resolved', url }),
+      prepare: async value => { lease = await prepare(value); return lease; },
+      check: async (message, options) => {
+        assert.equal(message.attachments.length, 1); assert.equal(message.attachments[0].type, 'video');
+        assert.equal(message.attachments[0].payload.title, '영상 본문');
+        await assert.rejects(options.fetchMedia('dm/credentials/secret.json', 100));
+        const input = await options.fetchMedia(message.attachments[0].payload.url, 100);
+        assert.equal(input.body, body); assert.equal(input.body.subarray(4, 8).toString(), 'ftyp');
+        await Promise.resolve(); assert.ok(body.some(byte => byte !== 0), 'retain full bytes until AI settles');
+        if (fail) throw new Error('AI failed');
+        return { status: 'done' };
+      } });
+    if (fail) await assert.rejects(run({}), /AI failed/);
+    else assert.equal((await run({})).media.videos, 1);
+    assert.ok(body.every(byte => byte === 0));
+    await assert.rejects(lease.fetchMedia(lease.files[0].path, 100), /Invalid direct video input/);
+  }
+});
+
+test('failed, oversized, redirected or cover-only direct video falls back once using the same job and timeout', async () => {
+  for (const mode of ['network', 'oversize', 'redirect', 'cover']) {
+    const calls = []; const body = mode === 'oversize' ? Buffer.alloc(20 * 1024 * 1024 + 1) : mode === 'cover' ? Buffer.from([255, 216, 255]) : mp4();
+    const staged = { ...file, kind: 'video', contentType: 'video/mp4', path: prefix + 'original_video_01.mp4', bytes: 24 };
+    const prepare = createMediaPreparer({ origin: 'https://example.com', secret: 'test', uuid: () => jobId,
+      fetchImpl: async (_url, options) => {
+        calls.push(options);
+        return Response.json(calls.length === 1 ? direct() : { sourceUrl: url, caption: '본문', files: [staged] });
+      }, fetchVideo: async () => {
+        if (mode === 'network') throw new Error('not available');
+        return { url: mode === 'redirect' ? 'https://unexpected.example/x' : videoUrl, body };
+      }, getBlob: async () => ({ stream: new Response(mp4()).body }) });
+    const lease = await prepare(url);
+    assert.deepEqual(calls.map(c => JSON.parse(c.body).directVideo), [true, false]);
+    assert.ok(calls.every(c => JSON.parse(c.body).jobId === jobId));assert.equal(calls[0].signal, calls[1].signal);
+    assert.equal((await lease.fetchMedia(staged.path, 100)).body.subarray(4, 8).toString(), 'ftyp');
+    assert.ok(body.every(byte => byte === 0) || mode === 'network');
+  }
+});
+
+test('unsafe direct URLs, wrong source and mixed manifests never bypass full-media validation', async () => {
+  for (const result of [ { ...direct(), sourceUrl: 'https://www.instagram.com/p/Other/' },
+    { ...direct(), files: [file] }, { ...direct(), video: { url: 'https://localhost/private', contentType: 'video/mp4' } },
+    { ...direct(), video: { url: 'https://name:pass@video.example.cdninstagram.com/x', contentType: 'video/mp4' } } ]) {
+    const prepare = createMediaPreparer({ origin: 'https://example.com', secret: 'test', uuid: () => jobId,
+      fetchImpl: async () => Response.json(result), fetchVideo: () => assert.fail('never fetch an untrusted manifest'),
+      listBlobs: async ({prefix: allocated}) => { assert.equal(allocated,prefix); return {blobs:[]}; } });
+    await assert.rejects(prepare(url), /Invalid/);
+  }
+});

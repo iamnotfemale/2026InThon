@@ -8,6 +8,8 @@ import argparse
 import json
 import re
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from urllib.request import Request, build_opener, HTTPRedirectHandler
@@ -100,6 +102,28 @@ class QuietLogger:
         pass  # The caller reports the exception without temporary media URLs.
 
 
+def resolve_video(url):
+    """Resolve exactly one complete MP4 using the same combined-format selector as download()."""
+    import yt_dlp
+
+    source = canonical_url(url)
+    with yt_dlp.YoutubeDL({"quiet": True, "noprogress": True, "logger": QuietLogger(),
+                          "socket_timeout": 20, "retries": 1, "extractor_retries": 1,
+                          "ignore_no_formats_error": True, "skip_download": True,
+                          "format": "b[ext=mp4]/b"}) as ydl:
+        info = ydl.extract_info(source, download=False)
+    entries = info.get("entries") or [info]
+    video = entries[0] if len(entries) == 1 and isinstance(entries[0], dict) else {}
+    # Separate tracks, playlists, silent/unknown codecs and HLS use the complete staging path.
+    if (video.get("ext") != "mp4" or video.get("vcodec") in {None, "none"}
+            or video.get("acodec") in {None, "none"} or video.get("requested_formats")
+            or video.get("protocol") not in {None, "http", "https"} or not video.get("url")):
+        return info, None
+    check_media_url(video["url"])
+    return info, {"url": video["url"], "contentType": "video/mp4", "width": video.get("width"),
+                  "height": video.get("height"), "duration": video.get("duration")}
+
+
 def download(url, directory, info=None, ffmpeg=None, *, max_entries=20, max_video_bytes=150 * 1024 * 1024):
     import yt_dlp
 
@@ -109,15 +133,20 @@ def download(url, directory, info=None, ffmpeg=None, *, max_entries=20, max_vide
     options = {"quiet": True, "noprogress": True, "logger": QuietLogger(),
                "socket_timeout": 20, "retries": 1, "extractor_retries": 1,
                "ignore_no_formats_error": True, "skip_download": True}
+    started = time.perf_counter()
     with yt_dlp.YoutubeDL(options) as ydl:
         info = info or ydl.extract_info(source, download=False)
+    metadata_ms = round((time.perf_counter() - started) * 1000)
     entries = info.get("entries") or [info]
     if len(entries) > max_entries:
         raise ValueError("Too many media entries; split the input")
+    if any(not isinstance(entry, dict) for entry in entries):
+        raise ValueError("Missing media entry")
     if re.search(r"/(?:reels?|tv)/", source) and any(not entry.get("formats") for entry in entries):
         raise ValueError("Reel video formats unavailable; a cover image is not the full video")
     manifest = {"source": source, "caption": info.get("description") or "", "files": []}
-    for index, entry in enumerate(entries, start=1):
+    def download_entry(pair):
+        index, entry = pair
         if entry.get("formats"):
             for video_format in entry["formats"]:
                 check_media_url(video_format["url"])
@@ -134,14 +163,19 @@ def download(url, directory, info=None, ffmpeg=None, *, max_entries=20, max_vide
                 raise ValueError("Video download not confirmed")
             if target.stat().st_size > max_video_bytes:
                 raise ValueError("Video exceeds size limit")
-            manifest["files"].append({"index": index, "kind": "video", "file": target.name,
+            return {"index": index, "kind": "video", "file": target.name,
                                       "bytes": target.stat().st_size, "width": result.get("width"),
-                                      "height": result.get("height"), "duration": result.get("duration")})
+                                      "height": result.get("height"), "duration": result.get("duration")}
         else:
             image = best_image(entry)
             target = save_image(image["url"], directory / f"image_{index:02d}")
-            manifest["files"].append({"index": index, "kind": "image", "file": target.name,
-                                      "bytes": target.stat().st_size, "width": image.get("width"), "height": image.get("height")})
+            return {"index": index, "kind": "image", "file": target.name,
+                    "bytes": target.stat().st_size, "width": image.get("width"), "height": image.get("height")}
+    transfer_started = time.perf_counter()
+    # map preserves post order; the executor waits for every writer even if one download fails.
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        manifest["files"] = list(pool.map(download_entry, enumerate(entries, start=1)))
+    manifest["timings"] = {"metadata_ms": metadata_ms, "transfer_ms": round((time.perf_counter() - transfer_started) * 1000)}
     (directory / "metadata.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     (directory / "caption.txt").write_text(manifest["caption"], encoding="utf-8")
     return manifest

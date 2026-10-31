@@ -1,6 +1,6 @@
 # Instagram DM 콘텐츠 선택 버튼
 
-콘텐츠(릴스·게시물·첨부 이미지·Instagram 링크)를 공유하면 즉시 분석하는 대신 Quick Replies 여섯 개를 보냅니다.
+콘텐츠(릴스·게시물·첨부 이미지·Instagram 링크)를 공유하면 Quick Replies 여섯 개를 보냅니다. 선택한 작업만 실행합니다.
 
 | 버튼 | 동작 |
 | --- | --- |
@@ -34,6 +34,6 @@
 
 `npm test`에 버튼 계약, 여러 콘텐츠 연결, 다른 발신자 차단, 만료·동시 클릭, 실패 후 삭제, 서명된 웹훅 → Send API 메시지 → 클릭 → 실제 분석 저장 흐름 테스트가 있습니다.
 
-실기 확인은 Instagram 모바일 앱에서 공개 콘텐츠를 새로 공유하고 여섯 버튼을 확인한 다음 원하는 정리 유형을 누릅니다. 실제 미용 콘텐츠의 운영 Gemini·DB·DM 전달 확인은 별도로 남아 있습니다.
+실기 확인은 Instagram 모바일 앱에서 공개 콘텐츠를 새로 공유하고 여섯 버튼 중 해당 유형을 누릅니다. 변경 전 보낸 메시지의 버튼은 자동으로 갱신되지 않습니다.
 
 Meta 참고: [Instagram Quick Replies](https://developers.facebook.com/docs/messenger-platform/instagram/features/quick-replies/), [Meta 공식 Send API 예제](https://www.postman.com/meta/messenger-platform-api/documentation/iyp204x/messenger-platform-api?entity=request-22794852-c54925d1-6422-49cd-a2d2-e275e3f559c4).
