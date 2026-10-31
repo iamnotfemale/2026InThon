@@ -1,0 +1,9 @@
+.local/
+.agent-context.md
+node_modules/
+.env*
+!.env.example
+*.dpapi
+*.pem
+*.key
+*.log
