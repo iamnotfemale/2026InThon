@@ -16,7 +16,8 @@ export function createMediaFactChecker({ check, resolveSource, prepare, onCleanu
     catch { return failed('download_failed', '원본 미디어를 모두 내려받지 못했어요. 공개 게시물인지 확인해 주세요. 한 번에 최대 10개 미디어, 영상은 개당 20MB까지 처리해요.'); }
     try {
       const result = await check({ ...message, attachments: lease.files.map((file, i) => ({ type: file.kind,
-        payload: { url: file.path, title: i === 0 ? lease.caption : '' } })) }, { fetchMedia: lease.fetchMedia, requireAllMedia: true });
+        payload: { url: file.path, title: i === 0 ? lease.caption : '' } })) },
+      { fetchMedia: lease.fetchMedia, requireAllMedia: true, signal: AbortSignal.timeout(150000) });
       return { ...result, media: { status: 'downloaded', sourceUrl: source.url, sourceVia: source.via,
         totalItems: lease.files.length, images: lease.files.filter(f => f.kind === 'image').length,
         videos: lease.files.filter(f => f.kind === 'video').length } };

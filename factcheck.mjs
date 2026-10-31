@@ -157,9 +157,9 @@ export function createSearch({ fetchImpl = fetch, resolve = lookup } = {}) {
 
 // Continuum(Lablup)의 Anthropic 호환 /v1/messages. 이 모델은 thinking 블록(이미지 입력 시 약 650토큰)을 먼저 내므로 max_tokens를 넉넉히 둔다.
 export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch, timeout = 60000 }) {
-  return async ({ system, content, maxTokens = 6000 }) => {
+  return async ({ system, content, maxTokens = 6000, signal }) => {
     const response = await fetchImpl(`${baseUrl.replace(/\/$/, '')}/v1/messages`, { method: 'POST',
-      signal: AbortSignal.timeout(timeout),
+      signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}`, 'x-api-key': apiKey,
         'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }) });
@@ -172,9 +172,9 @@ export function createAnthropicModel({ baseUrl, apiKey, model, fetchImpl = fetch
 
 // 영상·음성은 Gemini만 직접 읽을 수 있다. 키가 있을 때만 릴스 영상 분석에 쓴다.
 export function createGeminiVideoReader({ apiKey, model = 'gemini-2.5-flash', fetchImpl = fetch, timeout = 90000 }) {
-  return async ({ prompt, video, mediaType }) => {
+  return async ({ prompt, video, mediaType, signal }) => {
     const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: 'POST', signal: AbortSignal.timeout(timeout),
+      method: 'POST', signal: AbortSignal.any([AbortSignal.timeout(timeout), ...(signal ? [signal] : [])]),
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mediaType, data: video.toString('base64') } },
         { text: prompt }] }] }) });
@@ -200,7 +200,7 @@ export function describeMessage(message) {
   return { text, items };
 }
 
-async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia }) {
+async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, signal }) {
   const { text, items } = describeMessage(message);
   const images = []; const notes = []; const transcripts = [];
   const captions = items.map(i => i.caption).filter(Boolean);
@@ -230,7 +230,7 @@ async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia }) 
       if (requireAllMedia && !readVideo) throw new Error('영상 분석 모델이 연결되지 않았어요.');
       if (!readVideo) { notes.push('영상은 열었지만 화면·음성 분석 모델이 없어 확인하지 못함'); continue; }
       try {
-        const transcript = await readVideo({ video: media.body, mediaType: media.contentType,
+        const transcript = await readVideo({ video: media.body, mediaType: media.contentType, signal,
           prompt: '이 영상의 자막·화면 글자·음성 발언을 시간 순서대로 한국어로 옮겨 적어. 들리지 않거나 읽히지 않는 부분은 [불명확]으로 표시해.' });
         if (requireAllMedia && !transcript.trim()) throw new Error('Empty video transcript');
         transcripts.push(transcript);
@@ -300,11 +300,11 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     return { evidence, searched: candidates.length, failures, unopened: opened.filter(o => o.status === 'rejected').length };
   }
 
-  return async function check(message, { fetchMedia: preparedFetch, requireAllMedia } = {}) {
+  return async function check(message, { fetchMedia: preparedFetch, requireAllMedia, signal } = {}) {
     const started = Date.now(); const timings = {};
     let step = Date.now();
     let input;
-    try { input = await gatherInput(message, { fetchMedia: preparedFetch ?? fetchMedia, readVideo, requireAllMedia }); }
+    try { input = await gatherInput(message, { fetchMedia: preparedFetch ?? fetchMedia, readVideo, requireAllMedia, signal }); }
     catch (error) {
       if (!requireAllMedia) throw error;
       return { status: 'no_input', notes: [error.message], messages: [error.message], timings: { total: elapsed(started) } };
@@ -318,7 +318,8 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     const content = [...input.images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })),
       { type: 'text', text: `<content>\n${input.text ? `사용자 메시지: ${input.text}\n` : ''}${input.captions.map((c, i) => `공유된 게시물 캡션 ${i + 1}: ${clip(c, 2000)}\n`).join('')}`
         + `${input.transcripts.map((t, i) => `영상 ${i + 1} 전사: ${clip(t, 3000)}\n`).join('')}${input.images.length ? `이미지 ${input.images.length}장 첨부(순서대로)\n` : ''}</content>` }];
-    const extracted = parseJson(await model({ system: EXTRACT_SYSTEM, content }));
+    signal?.throwIfAborted();
+    const extracted = parseJson(await model({ system: EXTRACT_SYSTEM, content, signal }));
     timings.extract = elapsed(step);
     const scope = [...input.scope, ...input.notes].join(', ');
     const today = now().toISOString().slice(0, 10);
@@ -332,7 +333,8 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     step = Date.now();
     let judged = { verdict: 'unverified', reason: '주장을 직접 다루는 공개 자료를 찾지 못했어요.', evidence_ids: [] };
     if (gathered.evidence.length) {
-      judged = parseJson(await model({ system: JUDGE_SYSTEM, content: [{ type: 'text', text:
+      signal?.throwIfAborted();
+      judged = parseJson(await model({ system: JUDGE_SYSTEM, signal, content: [{ type: 'text', text:
         `주장: ${extracted.claim}\n확인 기준일: ${today}\n\n${gathered.evidence.map(e => `[${e.id}] ${e.title} (${e.source}${e.date ? ', ' + e.date : ''}${e.abstractOnly ? ', 초록만' : ''})\n${e.quote}`).join('\n\n')}` }] }));
     }
     timings.judge = elapsed(step);

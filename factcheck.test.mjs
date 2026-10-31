@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createFactChecker, createSearch, safeFetch, composeMessages, isPrivateAddress, unwrapBingLink, parseJson,
-  htmlToText, excerpt, factCheckerFromEnv } from './factcheck.mjs';
+  htmlToText, excerpt, factCheckerFromEnv, createAnthropicModel, createGeminiVideoReader } from './factcheck.mjs';
 
 const publicDns = async () => [{ address: '93.184.216.34' }];
 const page = (html, contentType = 'text/html') => ({ url: 'https://news.example.com/a', contentType, body: Buffer.from(html) });
@@ -30,6 +30,17 @@ test('prepared media never falls back to caption-only AI after a missing image o
     const result = await checker({ attachments }, { requireAllMedia: true, fetchMedia });
     assert.equal(result.status, 'no_input'); assert.equal(calls, 0);
   }
+});
+
+test('the media job cancellation signal reaches both providers before the platform can kill cleanup', async () => {
+  const controller = new AbortController(); const signals = [];
+  const fetchImpl = async (_url, options) => { signals.push(options.signal); return Response.json({ content: [] }); };
+  const model = createAnthropicModel({ baseUrl: 'https://model.example', apiKey: 'fake', model: 'test', fetchImpl });
+  const video = createGeminiVideoReader({ apiKey: 'fake', fetchImpl });
+  await model({ system: '', content: [], signal: controller.signal });
+  await video({ prompt: '', video: Buffer.from('x'), mediaType: 'video/mp4', signal: controller.signal });
+  assert.ok(signals.every(s => !s.aborted));
+  controller.abort(); assert.ok(signals.every(s => s.aborted));
 });
 
 function fixture({ judge, search, fetchPage = async () => page(article), extract } = {}) {
