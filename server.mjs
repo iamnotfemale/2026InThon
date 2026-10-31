@@ -191,21 +191,25 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
               : action === 'schedule' ? CONTEST_ACK : action === 'restaurant' ? RESTAURANT_ACK : action === 'space' ? SPACE_ACK : FACTCHECK_ACK); activity.typing(); },
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
-          let savedId = null;
+          // A post with several recipes comes back as parts: each part is saved as its own record.
+          const parts = Array.isArray(result.parts) && result.parts.length ? result.parts.map(part => ({ ...part, media: result.media })) : [result];
+          const savedIds = [];
           if ((result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck) {
             await track(); // The sender row must exist before writing a content result with its foreign key.
-            await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
+            for (const part of parts) {
+              await quietly(async () => { const id = (await saveFactCheck(sender, part))?.id; if (id) savedIds.push([id, part]); }, '팩트체크 기록 실패');
+            }
           }
           let messages = result.messages;
-          if (savedId && config.publicUrl && getDeliveryMode) {
+          if (savedIds.length && config.publicUrl && getDeliveryMode) {
             let mode = 'full';
             try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
-            if (mode === 'summary') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
+            if (mode === 'summary' && savedIds.length === parts.length) messages = savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part));
           }
           for (const text of messages) await send(text);
           await activity.finish();
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
-          if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
+          if (markFactCheckSent) for (const [id] of savedIds) await quietly(() => markFactCheckSent(id), 'DM 발송 기록 실패');
           await backfill();
         } else await send('안녕, 디미예요!');
         await track();

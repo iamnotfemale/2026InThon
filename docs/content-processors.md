@@ -45,7 +45,8 @@
 
 ## 레시피 구현
 
-- `recipe.mjs`: 프롬프트, 한 번의 Gemini 이미지·영상·본문 동시 분석, DM 렌더링.
+- `recipe.mjs`: 프롬프트, Gemini 이미지·영상·본문 동시 분석, DM 렌더링. 첫 레시피 정리와 함께 가벼운 목록 호출(`RECIPE_LIST_SYSTEM`, thinking low)로 레시피 개수를 센다. 레시피 모음 게시물이면 두 번째부터 최대 5개까지 `<focus>`로 하나씩 병렬 정리해 `parts`로 돌려주고, 서버는 레시피마다 `factchecks` 한 건씩 저장·링크한다. 일부만 실패하면 성공한 레시피는 저장하고 첫 DM에 실패한 이름을 알린다.
+- 모델이 배열로 답하면 첫 레시피를 쓰고, 길이 제한을 넘는 문자열은 잘라서 검증한다(빈 값·누락은 그대로 실패). 실패는 `recipe_failed` 로그에 단계(`list`, `recipe_N`, `result`)와 오류 종류만 남긴다.
 - `public/js/recipe-data.js`: 서버·클라이언트 공용 v1 구조 검증. 재료40개·단계30개·팁10개로 제한한다.
 - `media-pipeline.mjs`: 기존 최대10개 원본 확보, 전체 파일 확보 실패 시 분석 중단. 준비한 원본은 모델 호출이 끝난 후 finally에서 삭제한다.
 - `content-choices.mjs`와 `dm-assistant.mjs`: 티켓의 원본과 action으로 분기. 일반 대화·팩트체크는 유지한다.
