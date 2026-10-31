@@ -53,13 +53,14 @@ export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어�
 export const CHAT_FAILED = '지금은 답장을 만들지 못했어요. 잠시 후 다시 보내주세요.';
 // DMs that ask for a web login link instead of a fact-check.
 export const LINK_COMMANDS = new Set(['연결', '로그인', '대시보드']);
+const USERNAME = /^[A-Za-z0-9._]{1,30}$/; // Instagram handle format
 export const LINK_FAILED = '지금은 연결 링크를 만들지 못했어요. 잠시 후 다시 "연결"이라고 보내주세요.';
 export const linkMessage = url => '아래 링크를 열고 구글로 로그인하면 이 Instagram 계정이 연결돼요.\n'
   + '링크는 10분 동안 한 번만 쓸 수 있어요. 다른 사람에게 보내지 마세요.\n\n' + url;
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, respondToMessage }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, recordUsernameLookup, respondToMessage }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -71,7 +72,11 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     const data = await response.json();
     if (!response.ok || data.error || data.error_type) {
       // API errors can echo credentials, so expose only numeric codes.
-      throw new Error(`Meta API 요청 실패 (HTTP ${response.status}, code ${Number(data.error?.code) || 0})`);
+      // Subcode and type (e.g. OAuthException) are fixed identifiers, safe to log; error text can contain user IDs.
+      const subcode = Number(data.error?.error_subcode) || 0;
+      const type = /^\w{1,64}$/.test(data.error?.type ?? '') ? data.error.type : '';
+      throw new Error(`Meta API 요청 실패 (HTTP ${response.status}, code ${Number(data.error?.code) || 0}`
+        + `${subcode ? `, subcode ${subcode}` : ''}${type ? `, ${type}` : ''})`);
     }
     return data;
   }
@@ -118,20 +123,34 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         const sender = m.sender.id;
         // Storage problems must not stop the reply itself; they only cost history.
         const quietly = async (task, label) => { try { await task(); } catch { stats.lastError = label; } };
-        if (trackSender) await quietly(() => trackSender(sender), '발신자 기록 실패');
+        let knownUsername = null;
+        if (trackSender) await quietly(async () => { knownUsername = (await trackSender(sender))?.username ?? null; }, '발신자 기록 실패');
+        // The handle is only for display; linking and replies work without it. Failures are kept as codes only
+        // (Vercel log + ig_accounts.username_lookup_error), never Meta's error text, which can contain user IDs.
+        const lookupUsername = async () => {
+          let outcome;
+          try {
+            const profile = await api(`${GRAPH}/${sender}?fields=username`, { headers: { Authorization: `Bearer ${accessToken}` } });
+            outcome = USERNAME.test(profile.username ?? '') ? { username: profile.username }
+              : { error: `no username; fields: ${Object.keys(profile).filter(k => k !== 'id').join(',') || 'none'}` };
+          } catch (error) {
+            outcome = { error: error.message.startsWith('Meta API') ? error.message.replace(/^.*?\((.*)\)$/, '$1') : error.name };
+          }
+          if (outcome.error) console.warn('Instagram profile lookup failed:', outcome.error);
+          if (recordUsernameLookup) await quietly(() => recordUsernameLookup(sender, outcome), '아이디 조회 결과 기록 실패');
+          return outcome.username;
+        };
         const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
         if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
-          let username;
-          try {
-            username = (await api(`${GRAPH}/${sender}?fields=username`,
-              { headers: { Authorization: `Bearer ${accessToken}` } })).username;
-          } catch {} // The handle is only for display; linking works without it.
+          const username = knownUsername ?? await lookupUsername();
           let text;
           try { text = linkMessage(`${config.publicUrl}/link#token=${await issueLinkToken({ igsid: sender, username })}`); }
           catch { stats.lastError = '연결 링크 생성 실패'; text = LINK_FAILED; }
           await send(text);
         } else if (respondToMessage || factCheck) {
           const content = !respondToMessage || isContentMessage(m.message);
+          // Backfill a missing handle alongside the AI response, without delaying the reply.
+          const backfill = trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null;
           if (content) await send(FACTCHECK_ACK);
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
@@ -139,6 +158,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           if (content && saveFactCheck) await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
           for (const text of result.messages) await send(text);
+          await backfill;
         } else await send('안녕?');
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });

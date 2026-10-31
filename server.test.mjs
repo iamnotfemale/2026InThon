@@ -8,13 +8,24 @@ import { join } from 'node:path';
 import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED, CHAT_FAILED, LINK_FAILED, linkMessage } from './server.mjs';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 
+const FETCH_BAD_PORTS = new Set([1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, 77, 79, 87, 95, 101, 102,
+  103, 104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 137, 139, 143, 161, 179, 389, 427, 465, 512, 513, 514, 515, 526, 530,
+  531, 532, 540, 548, 554, 556, 563, 587, 601, 636, 989, 990, 993, 995, 1719, 1720, 1723, 2049, 3659, 4045, 4190, 5060, 5061,
+  6000, 6566, 6665, 6666, 6667, 6668, 6669, 6679, 6697, 10080]);
+
 async function fixture(t, options = {}) {
   const config = { publicUrl: 'https://example.ngrok-free.dev', verifyToken: 'test-verification',
     appSecret: 'a'.repeat(32), webhookSecret: 'a'.repeat(32), ...options.config };
   const saved = []; const receipts = [];
   const { config: ignored, ...serverOptions } = options;
   const servers = createServers({ config, persist: value => saved.push(value), record: value => receipts.push(value), ...serverOptions });
-  for (const server of [servers.publicServer, servers.adminServer]) { server.listen(0, '127.0.0.1'); await once(server, 'listening'); }
+  for (const server of [servers.publicServer, servers.adminServer]) {
+    // fetch() refuses the WHATWG "bad ports"; Windows sometimes hands one out as an ephemeral port, so pick again.
+    do {
+      if (server.listening) await new Promise(resolve => server.close(resolve));
+      server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    } while (FETCH_BAD_PORTS.has(server.address().port));
+  }
   t.after(() => Promise.all([servers.publicServer, servers.adminServer].map(server => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }))));
   const publicUrl = `http://127.0.0.1:${servers.publicServer.address().port}`;
   const adminUrl = `http://127.0.0.1:${servers.adminServer.address().port}`;
@@ -420,4 +431,46 @@ test('chat outages get a chat error and the existing linking command still takes
   await deliver(f, [incoming({ message: { mid: 'link-assistant', text: '연결' } })]);
   await eventually(() => f.stats.replies === 2);
   assert.equal(calls, 1); assert.match(sent.at(-1), /구글로 로그인/);
+});
+
+test('missing handles are backfilled during a fact-check, known handles are not looked up again', async t => {
+  const lookups = []; const stored = []; let known = null;
+  const options = { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => ({ status: 'done', messages: ['결과'] }),
+    trackSender: async () => ({ username: known }),
+    recordUsernameLookup: async (id, { username }) => { stored.push([id, username]); known = username; },
+    apiFetch: async url => {
+      if (url.includes('fields=username')) { lookups.push(url); return json({ id: '123456789', username: 'tester.one' }); }
+      return json({ message_id: 'm' });
+    } };
+  const f = await fixture(t, options);
+  await deliver(f, [incoming({ message: { mid: 'bf-1', text: '주장' } })]);
+  await eventually(() => f.stats.replies === 1);
+  await deliver(f, [incoming({ message: { mid: 'bf-2', text: '주장' } })]);
+  await eventually(() => f.stats.replies === 2);
+  assert.equal(lookups.length, 1);
+  assert.deepEqual(stored, [['123456789', 'tester.one']]);
+});
+
+test('profile lookup failures are logged and stored as Meta codes only and never block the link reply', async t => {
+  const warnings = []; const sent = []; const issued = []; const recorded = [];
+  t.mock.method(console, 'warn', (...args) => warnings.push(args.join(' ')));
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    trackSender: async () => ({ username: null }),
+    recordUsernameLookup: async (id, outcome) => { recorded.push([id, outcome]); },
+    issueLinkToken: async args => { issued.push(args); return 'e'.repeat(64); },
+    apiFetch: async (url, options) => {
+      if (url.includes('fields=username')) return new Response(JSON.stringify({ error: { code: 100, error_subcode: 33,
+        type: 'GraphMethodException', message: 'Object with ID 123456789 does not exist' } }), { status: 400 });
+      sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' });
+    } });
+  await deliver(f, [incoming({ message: { mid: 'lk-1', text: '연결' } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(issued, [{ igsid: '123456789', username: undefined }]);
+  assert.equal(sent.length, 1);
+  const codes = 'HTTP 400, code 100, subcode 33, GraphMethodException';
+  assert.deepEqual(warnings, [`Instagram profile lookup failed: ${codes}`]);
+  assert.deepEqual(recorded, [['123456789', { error: codes }]]);
+  assert.ok(!warnings.join().includes('123456789'), 'sender IDs must not be logged');
+  assert.ok(!JSON.stringify(recorded.map(([, outcome]) => outcome)).includes('does not exist'), 'Meta error text must not be stored');
 });
