@@ -1085,9 +1085,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
                 <div class="field"><span class="k">분류</span><span class="v">{{d.category}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">가격대</span><span class="{{d.priceRangeCls}}">{{d.priceRange}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">영업 시간</span><span class="{{d.hoursCls}}">{{d.hours}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
               </div>
             </section>
             <section class="card" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
@@ -1126,23 +1123,17 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               </sc-for>
               <sc-if value="{{d.noMenus}}" hint-placeholder-val="{{ false }}"><p class="muted" style="padding: 0 20px 18px; font-size: 13.5px">원본에 메뉴 정보가 없어요.</p></sc-if>
             </section>
-            <section class="card" style="overflow: hidden">
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
-                <div class="field"><span class="k">예약</span><span class="{{d.reservationCls}}">{{d.reservation}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">웨이팅</span><span class="{{d.waitingCls}}">{{d.waiting}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">주차</span><span class="{{d.parkingCls}}">{{d.parking}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">전화</span><span class="{{d.phoneCls}}">{{d.phone}}</span></div>
-              </div>
-              <sc-if value="{{d.hasPlaceLinks}}" hint-placeholder-val="{{ false }}">
-                <div style="padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap">
+            <sc-if value="{{d.hasPlaceLinks}}" hint-placeholder-val="{{ false }}">
+              <section class="card" style="overflow: hidden">
+                <div style="padding: 14px 16px; display: flex; gap: 8px; flex-wrap: wrap">
                   <sc-for list="{{d.placeLinks}}" as="pl" hint-placeholder-count="1">
                     <a class="btn" href="{{pl.url}}" target="_blank" rel="noopener">{{pl.label}}
                       <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
                     </a>
                   </sc-for>
                 </div>
-              </sc-if>
-            </section>
+              </section>
+            </sc-if>
           </sc-if>
 
           <!-- SPACE (취향공간): 맛집 detail without menus and price range -->
