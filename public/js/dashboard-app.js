@@ -3,7 +3,7 @@ import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
-import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, spaceRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
   const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/settings': 'settings' }[path];
@@ -210,7 +210,7 @@ class DashboardApp extends DashboardModel {
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
     this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done')
-      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
+      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now) : row.topic === 'space' ? spaceRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
