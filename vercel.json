@@ -9,10 +9,14 @@
     "api/instagram-link.mjs": { "maxDuration": 60 },
     "api/content-search.mjs": { "maxDuration": 60 },
     "api/media.py": { "maxDuration": 120, "excludeFiles": "{node_modules/**,public/**,**/*_test.py,**/*.test.mjs}" },
-    "api/cleanup.mjs": { "maxDuration": 120 }
+    "api/cleanup.mjs": { "maxDuration": 120 },
+    "api/calendar.mjs": { "maxDuration": 30 },
+    "api/taste.mjs": { "maxDuration": 30 }
   },
   "crons": [{ "path": "/api/cleanup", "schedule": "40 18 * * *" }],
   "rewrites": [
+    { "source": "/api/calendar/:id", "destination": "/api/calendar?id=:id" },
+    { "source": "/api/taste/:id", "destination": "/api/taste?id=:id" },
     { "source": "/health", "destination": "/api/instagram" },
     { "source": "/webhooks/instagram", "destination": "/api/instagram" },
     { "source": "/auth/start", "destination": "/api/instagram" },

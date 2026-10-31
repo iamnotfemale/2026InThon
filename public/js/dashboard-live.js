@@ -165,6 +165,17 @@ export function exhibitRowItems(row, now = new Date()) {
 export const RESTAURANT_SELECT = 'restaurants(position, name, category, intro, area, address, phone, hours, closed, price_range, reservation, '
   + 'waiting, parking, links, evidence, checks, restaurant_menus(position, name, price_text, price_won, note, signature))';
 
+/** Columns every dashboard reader of factchecks needs (the list, old references and the calendar/taste API). */
+export const ROW_SELECT = 'id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at, ' + RESTAURANT_SELECT;
+
+/** One finished factchecks row → its dashboard cards (an exhibition/맛집/공간 post may hold several: fc42, fc42-2…). */
+export function rowItems(row, now = new Date()) {
+  if (row?.status !== 'done') return [];
+  const items = row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now)
+    : row.topic === 'space' ? spaceRowItems(row, now) : [factcheckToItem(row, now)];
+  return items.filter(Boolean);
+}
+
 /**
  * One 맛집 result row (with its restaurants and menus) → one dashboard item per place, mapped onto the design's
  * restaurant fields. Empty values use the design's "미기재" wording; nothing comes from outside the post.
