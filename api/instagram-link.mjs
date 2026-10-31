@@ -1,8 +1,9 @@
 import { createInstagramLink } from '../instagram-link.mjs';
 import { createResultPreferences } from '../result-preferences.mjs';
+import { deleteMemberAccount } from '../account-deletion.mjs';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../public/js/supabase-config.js';
 
-export function createLinkHandler({ links, preferences, fetchImpl = fetch, origin = 'https://inthon.yeoziphab.com' }) {
+export function createLinkHandler({ links, preferences, deleteAccount, fetchImpl = fetch, origin = 'https://inthon.yeoziphab.com' }) {
   const respond = (res, status, value) => {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify(value));
@@ -23,6 +24,12 @@ export function createLinkHandler({ links, preferences, fetchImpl = fetch, origi
       if (body.action === 'preferences') return respond(res, 200, body.delivery !== undefined || body.item !== undefined
         ? await preferences.update(user.id, body) : await preferences.read(user.id));
       if (body.action === 'issue') return respond(res, 200, { status: 'pending', ...await links.issue(user.id, body.username) });
+      // Only ever deletes the caller's own account: the user ID comes from the verified Google session above.
+      if (body.action === 'delete-account') {
+        if (!deleteAccount) return respond(res, 503, { error: '지금은 계정을 삭제할 수 없어요. contact@yeoziphab.com으로 알려 주세요.' });
+        await deleteAccount(user.id);
+        return respond(res, 200, { status: 'deleted' });
+      }
       if (body.action !== 'status') return respond(res, 400, { error: '지원하지 않는 요청이에요.' });
       const state = await links.status(user.id);
       if (state.status !== 'verified') return respond(res, 200, state);
@@ -48,8 +55,11 @@ export default function instagramLinkHandler(req, res) {
   if (!process.env.META_APP_SECRET || !process.env.BLOB_READ_WRITE_TOKEN) {
     res.statusCode = 503; return res.end('Server configuration is incomplete');
   }
-  handler ??= createLinkHandler({ links: createInstagramLink({ secret: process.env.META_APP_SECRET }),
-    preferences: createResultPreferences({ secret: process.env.META_APP_SECRET }),
+  const preferences = createResultPreferences({ secret: process.env.META_APP_SECRET });
+  handler ??= createLinkHandler({ links: createInstagramLink({ secret: process.env.META_APP_SECRET }), preferences,
+    // Requires the server-only Supabase secret key (already set for the DM bot) to remove the login account.
+    deleteAccount: process.env.SUPABASE_SECRET_KEY ? uid => deleteMemberAccount({ uid, preferences,
+      supabaseUrl: process.env.SUPABASE_URL || SUPABASE_URL, secretKey: process.env.SUPABASE_SECRET_KEY }) : undefined,
     origin: process.env.PUBLIC_URL || 'https://inthon.yeoziphab.com' });
   return handler(req, res);
 }

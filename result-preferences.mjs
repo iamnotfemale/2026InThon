@@ -41,6 +41,15 @@ export function createResultPreferences({ secret, getBlob = get, putBlob = put, 
       }
       return this.read(uid);
     },
+    /** Removes every stored preference of the user (account deletion). */
+    async clear(uid) {
+      const path = prefix(uid); let cursor;
+      do {
+        const page = await listBlob({ prefix: path, cursor, limit: 1000 });
+        if (page.blobs.length) await deleteBlob(page.blobs.map(blob => blob.pathname));
+        cursor = page.hasMore ? page.cursor : undefined;
+      } while (cursor);
+    },
   };
 }
 

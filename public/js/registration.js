@@ -26,5 +26,10 @@ export function createRegistrationServices({ loadAuth, fetchImpl = fetch, origin
       if (error) throw new Error('가입 정보를 저장하지 못했어요. 다시 시도해 주세요.');
     },
     async copy(code) { await navigator.clipboard.writeText(code); },
+    /** Deletes the signed-in user's account and linked records on the server, then ends the local session. */
+    async deleteAccount() {
+      await request({ action: 'delete-account' });
+      try { await (await loadAuth()).supabase.auth.signOut({ scope: 'local' }); } catch {}
+    },
   };
 }

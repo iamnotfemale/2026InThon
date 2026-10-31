@@ -84,7 +84,19 @@ export default class RegisterModel extends DCLogic {
     const raw = String(this.state.ageDraft).trim(); const n = Number(raw);
     if (this.state.step !== 'age') return;
     if (!raw || !Number.isInteger(n) || n < 1 || n > 120) return this.setState({ ageError: true });
-    this.setState({ age: String(n), ageDraft: '', ageError: false }); this.push('me', n + '살'); this.finish(String(n));
+    this.push('me', n + '살');
+    if (n < 14) return this.blockMinor();
+    this.setState({ age: String(n), ageDraft: '', ageError: false }); this.finish(String(n));
+  }
+  // Under 14: no signup. The account and everything linked so far are deleted, as the privacy policy promises.
+  async blockMinor() {
+    const run = this._run; this.stopPoll(); this.setState({ step: 'saving', ageDraft: '', ageError: false, error: '' });
+    let deleted = true;
+    try { await this.services.deleteAccount(); } catch (e) { deleted = false; }
+    if (run !== this._run) return;
+    this.botSay(['만 14세 미만은 디미에 가입할 수 없어요.', deleted
+      ? 'Google 계정 정보와 연결한 Instagram 계정 정보를 모두 삭제했어요.'
+      : '정보를 삭제하지 못했어요. contact@yeoziphab.com으로 알려 주시면 바로 삭제할게요.'], { step: 'blocked' });
   }
   skipAge() { if (this.state.step !== 'age') return; this.setState({ age: '', ageDraft: '', ageError: false }); this.push('me', '나이는 건너뛸게요'); this.finish(''); }
   async finish(age) {
@@ -117,7 +129,7 @@ export default class RegisterModel extends DCLogic {
       onNameKey: e => { if (e.key === 'Enter' && !((e.nativeEvent || e).isComposing)) { e.preventDefault(); this.submitName(); } }, submitName: () => this.submitName(), nameDisabled: !s.nameDraft.trim(),
       showAge: s.step === 'age', ageDraft: s.ageDraft, onAge: e => this.setState({ ageDraft: e.target.value, ageError: false }),
       onAgeKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.submitAge(); } }, submitAge: () => this.submitAge(), ageDisabled: !String(s.ageDraft).trim(), skipAge: () => this.skipAge(), ageError: s.ageError,
-      showDone: s.step === 'done', restart: () => this.start(), waiting: ['intro', 'wait', 'saving'].includes(s.step),
+      showDone: s.step === 'done', showBlocked: s.step === 'blocked', restart: () => this.start(), waiting: ['intro', 'wait', 'saving'].includes(s.step),
     };
   }
 }
