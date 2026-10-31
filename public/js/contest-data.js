@@ -116,111 +116,13 @@ export function validateContest(value) {
     for (const key of ['date', 'end']) if (item[key] !== null && !ISO_DATE.test(item[key] ?? '')) throw new Error('Invalid schedule date');
     if (item.time !== null && !TIME.test(item.time ?? '')) throw new Error('Invalid schedule time');
     return { label: text(item.label, 40), type: item.type, date: item.date, end: item.end, time: item.time,
-      raw: text(item.raw, 80, true), yearInferred: item.yearInferred === true, evidence: text(item.evidence, 300, true),
-      ...(item.web === true ? { web: true } : {}) };
+      raw: text(item.raw, 80, true), yearInferred: item.yearInferred === true, evidence: text(item.evidence, 300, true) };
   }).sort((a, b) => (a.date ?? '9999') .localeCompare(b.date ?? '9999') || TYPE_ORDER[a.type] - TYPE_ORDER[b.type]);
-  // Where web-filled values came from (step 2). Values themselves live in the normal fields, marked as web.
-  const web = Object.fromEntries(Object.entries(value.web && typeof value.web === 'object' ? value.web : {})
-    .filter(([field]) => CONTEST_FILL_FIELDS.includes(field)).map(([field, source]) => {
-      const url = httpsUrl(source?.url);
-      if (!url) throw new Error('Invalid web source');
-      return [field, { url, title: text(source.title, 200, true), quote: text(source.quote, 200) }];
-    }));
   return { version: 1, kind: value.kind, title: text(value.title, 120), summary: text(value.summary, 400, true),
     host: text(value.host, 100, true), organizer: text(value.organizer, 100, true), sponsors: list(value.sponsors, 6).map(item => text(item, 100)),
     reference: value.reference, schedule, eligibility: items(value.eligibility, 12), submissions: items(value.submissions, 12),
     process: items(value.process, 12), benefits: items(value.benefits, 12), fee: text(value.fee, 120, true), contact: text(value.contact, 160, true),
-    noticeUrl: httpsUrl(value.noticeUrl), applyUrl: httpsUrl(value.applyUrl), checks: list(value.checks, 20).map(item => text(item, 300)),
-    ...(Object.keys(web).length ? { web } : {}) };
-}
-
-// --- web fills (step 2) --------------------------------------------------------------------------
-
-/** Fields the web step may fill, as the fill prompt names them. */
-export const CONTEST_FILL_FIELDS = ['deadline', 'deadline_time', 'start', 'host', 'organizer', 'notice_url', 'apply_url',
-  'eligibility', 'submissions', 'process', 'benefits'];
-const LIST_FIELDS = ['eligibility', 'submissions', 'process', 'benefits'];
-const squash = value => String(value ?? '').replace(/\s+/g, '');
-const WEB_EVIDENCE = '웹';
-
-/** Fillable fields the post left empty (and the web has not filled yet). */
-export function contestMissingFields(contest) {
-  const deadline = contest.schedule.find(item => item.type === 'deadline' && item.date);
-  return CONTEST_FILL_FIELDS.filter(field => {
-    if (field === 'deadline') return !deadline;
-    if (field === 'deadline_time') return !!deadline && !deadline.time;
-    if (field === 'start') return !contest.schedule.some(item => item.type === 'start' && item.date);
-    if (field === 'notice_url') return !contest.noticeUrl;
-    if (field === 'apply_url') return !contest.applyUrl;
-    if (LIST_FIELDS.includes(field)) return !contest[field].length;
-    return !contest[field];
-  });
-}
-
-/** True when a value (or list entry, or schedule item) came from the web step. */
-export const isWebEvidence = item => item?.web === true || item?.evidence === WEB_EVIDENCE;
-
-/**
- * Applies the model's fills. Each fill must name a page we opened, quote that page verbatim and fill a field that is
- * still empty; dates must be real, not from an earlier round (before reference − 62 days) and not before the start;
- * links must be the page itself or appear in it. Differences from the post go to checks, never over the post's value.
- * Returns how many fields were filled.
- */
-export function applyContestFills(contest, answer, pages) {
-  contest.web ??= {};
-  let count = 0;
-  const missing = new Set(contestMissingFields(contest));
-  const minDate = new Date(Date.parse(contest.reference + 'T00:00:00Z') - 62 * DAY).toISOString().slice(0, 10);
-  for (const fill of Array.isArray(answer?.fills) ? answer.fills : []) {
-    const page = pages.find(p => p.id === fill?.source);
-    const field = fill?.field;
-    if (!page || !missing.has(field) || typeof fill.quote !== 'string' || squash(fill.quote).length < 4) continue;
-    if (!squash(page.text).includes(squash(fill.quote))) continue; // A quote the page does not contain was made up.
-    const v = fill.value;
-    if (field === 'deadline' || field === 'start') {
-      if (!ISO_DATE.test(v?.date ?? '') || !isoOf(+v.date.slice(0, 4), +v.date.slice(5, 7), +v.date.slice(8, 10)) || v.date < minDate) continue;
-      const startDate = contest.schedule.find(item => item.type === 'start' && item.date)?.date;
-      if (field === 'deadline' && startDate && v.date < startDate) continue;
-      contest.schedule.push({ label: field === 'deadline' ? '접수 마감' : '접수 시작', type: field, date: v.date, end: null,
-        time: TIME.test(v.time ?? '') ? v.time : null, raw: null, yearInferred: false, evidence: WEB_EVIDENCE, web: true });
-    } else if (field === 'deadline_time') {
-      if (!TIME.test(v ?? '')) continue;
-      const deadline = contest.schedule.find(item => item.type === 'deadline' && item.date);
-      deadline.time = v; deadline.web = true;
-      contest.checks = contest.checks.filter(check => !check.startsWith('마감 시간이 원본에 없어요'));
-    } else if (field === 'notice_url' || field === 'apply_url') {
-      const url = httpsUrl(v);
-      if (!url || (url !== page.url && !page.text.includes(url.replace(/^https?:\/\//, '').replace(/\/$/, '')))) continue;
-      contest[field === 'notice_url' ? 'noticeUrl' : 'applyUrl'] = url;
-    } else if (LIST_FIELDS.includes(field)) {
-      const entries = (Array.isArray(v) ? v : []).filter(entry => typeof entry === 'string' && entry.trim()).slice(0, 8);
-      if (!entries.length) continue;
-      contest[field] = entries.map(entry => ({ text: entry.trim().slice(0, 300), evidence: WEB_EVIDENCE }));
-    } else {
-      if (typeof v !== 'string' || !v.trim()) continue;
-      contest[field] = v.trim().slice(0, 100);
-    }
-    contest.web[field] = { url: page.url, title: page.title?.slice(0, 200) || null, quote: fill.quote.trim().slice(0, 200) };
-    missing.delete(field);
-    count++;
-  }
-  if (contest.web.deadline) contest.checks = contest.checks.filter(check => check !== '접수 마감일이 원본에 없어요.');
-  for (const conflict of (Array.isArray(answer?.conflicts) ? answer.conflicts : []).filter(c => typeof c === 'string' && c.trim()).slice(0, 3)) {
-    contest.checks = [...new Set([...contest.checks, '웹 안내와 다름: ' + conflict.trim().slice(0, 200)])].slice(0, 20);
-  }
-  return count;
-}
-
-/** "마감일 → 공고 페이지 (example.org)" lines for every page a fill came from. */
-export function contestWebSources(contest) {
-  const LABEL = { deadline: '마감일', deadline_time: '마감 시간', start: '접수 시작', host: '주최', organizer: '주관', notice_url: '공고 링크',
-    apply_url: '지원 링크', eligibility: '지원 대상', submissions: '제출물', process: '지원 방법', benefits: '혜택' };
-  const byUrl = new Map();
-  for (const [field, source] of Object.entries(contest.web ?? {})) {
-    const entry = byUrl.get(source.url) ?? { url: source.url, title: source.title, fields: [] };
-    entry.fields.push(LABEL[field] ?? field); byUrl.set(source.url, entry);
-  }
-  return [...byUrl.values()];
+    noticeUrl: httpsUrl(value.noticeUrl), applyUrl: httpsUrl(value.applyUrl), checks: list(value.checks, 20).map(item => text(item, 300)) };
 }
 
 // --- view-time values ----------------------------------------------------------------------------
@@ -240,7 +142,7 @@ export function contestTimeline(contest, now = new Date()) {
   const phase = !deadline ? (upcoming ? '모집 예정' : '마감일 미확인') : closed ? '마감' : upcoming ? '모집 예정' : '모집 중';
   const phaseCls = closed ? 'badge s-neutral' : !deadline ? 'badge s-warn' : 'badge s-done';
   const when = item => (item.date ? formatDate(item.date) + (item.end ? ' – ' + formatDate(item.end) : '') : item.raw ?? '날짜 미기재')
-    + (item.time ? ' ' + item.time : '') + (item.yearInferred ? ' · 연도 추정' : '') + (item.web ? ' · 웹 확인' : '');
+    + (item.time ? ' ' + item.time : '') + (item.yearInferred ? ' · 연도 추정' : '');
   const state = item => {
     const last = item.end ?? item.date;
     if (!item.date) return 'wait';

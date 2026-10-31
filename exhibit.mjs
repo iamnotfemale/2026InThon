@@ -4,7 +4,6 @@ import { normalizeExhibit, exhibitView, kstDate } from './public/js/exhibit-data
 import { parseJson, splitBytes, htmlToText, excerpt } from './factcheck.mjs';
 import { missingFields, applyWebFills, shownValue, webSources } from './public/js/exhibit-data.js';
 import { INDEX_INSTRUCTION, resultIndex } from './content-index.mjs';
-import { FILL_BUDGET, withinTime, budgetSignal, exhibitWorthSearching } from './web-fill-policy.mjs';
 export { validateExhibit, exhibitView } from './public/js/exhibit-data.js';
 
 // Prompt v3 step 2: fills only what the post left empty, from pages the code searched and opened itself.
@@ -119,8 +118,7 @@ const FILL_TERMS = '운영 관람 시간 휴관 휴무 휴관일 입장 입장�
  * Searches the web for what the post left empty and fills it from pages we opened, never from the model's memory.
  * Each fill keeps its page URL and a verbatim quote that the code finds in that page; anything else is dropped.
  */
-export function createExhibitFiller({ model, search, fetchPage, maxEvents = FILL_BUDGET.maxTargets, pagesPerEvent = FILL_BUDGET.pagesPerTarget,
-  budget = FILL_BUDGET, clock = Date.now }) {
+export function createExhibitFiller({ model, search, fetchPage, maxEvents = 10, pagesPerEvent = 3 }) {
   const open = async (result, event) => {
     const page = await fetchPage(result.url);
     if (!page.contentType?.includes('html')) throw new Error('HTML 아님');
@@ -142,18 +140,14 @@ export function createExhibitFiller({ model, search, fetchPage, maxEvents = FILL
     return opened.filter(o => o.status === 'fulfilled' && o.value.quote.length > 40).map(o => o.value);
   };
   return async (exhibit, { signal } = {}) => {
-    const started = clock();
-    // Only events still running whose visit-critical fields (address, hours, fee, booking link) are empty.
     const targets = exhibit.events.map((event, i) => ({ event, id: 'T' + (i + 1) }))
-      .filter(({ event }) => exhibitWorthSearching(event, missingFields(event), exhibit.reference)).slice(0, maxEvents);
+      .filter(({ event }) => missingFields(event).length).slice(0, maxEvents);
     if (!targets.length) return { searched: 0, filled: 0 };
-    // Slow searches and pages are abandoned at the gather deadline; whatever arrived in time is used.
-    const pages = await Promise.all(targets.map(t => withinTime(gather(t.event).catch(() => []), budget.gatherMs, [])));
+    const pages = await Promise.all(targets.map(t => gather(t.event).catch(() => [])));
     let n = 0;
     const withPages = targets.map((t, i) => ({ ...t, pages: pages[i].map(page => ({ ...page, id: 'W' + (++n) })) })).filter(t => t.pages.length);
     if (!withPages.length) return { searched: targets.length, filled: 0 };
     signal?.throwIfAborted();
-    signal = budgetSignal(signal, Math.max(1000, budget.totalMs - (clock() - started)));
     const text = `기준일: ${exhibit.reference}\n<events>\n${withPages.map(t => `[${t.id}] ${t.event.title} | 장소: ${t.event.place ?? t.event.area ?? '미기재'}`
       + ` | 기간: ${t.event.start ?? '?'} ~ ${t.event.end ?? '?'} | 비어 있는 칸: ${missingFields(t.event).join(', ')}`).join('\n')}\n</events>\n`
       + withPages.map(t => `<pages for="${t.id}">\n${t.pages.map(p => `[${p.id}] ${p.title}\nURL: ${p.url}\n${p.quote}`).join('\n\n')}\n</pages>`).join('\n');

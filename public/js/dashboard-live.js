@@ -2,7 +2,7 @@
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 import { validateRecipe } from './recipe-data.js';
 import { indexFromRow, storedContent } from './content-index.js';
-import { validateContest, contestTimeline, calendarLink, isWebEvidence, contestWebSources } from './contest-data.js';
+import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
@@ -98,25 +98,19 @@ export function factcheckToItem(row, now = new Date()) {
       const contest = validateContest(stored.contest);
       const t = contestTimeline(contest, now);
       const orNote = (list, note) => (list.length ? list : [note]);
-      // Values the post did not have and the web step found are marked like exhibitions: "(웹 확인)".
-      const mark = (value, field) => (value && contest.web?.[field] ? value + ' (웹 확인)' : value);
-      const texts = list => list.map(x => x.text + (isWebEvidence(x) ? ' (웹 확인)' : ''));
-      const deadline = contest.schedule.find(x => x.type === 'deadline' && x.date);
-      const sources = contestWebSources(contest).map(s => `웹에서 확인한 ${s.fields.join('·')}: ${s.title ?? new URL(s.url).hostname} (${s.url})`);
       return { ...item, type: 'contest', title: contest.title, key: t.keyLine, summary: contest.summary,
         phase: t.phase, phaseCls: t.phaseCls,
-        host: mark(contest.host, 'host') || '주최 미기재',
-        organizer: contest.organizer ? '주관 · ' + mark(contest.organizer, 'organizer') : contest.sponsors.length ? '후원 · ' + contest.sponsors.join(', ') : '',
+        host: contest.host || '주최 미기재',
+        organizer: contest.organizer ? '주관 · ' + contest.organizer : contest.sponsors.length ? '후원 · ' + contest.sponsors.join(', ') : '',
         // The design shows "마감" when dday is empty, so an unknown deadline must not look closed.
-        dday: t.dday ?? (t.deadlineLabel === '마감일이 원본에 없어요' ? '미확인' : null),
-        deadline: t.deadlineLabel + (deadline?.web ? ' (웹 확인)' : ''),
-        elig: orNote(texts(contest.eligibility), '지원 대상·조건이 원본에 없어요.'),
+        dday: t.dday ?? (t.deadlineLabel === '마감일이 원본에 없어요' ? '미확인' : null), deadline: t.deadlineLabel,
+        elig: orNote(contest.eligibility.map(x => x.text), '지원 대상·조건이 원본에 없어요.'),
         schedule: t.schedule.length ? t.schedule : [{ label: '일정', date: '원본에 날짜가 없어요', st: 'wait' }],
-        submit: orNote(texts(contest.submissions), '제출물이 원본에 없어요.'),
-        process: orNote(texts(contest.process), '지원 방법이 원본에 없어요.'),
-        benefit: orNote([...texts(contest.benefits), contest.fee && '참가 비용: ' + contest.fee].filter(Boolean),
+        submit: orNote(contest.submissions.map(x => x.text), '제출물이 원본에 없어요.'),
+        process: orNote(contest.process.map(x => x.text), '지원 방법이 원본에 없어요.'),
+        benefit: orNote([...contest.benefits.map(x => x.text), contest.fee && '참가 비용: ' + contest.fee].filter(Boolean),
           '혜택·참가 비용이 원본에 없어요.'),
-        noticeUrl: contest.noticeUrl, applyUrl: contest.applyUrl, checks: [...contest.checks, ...sources],
+        noticeUrl: contest.noticeUrl, applyUrl: contest.applyUrl, checks: contest.checks,
         origin: instagramOrigin(stored.sourceUrl), contestEvents: t.events };
     } catch { return null; } // A malformed contest must not appear as a news verdict or crash the library.
   }
