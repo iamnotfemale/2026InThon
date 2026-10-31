@@ -287,8 +287,9 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       <div class="fadein" style="display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 28px">
         <div style="position: relative">
           <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 15px; top: 15px"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}">
+          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200">
         </div>
+        <sc-if value="{{isLive}}"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-sm" type="button" onClick="{{searchContents}}">의미로 찾기</button><span class="muted" role="status" style="font-size:12px">{{searchStatus}}</span></div></sc-if>
         <div class="hscroll" role="group" aria-label="유형 필터">
           <sc-for list="{{typeChips}}" as="t" hint-placeholder-count="5">
             <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}">
@@ -340,7 +341,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <!-- TASTE -->
     <sc-if value="{{isTaste}}" hint-placeholder-val="{{ false }}">
       <div class="fadein" style="display: flex; flex-direction: column; gap: 18px; padding: 4px 20px 28px">
-        <p class="muted" style="font-size: 14.5px">마음에 든 레시피와 전시를 모아보세요.</p>
+        <p class="muted" style="font-size: 14.5px">{{tasteIntro}}</p>
         <div class="seg" role="group" aria-label="취향 분야">
           <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="2">
             <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><span class="{{t.dot}}"></span>{{t.label}}<span class="mono" style="font-size: 11.5px; opacity: .6">{{t.count}}</span></button>
@@ -349,11 +350,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         <sc-if value="{{tasteShowCard}}" hint-placeholder-val="{{ true }}">
           <section class="card fadein" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
             <div style="display: flex; align-items: center; gap: 8px"><span class="label">정리된 취향</span><span class="{{tasteBadgeCls}}">{{tasteBadge}}</span></div>
-            <p style="font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">15분 안팎의 간단한 팬·면 요리</p>
-            <p class="muted" style="font-size: 14px">짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.</p>
+            <p style="font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">{{tasteCardLabel}}</p>
+            <p class="muted" style="font-size: 14px">{{tasteCardDesc}}</p><sc-if value="{{isLive}}"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12px">근거</span><sc-for list="{{tasteEvidence}}" as="e"><button type="button" class="chip" onClick="{{e.open}}">{{e.title}}</button></sc-for></div></sc-if><sc-if value="{{isLive}}"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12px">다시 살펴볼 콘텐츠</span><sc-for list="{{tasteRecommendations}}" as="r"><button class="chip" type="button" onClick="{{r.open}}">{{r.title}}</button></sc-for></div></sc-if>
             <div style="display: flex; gap: 8px; padding-top: 4px">
-              <button type="button" class="btn btn-sm" onClick="{{confirmTaste}}" disabled="{{tasteConfirmed}}" style="flex: 1">맞아요</button>
-              <button type="button" class="btn btn-sm" onClick="{{editTaste}}" style="flex: 1">수정하기</button>
+              <sc-if value="{{tasteEditable}}"><button type="button" class="btn btn-sm" onClick="{{confirmTaste}}" disabled="{{tasteConfirmed}}" style="flex: 1">맞아요</button>
+              <button type="button" class="btn btn-sm" onClick="{{editTaste}}" style="flex: 1">수정하기</button></sc-if>
               <button type="button" class="btn btn-sm btn-ghost" onClick="{{removeTasteCard}}" style="color: #DC2626">삭제</button>
             </div>
           </section>
@@ -380,7 +381,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             </div>
           </sc-if>
         </section>
-        <section class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <sc-if value="{{tasteEditable}}"><section class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
           <span class="sec-title" style="font-size: 15px">내 생활 조건</span>
           <span class="muted" style="font-size: 13px">직접 입력한 조건만 써요. 원래 정리 결과는 바뀌지 않아요.</span>
           <div style="display: flex; gap: 6px; flex-wrap: wrap">
@@ -388,7 +389,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <span class="uchip" style="padding-left: 12px">조리도구 · 전자레인지</span>
             <span class="uchip" style="padding-left: 12px">요리 시간 · 20분 이내</span>
           </div>
-        </section>
+        </section></sc-if>
       </div>
     </sc-if>
   </div>
@@ -977,8 +978,8 @@ class Component extends DCLogic {
     const items = ITEMS.map(deco);
     const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
-    let lib = items.filter(i => (!q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF));
-    lib.sort((a, b) => s.sortNew ? b.ts - a.ts : a.ts - b.ts);
+    let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF));
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = !!q || s.typeF !== 'all' || s.statusF !== 'all';
     const tasteAll = items.filter(i => s.taste[i.id] && (i.type === 'recipe' || i.type === 'exhibit'));
     const tasteType = s.tab === 'taste' && s.tasteTab === 'exhibit' ? 'exhibit' : (s.tasteTab || 'recipe');
@@ -1065,6 +1066,7 @@ class Component extends DCLogic {
       resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all' }),
       sortLabel: s.sortNew ? '최근순' : '오래된순', toggleSort: () => this.setState({ sortNew: !s.sortNew }),
       tasteTabs: [['recipe', '레시피', 'dot t-recipe'], ['exhibit', '전시·공간', 'dot t-exhibit']].map(([k, label, dot]) => ({ label, dot, count: tasteAll.filter(i => i.type === k).length, cls: tasteType === k ? 'on' : '', pressed: tasteType === k ? 'true' : 'false', pick: () => this.setState({ tasteTab: k }) })),
+      tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteCardLabel: '15분 안팎의 간단한 팬·면 요리', tasteCardDesc: '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
       tasteItems, tasteEmpty: tasteItems.length === 0, tasteSingle: tasteItems.length === 1, tasteShowCard: tasteType === 'recipe' && tasteItems.length >= 2 && !s.tasteRemoved,
       tasteBadge: tb[0], tasteBadgeCls: tb[1], tasteConfirmed: s.tasteState === 'confirmed',
       confirmTaste: () => { this.setState({ tasteState: 'confirmed' }); this.toast('취향을 확인했어요'); }, editTaste: () => { this.setState({ tasteState: 'edited' }); this.toast('수정 화면은 데스크톱 시안과 같아요 (데모)'); },

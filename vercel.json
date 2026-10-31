@@ -7,6 +7,7 @@
   "functions": {
     "api/instagram.mjs": { "maxDuration": 300 },
     "api/instagram-link.mjs": { "maxDuration": 60 },
+    "api/content-search.mjs": { "maxDuration": 60 },
     "api/media.py": { "maxDuration": 120, "excludeFiles": "{node_modules/**,public/**,**/*_test.py,**/*.test.mjs}" },
     "api/cleanup.mjs": { "maxDuration": 120 }
   },

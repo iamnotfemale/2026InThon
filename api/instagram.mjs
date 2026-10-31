@@ -9,12 +9,14 @@ import { mediaFactCheckerFromEnv } from '../media-pipeline.mjs';
 import { dmAssistantFromEnv } from '../dm-assistant.mjs';
 import { createInstagramLink, createSenderHandleLookup } from '../instagram-link.mjs';
 import { createResultPreferences } from '../result-preferences.mjs';
+import { createOpenAIDecisions } from '../openai-decisions.mjs';
 
 // DM receipts and reply reservations go to Supabase once both variables are set; until then Blob keeps working.
 // Blob stays required either way: cloud OAuth tickets and the renewed access token are stored there.
 const useSupabase = () => Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY);
 const stateStore = () => useSupabase()
-  ? createSupabaseState({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY })
+  ? createSupabaseState({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SECRET_KEY,
+    embedIndex: createOpenAIDecisions({ apiKey: process.env.OPENAI_API_KEY })?.embed })
   : createCloudState();
 
 let publicHandler;

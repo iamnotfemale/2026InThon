@@ -2,6 +2,7 @@
 // It reuses the media that action already downloaded and makes one more Gemini call with its own prompt.
 import { normalizeExhibit, exhibitView, kstDate } from './public/js/exhibit-data.js';
 import { parseJson, splitBytes } from './factcheck.mjs';
+import { INDEX_INSTRUCTION, resultIndex } from './content-index.mjs';
 export { validateExhibit, exhibitView } from './public/js/exhibit-data.js';
 
 // Prompt v2 (project files gemini-prompts/exhibit-v2-prompts.md), with the post date replaced by the day it was received.
@@ -96,7 +97,7 @@ export function exhibitMessages(exhibit, now = new Date()) {
 export function createExhibitExtractor({ model, now = () => new Date() }) {
   return async (input, { signal } = {}) => {
     const reference = kstDate(now());
-    const raw = parseJson(await model({ system: EXHIBIT_SYSTEM, content: exhibitContent(input, reference), maxTokens: 8000, signal }));
+    const raw = parseJson(await model({ system: EXHIBIT_SYSTEM + '\n' + INDEX_INSTRUCTION, content: exhibitContent(input, reference), maxTokens: 10000, signal }));
     const exhibit = normalizeExhibit(raw, { reference, sourceText: [input.text, ...input.captions].join('\n') });
     if (exhibit.kind === 'none') {
       return { status: 'not_checkable', messages: ['방문할 수 있는 전시·행사 정보를 찾지 못했어요. 행사 기간이나 장소가 담긴 게시물을 보내주세요.'] };
@@ -104,7 +105,9 @@ export function createExhibitExtractor({ model, now = () => new Date() }) {
     if (input.notes.length) exhibit.events[0].checks = [...new Set([...exhibit.events[0].checks, ...input.notes])].slice(0, 8);
     const first = exhibit.events[0];
     const claim = exhibit.events.length > 1 ? `${first.title} 외 ${exhibit.events.length - 1}곳` : first.title;
-    return { status: 'done', action: 'schedule', exhibit, extracted: { claim, topic: 'exhibit' },
+    const result = { status: 'done', action: 'schedule', exhibit, extracted: { claim, topic: 'exhibit' },
       reason: first.intro ?? claim, messages: exhibitMessages(exhibit, now()) };
+    result.contentIndex = resultIndex(raw.content_index, result, input);
+    return result;
   };
 }

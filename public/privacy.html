@@ -76,6 +76,7 @@
               <li><b>DM 콘텐츠 정리 서비스 제공</b>: Instagram DM으로 받은 게시물·릴스·이미지·텍스트의 분석(사실 확인 등), 결과 답장, 결과 링크 제공</li>
               <li><b>회원 관리</b>: Google 계정을 통한 본인 식별, 회원가입·탈퇴 처리, 만 14세 미만 가입 제한</li>
               <li><b>Instagram 계정 연결</b>: 인증번호 또는 1회용 링크로 본인 계정임을 확인하고, 보낸 콘텐츠를 내 대시보드에 모아 보여 주기</li>
+              <li><b>검색과 관심 패턴 정리</b>: 콘텐츠 분석에서 만든 설명·키워드·속성을 검색에 활용하고, 반복해서 공유한 특징으로 관심 패턴과 다시 볼 콘텐츠를 제안해요. 별도 취향 입력은 받지 않으며 공유를 선호로 확정하지 않아요.</li>
               <li><b>서비스 운영과 안전</b>: 중복 답장 방지, 오류 확인, 부정 이용 방지</li>
             </ol>
           </section>
@@ -88,6 +89,7 @@
                 <tr><td>회원</td><td>Google 계정 이메일, Google 프로필 이름, 회원 고유 식별자, 디미에서 쓸 이름, 나이(선택)</td><td>Google 로그인, 회원가입 화면 입력</td></tr>
                 <tr><td>Instagram 연결</td><td>Instagram 아이디, Instagram 계정 식별자(IGSID), 인증번호</td><td>회원가입 화면 입력, DM 수신</td></tr>
                 <tr><td>DM 이용자<br>(비회원 포함)</td><td>Instagram 계정 식별자(IGSID), Instagram 아이디, 보낸 메시지와 공유한 콘텐츠(분석 중에만), 정리 결과(확인한 주장·판정·이유·근거 링크·처리 시각·DM 전달 여부), 최근 대화 내용(30분)</td><td>Instagram DM 수신, Meta API를 통한 아이디 확인</td></tr>
+                <tr><td>콘텐츠 색인</td><td>분석에서 만든 설명, 근거가 있는 태그·속성, 검색용 텍스트·벡터와 분석 범위. 관심 패턴은 본인의 결과에서 요청 시 계산해요.</td><td>콘텐츠 분석 결과에서 생성</td></tr>
                 <tr><td>서비스 설정</td><td>결과 받는 방식, 내 목록에서 뺀 항목</td><td>대시보드 설정</td></tr>
                 <tr><td>자동 생성 정보</td><td>DM 수신 시각·건수, 메시지 식별자의 해시값(원문 아님), 접속 IP 주소·브라우저 정보·접속 시각(호스팅 접속 기록)</td><td>서비스 이용 과정에서 자동 생성</td></tr>
               </tbody>
@@ -101,7 +103,7 @@
             <div class="table-wrap"><table>
               <thead><tr><th>항목</th><th>보유 기간</th></tr></thead>
               <tbody>
-                <tr><td>회원 정보, 연결한 Instagram 정보와 정리 결과, 서비스 설정</td><td>회원 탈퇴 시까지 (탈퇴하면 즉시 파기)</td></tr>
+                <tr><td>회원 정보, 연결한 Instagram 정보와 정리 결과·콘텐츠 색인, 서비스 설정</td><td>회원 탈퇴 시까지 (탈퇴하면 즉시 파기)</td></tr>
                 <tr><td>비회원 DM 이용 기록 (Instagram 계정 식별자·아이디·정리 결과)</td><td>마지막으로 DM을 보낸 날부터 1년</td></tr>
                 <tr><td>DM 수신 기록 (수신 시각·건수, 메시지 식별자 해시)</td><td>90일</td></tr>
                 <tr><td>인증번호, 계정 연결용 1회용 링크</td><td>10분간 유효, 만료 후 1일 이내 파기</td></tr>
@@ -136,7 +138,8 @@
                 <tr><td>Supabase, Inc.</td><td>회원 인증(Google 로그인), 데이터베이스 운영 (저장 위치: 대한민국 서울 리전)</td></tr>
                 <tr><td>Vercel Inc.</td><td>웹사이트·서버 호스팅, 임시 파일 저장</td></tr>
                 <tr><td>Google LLC</td><td>Gemini API를 이용한 콘텐츠 분석과 답변 생성</td></tr>
-                <tr><td>Meta Platforms, Inc.</td><td>Instagram 메시지 송수신과 계정 아이디 확인 (Instagram API)</td></tr>
+                <tr><td>OpenAI, LLC</td><td>텍스트 검색용 벡터 생성, 검색 관련도와 관심 패턴 적합성 평가 (API 키가 연결된 경우)</td></tr>
+                  <tr><td>Meta Platforms, Inc.</td><td>Instagram 메시지 송수신과 계정 아이디 확인 (Instagram API)</td></tr>
               </tbody>
             </table></div>
             <p class="note">위탁 업무의 내용이나 수탁자가 바뀌면 이 처리방침으로 알려 드려요.</p>
@@ -149,6 +152,7 @@
               <thead><tr><th>이전받는 자 (연락처)</th><th>국가</th><th>이전 항목</th><th>목적</th><th>보유·이용 기간</th></tr></thead>
               <tbody>
                 <tr><td>Google LLC<br>(<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">개인정보처리방침</a>)</td><td>미국</td><td>공유한 콘텐츠(이미지·영상·텍스트), 보낸 메시지, 최근 대화 내용</td><td>콘텐츠 분석과 답변 생성 (Gemini API)</td><td>요청 처리 후 Google 정책에 따라 남용 감시 목적으로 제한된 기간 보관될 수 있음</td></tr>
+                <tr><td>OpenAI, LLC<br>(<a href="https://openai.com/policies/privacy-policy/" target="_blank" rel="noopener">개인정보처리방침</a>)</td><td>미국 등 OpenAI 처리 정책에 따른 지역</td><td>콘텐츠 색인, 검색어, 근거 콘텐츠의 반복 특징. Google 이메일·Instagram 계정 식별자와 원본 미디어는 전송하지 않아요.</td><td>검색용 벡터 생성, 검색·추천 후보의 관련도 평가</td><td>OpenAI API 데이터 처리 정책에 따름</td></tr>
                 <tr><td>Meta Platforms, Inc.<br>(<a href="https://privacycenter.instagram.com/policy" target="_blank" rel="noopener">개인정보처리방침</a>)</td><td>미국</td><td>Instagram 계정 식별자, 디미가 보내는 답장 내용</td><td>DM 답장 전송, Instagram 아이디 확인</td><td>Meta의 Instagram 정책에 따름</td></tr>
                 <tr><td>Vercel Inc.<br>(<a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">개인정보처리방침</a>)</td><td>미국 등 Vercel 데이터센터</td><td>암호화된 임시 파일(최근 대화 내용, 인증번호, 처리 대기 콘텐츠 정보, 서비스 설정), 접속 기록</td><td>서비스 호스팅과 임시 저장</td><td>3항의 보유 기간과 같음</td></tr>
                 <tr><td>Supabase, Inc.<br>(<a href="https://supabase.com/privacy" target="_blank" rel="noopener">개인정보처리방침</a>)</td><td>대한민국(서울)에 저장, 운영사는 미국 법인</td><td>2항의 회원·Instagram 연결·DM 이용 기록</td><td>회원 인증과 데이터베이스 운영</td><td>3항의 보유 기간과 같음</td></tr>

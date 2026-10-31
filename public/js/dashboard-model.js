@@ -363,9 +363,9 @@ export default class DashboardModel extends DCLogic {
 
     // library
     const q = s.query.trim().toLowerCase();
-    const matchQ = it => !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
+    const matchQ = it => this.matchesContent ? this.matchesContent(it, s.query) : !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
     let lib = items.filter(it => matchQ(it) && (s.typeF === 'all' || it.type === s.typeF) && (s.statusF === 'all' || it.group === s.statusF) && (!s.favOnly || s.fav[it.id]));
-    lib.sort((a, b) => s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = s.typeF !== 'all' || s.statusF !== 'all' || s.favOnly || !!q;
     const libBlocked = s.libError || s.libLoading;
     const libFirst = items.length === 0;
@@ -622,6 +622,7 @@ export default class DashboardModel extends DCLogic {
       // taste
       isTaste: s.view === 'taste', tasteTabs, tasteItems, tasteTabCount: tasteItems.length,
       tasteHasItems: tasteItems.length > 0, tasteEmpty: tasteItems.length === 0,
+      tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteEvidence: tasteItems,
       tasteShowCard: tasteCardEligible && !s.tasteRemoved, tasteCardGone: tasteCardEligible && s.tasteRemoved, tasteShowSingle: tasteItems.length === 1,
       tasteCardLabel: s.tasteLabel, tasteCardDesc: s.tasteState === 'edited' ? '직접 수정한 표현이에요.' : '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
       tasteBadge: tb[0], tasteBadgeCls: tb[1], tasteConfirmDisabled: s.tasteState === 'confirmed',

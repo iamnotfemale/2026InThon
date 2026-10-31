@@ -23,7 +23,7 @@ export function createContentChoices({ secret, getBlob = get, putBlob = put, del
       await putBlob(path(sender, id) + '.json', JSON.stringify(sealToken({ message, expires: now() + TTL }, secret)),
         { access: 'private', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: false });
       return { kind: 'choice', status: 'awaiting_choice', messages: [{
-        text: '이 콘텐츠로 무엇을 도와드릴까요? 아래에서 골라 주세요.',
+        text: '디미가 어떻게 정리해드릴까요? 아래에서 골라 주세요.',
         quick_replies: Object.entries(CONTENT_ACTIONS).map(([action, title]) => ({
           content_type: 'text', title, payload: `content:v1:${action}:${id}`,
         })),

@@ -89,7 +89,7 @@ test('auto reply sends the exact greeting, acknowledges promptly and deduplicate
       calls++;
       assert.equal(url, `https://graph.facebook.com/v26.0/${IG_ID}/messages`);
       assert.equal(options.headers.Authorization, 'Bearer test-token');
-      assert.deepEqual(JSON.parse(options.body), { recipient: { id: '123456789' }, message: { text: '안녕?' } });
+      assert.deepEqual(JSON.parse(options.body), { recipient: { id: '123456789' }, message: { text: '안녕, 디미예요!' } });
       await new Promise(resolve => { release = resolve; });
       return json({ recipient_id: '123456789', message_id: 'outbound-id' });
     } });
@@ -451,7 +451,7 @@ test('signed content shares send three quick replies; clicks route the original 
   assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
   assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
-  assert.equal(sent.filter(m => m.text?.includes('일정, 장소·주최, 조건')).length, 1, 'schedule has its own acknowledgement');
+  assert.equal(sent.filter(m => m.text?.includes('일정과 장소, 필요한 조건')).length, 1, 'schedule has its own acknowledgement');
   assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe'); assert.equal(saved[2].action, 'schedule');
   assert.deepEqual(marked, ['saved-result', 'saved-result', 'saved-result']); assert.equal(blobs.size, 0);
 });
