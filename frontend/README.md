@@ -24,6 +24,12 @@ Python 표준 라이브러리로 원본의 `sc-if`·`sc-for`·바인딩을 컴�
 
 `/`는 랜딩, `/register`는 채팅형 회원가입 온보딩, `/dashboard`는 대시보드다. `/home`, `/library`, `/items/:id`, `/taste`, `/settings`도 대시보드 화면으로 유지한다. 대시보드는 **데모**와 **내 실제 데이터** 두 모드로 동작한다(아래). 기존 `/link`, `/api/*`, `/auth/*`, `/webhooks/instagram` 경로와 DM 백엔드는 유지한다.
 
+### 취향 궤도와 캘린더
+
+내 취향 탭은 제공된 새 궤도 디자인을 PC/모바일에 함께 적용했다. 원본 `frontend/taste-redesign/Main.dc.html`에서 취향 영역만 분리한 `Taste.fragment.html`을 빌드에 포함하므로 다른 탭과 팀원의 맛집 추가를 유지한다. `/calendar`는 내 취향 다음 탭이며 제공된 `frontend/calendar/Calendar.dc.html`을 기존 셸 안에 넣는다. CSS는 두 화면 내부로 한정해 기존 화면에 영향을 주지 않는다.
+
+일정 등록/수정/삭제는 현재 계정별 브라우저 저장까지 동작한다. 실제 DM 리마인드와 기기 간 동기화는 준비 중이며 성공한 것처럼 표시하지 않는다. 서버 연결에 필요한 계약·우선순위·이관·권한·검증 항목은 [캘린더·취향 백엔드 인계](../docs/calendar-taste-backend-handoff.md)에 정리했다.
+
 ### 랜딩·회원가입과 디미 브랜딩
 
 - 원본은 `frontend/landing/Landing.dc.html`, `frontend/register/Signup.dc.html`에 보존했다. 새 ZIP의 마스코트는 `frontend/assets/onboarding-mascot.png`다.

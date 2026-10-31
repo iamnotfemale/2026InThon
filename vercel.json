@@ -21,6 +21,7 @@
     { "source": "/home", "destination": "/dashboard" },
     { "source": "/library", "destination": "/dashboard" },
     { "source": "/taste", "destination": "/dashboard" },
+    { "source": "/calendar", "destination": "/dashboard" },
     { "source": "/settings", "destination": "/dashboard" },
     { "source": "/items/:id", "destination": "/dashboard" }
   ],

@@ -16,7 +16,7 @@ export default class DashboardModel extends DCLogic {
       modal: null, connModal: 'disconnect', delTarget: null, shareStage: 'preview', shares: {},
       toast: null,
       dmMode: 'summary', dmType: 'recipe',
-      tasteTab: 'recipe',
+      tasteTab: 'all', tasteSel: null,
       tasteLabel: '15분 안팎의 간단한 팬·면 요리', tasteState: 'ai', tasteRemoved: false, tasteDraft: '',
       conds: [{ id: 1, cat: '조리도구', val: '프라이팬' }, { id: 2, cat: '조리도구', val: '전자레인지' }, { id: 3, cat: '요리 시간', val: '20분 이내' }],
       condCat: '조리도구', condVal: '', condSeq: 4,

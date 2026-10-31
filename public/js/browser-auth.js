@@ -3,7 +3,7 @@ export const isInAppBrowser = (ua = navigator.userAgent) => /Instagram|FBAN|FBAV
 export function safeLoginNext(value, origin) {
   try {
     const url = new URL(typeof value === 'string' ? value : '/dashboard', origin);
-    if (url.origin === origin && /^(\/(dashboard|register|library|taste|settings|link)|\/items\/fc[1-9]\d*(?:-\d+)?)\/?$/.test(url.pathname)) return url.pathname;
+    if (url.origin === origin && /^(\/(dashboard|register|library|taste|calendar|settings|link)|\/items\/fc[1-9]\d*(?:-\d+)?)\/?$/.test(url.pathname)) return url.pathname;
   } catch {}
   return '/dashboard';
 }

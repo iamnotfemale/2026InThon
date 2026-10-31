@@ -1,5 +1,6 @@
 import MobileModel from './mobile-model.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
+import { applyTasteOrbitValues } from './dashboard-taste.js';
 
 // The supplied mobile view shares the existing app's data, authentication and actions.
 export function createMobileDashboard(app) {
@@ -8,7 +9,7 @@ export function createMobileDashboard(app) {
   const defaults = mobile.state;
   const sync = () => {
     const s = app.state;
-    mobile.state = { ...defaults, ...s, tab: ['home', 'library', 'taste'].includes(s.view) ? s.view : (s.from || 'home'),
+    mobile.state = { ...defaults, ...s, tab: ['home', 'library', 'taste', 'calendar'].includes(s.view) ? s.view : (s.from || 'home'),
       detailId: s.view === 'detail' ? s.detailId : null, settingsOpen: s.view === 'settings', sortNew: s.sort !== 'old' };
     mobile._data = { ITEMS: app.allItems() };
   };
@@ -32,6 +33,8 @@ export function createMobileDashboard(app) {
     sync();
     const s = app.state; const live = s.mode === 'live';
     const v = mobile.renderVals();
+    Object.assign(v, app.pageValues?.());
+    applyTasteOrbitValues(v, s, app);
     v.d.hasTips = Array.isArray(v.d.tips) && v.d.tips.length > 0;
     Object.assign(v, {
       isLive: live, modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',

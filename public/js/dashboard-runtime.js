@@ -10,6 +10,7 @@ export function renderNodes(nodes, scope, state, prefix = '') {
   return nodes.map(node => {
     if (typeof node === 'string') return bind(node, scope) ?? '';
     if (node.tag === 'sc-if') return bind(node.attrs.value, scope) ? renderNodes(node.children, scope, state, prefix) : null;
+    if (node.tag === 'sc-scope') return renderNodes(node.children, { ...scope, ...bind(node.attrs.value, scope) }, state, prefix);
     if (node.tag === 'sc-for') {
       const list = bind(node.attrs.list, scope) ?? [];
       return list.map((item, index) => renderNodes(node.children, { ...scope, [node.attrs.as]: item }, state,
