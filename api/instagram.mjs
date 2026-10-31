@@ -7,6 +7,7 @@ import { factCheckerFromEnv } from '../factcheck.mjs';
 import { mediaProbeFromEnv } from '../media-probe.mjs';
 import { mediaFactCheckerFromEnv } from '../media-pipeline.mjs';
 import { dmAssistantFromEnv } from '../dm-assistant.mjs';
+import { createInstagramLink, createSenderHandleLookup } from '../instagram-link.mjs';
 
 // DM receipts and reply reservations go to Supabase once both variables are set; until then Blob keeps working.
 // Blob stays required either way: cloud OAuth tickets and the renewed access token are stored there.
@@ -33,13 +34,17 @@ export default function handler(req, res) {
     return res.end(authResultText(new URL(req.url, 'https://localhost').searchParams.get('page')));
   }
   if (path.startsWith('/auth/')) return handleCloudAuth(req, res);
+  const state = stateStore();
   publicHandler ??= createServers({
     config: { publicUrl: process.env.PUBLIC_URL, appSecret: process.env.META_APP_SECRET,
       webhookSecret: process.env.META_APP_SECRET, accessToken: process.env.META_ACCESS_TOKEN,
       verifyToken: process.env.META_VERIFY_TOKEN, userId: '17841414630453998' },
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
     // Gemini 일반 대화와 콘텐츠 처리를 분기하며, Continuum-only 구성도 유지한다.
-    ...stateStore(), loadAccessToken, loadProfileToken, background: task => waitUntil(task),
+    ...state, loadAccessToken, loadProfileToken, background: task => waitUntil(task),
+    verifyInstagramCode: state.issueLinkToken ? (code, sender) => createInstagramLink({
+      secret: process.env.META_APP_SECRET, issueLinkToken: state.issueLinkToken,
+    }).verify(code, sender, createSenderHandleLookup({ loadAccessToken, loadProfileToken })) : undefined,
     respondToMessage: dmAssistantFromEnv({ loadAccessToken }),
     factCheck: process.env.GEMINI_API_KEY ? undefined : mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
     observeMessages: mediaProbeFromEnv(),

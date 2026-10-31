@@ -1,8 +1,7 @@
 // Browser Supabase client. The publishable key is meant to be public: RLS decides what each signed-in user can read.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const SUPABASE_URL = 'https://epokaecxlgymchtqnjkn.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_eyA3BtaNxeG84MkHbmGqWA_cju4PpAD';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true },

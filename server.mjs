@@ -62,7 +62,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, loadProfileToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -148,7 +148,14 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           return outcome.username;
         };
         const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
-        if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
+        const isCode = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{6}$/i.test(command);
+        if (verifyInstagramCode && isCode && !isContentMessage(m.message)) {
+          await tracking;
+          let reply;
+          try { reply = await verifyInstagramCode(command, sender); }
+          catch { reply = '인증을 확인하지 못했어요. 잠시 후 같은 번호를 다시 보내 주세요.'; }
+          await send(reply);
+        } else if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
           await tracking;
           const username = knownUsername ?? await lookupUsername();
           let text;

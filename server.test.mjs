@@ -468,6 +468,17 @@ test('chat outages get a chat error and the existing linking command still takes
   assert.equal(calls, 1); assert.match(sent.at(-1), /구글로 로그인/);
 });
 
+test('signed six-character verification DMs bypass AI and preserve the authenticated sender ID', async t => {
+  const sent=[]; const verified=[];
+  const f=await fixture(t,{config:{accessToken:'test-token',userId:IG_ID},
+    verifyInstagramCode:async(code,sender)=>{verified.push([code,sender]);return '확인했어요';},
+    respondToMessage:()=>assert.fail('Codes must never be sent to AI'),
+    apiFetch:async(_url,options)=>{sent.push(JSON.parse(options.body).message.text);return json({message_id:'verified'});}});
+  await deliver(f,[incoming({message:{mid:'verification-dm',text:'ab12cd'}})]);
+  await eventually(()=>f.stats.replies===1);
+  assert.deepEqual(verified,[['ab12cd','123456789']]); assert.deepEqual(sent,['확인했어요']);
+});
+
 test('slow sender tracking does not block a chat reply; content persistence still waits for its sender row', async t => {
   for (const content of [false, true]) {
     let release; let started = false; let saved = false; const sent = [];

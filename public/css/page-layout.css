@@ -1,4 +1,7 @@
 .lp{zoom:.9}
+.lp .tagline-lead{font-size:clamp(26px,4.5vw,58px);font-weight:600;letter-spacing:-.04em}
+.su .verification-code{font:600 28px 'Geist Mono',monospace;letter-spacing:5px;user-select:all}
+.su .link-instruction,.su .link-notice{font-size:12px;color:#666;text-align:center;line-height:1.5;margin:8px 0}
 .su{min-height:0!important;height:100dvh;max-height:100dvh}
 .su>header{height:56px!important;flex:0 0 56px;padding:0 20px!important}
 .su>main{min-height:0;justify-content:center!important;gap:12px!important;padding:12px 20px 18px!important;overflow:hidden}

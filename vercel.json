@@ -6,6 +6,7 @@
   "regions": ["icn1"],
   "functions": {
     "api/instagram.mjs": { "maxDuration": 300 },
+    "api/instagram-link.mjs": { "maxDuration": 60 },
     "api/media.py": { "maxDuration": 120, "excludeFiles": "{node_modules/**,public/**,**/*_test.py,**/*.test.mjs}" }
   },
   "rewrites": [

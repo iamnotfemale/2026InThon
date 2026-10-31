@@ -84,7 +84,7 @@ def compile_page(source_path, name, model_name, output):
         "class Component extends DCLogic", f"export default class {model_name} extends DCLogic", 1).replace('서비스명이에요', '디미예요').replace('서비스명', '디미').replace('inthon2team', 'dimi_in')
     (public / f"js/{name}-model.js").write_text(module, encoding="utf-8")
     fonts = re.search(r'<link rel="stylesheet" href="([^"]+)"', source).group(1)
-    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 보낸 콘텐츠를 다시 쓰게', 'register': '디미 · 회원가입'}[name]
+    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 당신의 가장 가까운 비서', 'register': '디미 · 회원가입'}[name]
     shell = '''<!doctype html>
 <html lang="ko">
 <head>
