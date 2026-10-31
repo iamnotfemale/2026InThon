@@ -17,7 +17,7 @@ const random = () => randomBytes(32).toString('hex');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string'
   && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const page = content => `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>inthon2team DM 테스트</title><style>body{font:16px/1.6 system-ui;max-width:780px;margin:40px auto;padding:0 20px}label{display:block;margin:16px 0}input{display:block;width:100%;box-sizing:border-box;padding:8px}button{padding:10px 16px;cursor:pointer}code{overflow-wrap:anywhere}pre{white-space:pre-wrap}section{border-top:1px solid #ccc;margin-top:24px;padding-top:12px}</style><main>${content}</main></html>`;
+const page = content => `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>디미 DM 테스트</title><style>body{font:16px/1.6 system-ui;max-width:780px;margin:40px auto;padding:0 20px}label{display:block;margin:16px 0}input{display:block;width:100%;box-sizing:border-box;padding:8px}button{padding:10px 16px;cursor:pointer}code{overflow-wrap:anywhere}pre{white-space:pre-wrap}section{border-top:1px solid #ccc;margin-top:24px;padding-top:12px}</style><main>${content}</main></html>`;
 function respond(res, status, text, html = false) {
   res.writeHead(status, { 'Content-Type': html ? 'text/html; charset=utf-8' : 'text/plain; charset=utf-8',
     'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff',
@@ -59,7 +59,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
   + '링크는 10분 동안 한 번만 쓸 수 있어요. 다른 사람에게 보내지 마세요.\n\n' + url;
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, loadProfileToken, factCheck,
   observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
@@ -84,12 +84,13 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     const result = await api(`${GRAPH}/me/assigned_instagram_accounts?fields=id,username&limit=100`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const account = result.data?.find(a => a.id === IG_ID && a.username?.toLowerCase() === 'inthon2team');
+    const account = result.data?.find(a => a.id === IG_ID);
     if (account) return account;
     // The assigned-accounts edge may omit the target; verify the explicitly configured account with the same token.
     const target = await api(`${GRAPH}/${IG_ID}?fields=id,username`, { headers: { Authorization: `Bearer ${token}` } });
-    if (target.id !== IG_ID || target.username?.toLowerCase() !== 'inthon2team') {
-      throw new Error('@inthon2team 계정의 토큰인지 확인해 주세요.');
+    // Match by the numeric ID: the handle was renamed (inthon2team → dimi_in) and may change again.
+    if (target.id !== IG_ID) {
+      throw new Error('@dimi_in 계정의 토큰인지 확인해 주세요.');
     }
     return target;
   }
@@ -130,13 +131,16 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         // The handle is only for display; linking and replies work without it. Failures are kept as codes only
         // (Vercel log + ig_accounts.username_lookup_error), never Meta's error text, which can contain user IDs.
         const lookupUsername = async () => {
-          let outcome;
+          let outcome; let profileToken = accessToken; let tokenKind = 'user-token';
           try {
-            const profile = await api(`${GRAPH}/${sender}?fields=username`, { headers: { Authorization: `Bearer ${accessToken}` } });
+            // Meta documents a Page token for the User Profile API; the kind used is kept with any error for diagnosis.
+            if (loadProfileToken) ({ token: profileToken, kind: tokenKind } = await loadProfileToken());
+            const profile = await api(`${GRAPH}/${sender}?fields=username`, { headers: { Authorization: `Bearer ${profileToken}` } });
             outcome = USERNAME.test(profile.username ?? '') ? { username: profile.username }
-              : { error: `no username; fields: ${Object.keys(profile).filter(k => k !== 'id').join(',') || 'none'}` };
+              : { error: `${tokenKind}: no username; fields: ${Object.keys(profile).filter(k => k !== 'id').join(',') || 'none'}` };
           } catch (error) {
-            outcome = { error: error.message.startsWith('Meta API') ? error.message.replace(/^.*?\((.*)\)$/, '$1') : error.name };
+            outcome = { error: tokenKind + ': '
+              + (error.message.startsWith('Meta API') ? error.message.replace(/^.*?\((.*)\)$/, '$1') : error.name) };
           }
           if (outcome.error) console.warn('Instagram profile lookup failed:', outcome.error);
           if (recordUsernameLookup) await quietly(() => recordUsernameLookup(sender, outcome), '아이디 조회 결과 기록 실패');
@@ -264,7 +268,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         stats.tokenSaved = true; stats.subscription = '미확인'; stats.lastError = null;
       } catch (error) {
         const known = ['Instagram 권한 승인이 완료되지 않았습니다.', '접근 토큰을 받지 못했습니다.',
-          '@inthon2team 계정의 토큰인지 확인해 주세요.', '비즈니스 ID 확인 실패', 'Windows credential encryption failed'];
+          '@dimi_in 계정의 토큰인지 확인해 주세요.', '비즈니스 ID 확인 실패', 'Windows credential encryption failed'];
         stats.lastError = `${stage}: ${error.message.startsWith('Meta API') || known.includes(error.message)
           ? error.message : '처리하지 못했습니다. 다시 연결해 주세요.'}`;
       }
@@ -320,8 +324,8 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     }
     if (req.method !== 'GET' || url.pathname !== '/') return respond(res, 404, 'Not found');
     const hidden = `<input type="hidden" name="csrf" value="${csrf}">`;
-    return respond(res, 200, page(`<h1>inthon2team DM 테스트</h1>
-      <p>Meta 앱: 2418018855613539 · Instagram: @inthon2team</p>
+    return respond(res, 200, page(`<h1>디미 DM 테스트</h1>
+      <p>Meta 앱: 2418018855613539 · Instagram: @dimi_in</p>
       <p>이 설정 화면은 이 PC에서만 접근할 수 있습니다. 시크릿과 토큰은 Windows DPAPI로 암호화해 저장합니다.</p>
       <h2>Meta에 등록할 주소</h2><p>로그인 콜백<br><code>${escape(callback())}</code></p>
       <p>웹훅 콜백<br><code>${escape(config.publicUrl)}/webhooks/instagram</code></p>
@@ -336,7 +340,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       <p>접근 토큰: ${stats.tokenSaved ? '암호화 저장됨 (만료 시 다시 로그인)' : '미발급'}</p></section>
       <section><h2>3. 계정의 메시지 웹훅 구독</h2><p>Meta에서 웹훅을 등록하고 messages 필드 구독을 켠 뒤 실행하세요.</p>
       <form method="post" action="/subscribe">${hidden}<button>messages 구독하고 확인하기</button></form><p>${escape(stats.subscription)}</p></section>
-      <section><h2>4. DM 수신 확인</h2><p>다른 테스트 계정에서 @inthon2team으로 DM을 보낸 뒤 <a href="/">수신 상태 새로고침</a>을 누르세요. Meta의 샘플 이벤트도 이 횟수에 포함되므로 실제 DM 테스트와 구분해서 확인하세요.</p>
+      <section><h2>4. DM 수신 확인</h2><p>다른 테스트 계정에서 @dimi_in으로 DM을 보낸 뒤 <a href="/">수신 상태 새로고침</a>을 누르세요. Meta의 샘플 이벤트도 이 횟수에 포함되므로 실제 DM 테스트와 구분해서 확인하세요.</p>
       <p>이번 실행의 검증 요청: ${stats.verifications} · 서명 확인 이벤트: ${stats.signedEvents} · 수신 메시지: ${stats.messages}</p>
       <p>자동 답장: ${config.accessToken && config.userId === IG_ID ? '켜짐 — 안녕?' : '토큰 연결 필요'} · 전송 확인: ${stats.replies} · 실패/결과 미확인: ${stats.replyFailures}</p>
       <p>최근 이벤트: ${escape(stats.lastEventAt ? new Date(stats.lastEventAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) + ' (KST)' : '아직 없음')}</p><p>최근 오류: ${escape(stats.lastError || '없음')}</p>

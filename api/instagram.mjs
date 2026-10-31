@@ -2,7 +2,7 @@ import { waitUntil } from '@vercel/functions';
 import { createServers } from '../server.mjs';
 import { createCloudState } from '../cloud-state.mjs';
 import { createSupabaseState } from '../supabase-state.mjs';
-import { handleCloudAuth, loadAccessToken } from '../cloud-auth.mjs';
+import { handleCloudAuth, loadAccessToken, loadProfileToken, authResultText } from '../cloud-auth.mjs';
 import { factCheckerFromEnv } from '../factcheck.mjs';
 import { mediaProbeFromEnv } from '../media-probe.mjs';
 import { mediaFactCheckerFromEnv } from '../media-pipeline.mjs';
@@ -30,7 +30,7 @@ export default function handler(req, res) {
   }
   if (path === '/auth/result') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.end('Instagram 연결 처리가 완료되었습니다. 다른 계정에서 @inthon2team으로 새 DM을 보내 답장을 확인해 주세요.');
+    return res.end(authResultText(new URL(req.url, 'https://localhost').searchParams.get('page')));
   }
   if (path.startsWith('/auth/')) return handleCloudAuth(req, res);
   publicHandler ??= createServers({
@@ -39,7 +39,7 @@ export default function handler(req, res) {
       verifyToken: process.env.META_VERIFY_TOKEN, userId: '17841414630453998' },
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
     // Gemini 일반 대화와 콘텐츠 처리를 분기하며, Continuum-only 구성도 유지한다.
-    ...stateStore(), loadAccessToken, background: task => waitUntil(task),
+    ...stateStore(), loadAccessToken, loadProfileToken, background: task => waitUntil(task),
     respondToMessage: dmAssistantFromEnv({ loadAccessToken }),
     factCheck: process.env.GEMINI_API_KEY ? undefined : mediaFactCheckerFromEnv(factCheckerFromEnv(), { loadAccessToken }),
     observeMessages: mediaProbeFromEnv(),

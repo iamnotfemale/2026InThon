@@ -528,7 +528,7 @@ test('profile lookup failures are logged and stored as Meta codes only and never
   await eventually(() => f.stats.replies === 1);
   assert.deepEqual(issued, [{ igsid: '123456789', username: undefined }]);
   assert.equal(sent.length, 1);
-  const codes = 'HTTP 400, code 100, subcode 33, GraphMethodException';
+  const codes = 'user-token: HTTP 400, code 100, subcode 33, GraphMethodException';
   assert.deepEqual(warnings, [`Instagram profile lookup failed: ${codes}`]);
   assert.deepEqual(recorded, [['123456789', { error: codes }]]);
   assert.ok(!warnings.join().includes('123456789'), 'sender IDs must not be logged');
@@ -553,4 +553,30 @@ test('fact-check records are marked as DM-sent only after every result message i
   await deliver(failing, [incoming({ message: { mid: 'dm-fail', text: '주장' } })]);
   await eventually(() => failing.stats.replyFailures === 1);
   assert.deepEqual(marked, [5], 'a failed send must leave the record pending');
+});
+
+test('handle lookups use the Page token when available and record which token failed', async t => {
+  const auths = []; const recorded = [];
+  t.mock.method(console, 'warn', () => {});
+  const make = profileToken => fixture(t, { config: { accessToken: 'user-token-value', userId: IG_ID },
+    trackSender: async () => ({ username: null }),
+    loadProfileToken: profileToken,
+    recordUsernameLookup: async (id, outcome) => { recorded.push(outcome); },
+    issueLinkToken: async () => 'c'.repeat(64),
+    apiFetch: async (url, options) => {
+      if (url.includes('fields=username')) {
+        auths.push(options.headers.Authorization);
+        return auths.length === 1 ? json({ id: '123456789', username: 'dimi.fan' })
+          : new Response(JSON.stringify({ error: { code: 36103, type: 'OAuthException' } }), { status: 400 });
+      }
+      return json({ message_id: 'm' });
+    } });
+  const withPage = await make(async () => ({ token: 'page-token-value', kind: 'page-token' }));
+  await deliver(withPage, [incoming({ message: { mid: 'pt-1', text: '연결' } })]);
+  await eventually(() => withPage.stats.replies === 1);
+  const withoutPage = await make(undefined);
+  await deliver(withoutPage, [incoming({ message: { mid: 'pt-2', text: '연결' } })]);
+  await eventually(() => withoutPage.stats.replies === 1);
+  assert.deepEqual(auths, ['Bearer page-token-value', 'Bearer user-token-value']);
+  assert.deepEqual(recorded, [{ username: 'dimi.fan' }, { error: 'user-token: HTTP 400, code 36103, OAuthException' }]);
 });
