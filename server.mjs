@@ -4,12 +4,13 @@ import { readFileSync, appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join, dirname } from 'node:path';
 import { readSecrets, writeSecrets } from './secrets.mjs';
+import { createLoginTicket } from './oauth-state.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
-const APP_ID = '2418018855613539';
-const CONFIG_ID = '2085773485459248';
-const IG_ID = '17841414630453998';
-const GRAPH = 'https://graph.facebook.com/v26.0';
+export const APP_ID = '2418018855613539';
+export const CONFIG_ID = '2085773485459248';
+export const IG_ID = '17841414630453998';
+export const GRAPH = 'https://graph.facebook.com/v26.0';
 const root = dirname(fileURLToPath(import.meta.url));
 const random = () => randomBytes(32).toString('hex');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string'
@@ -47,7 +48,7 @@ export function readReplyKeys(file) {
 }
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task }) {
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -77,7 +78,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     return target;
   }
   async function autoReply(deliveries) {
-    if (!config.accessToken || config.userId !== IG_ID) return;
+    let accessToken = config.accessToken;
+    if (loadAccessToken) {
+      try { accessToken = await loadAccessToken(); }
+      catch { stats.replyFailures++; stats.lastError = '운영 토큰을 불러오지 못했습니다.'; return; }
+    }
+    if (!accessToken || config.userId !== IG_ID) return;
     for (const { accountId, event: m } of deliveries) {
       const age = now() - Number(m.timestamp);
       if (accountId !== IG_ID || m.recipient?.id !== IG_ID || m.sender?.id === IG_ID
@@ -93,7 +99,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           if (!await reserveReply(key)) continue;
         } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
         const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
-          headers: { Authorization: `Bearer ${config.accessToken}`, 'Content-Type': 'application/json' },
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text: '안녕?' } }) });
         if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
         stats.replies++;
@@ -216,6 +222,9 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           ...(changed ? { accessToken: null, userId: null, tokenSavedAt: null } : {}) });
         if (changed) { stats.tokenSaved = false; stats.subscription = '미확인'; launches.clear(); states.clear(); }
         stats.lastError = null;
+      } else if (url.pathname === '/cloud-login') {
+        if (!config.appSecret) return respond(res, 400, '먼저 앱 설정을 저장해 주세요.');
+        return redirect(res, 'https://inthon-pi.vercel.app/auth/start?ticket=' + createLoginTicket(config.appSecret));
       } else if (url.pathname === '/login') {
         if (!config.publicUrl || !config.appSecret) return respond(res, 400, '먼저 앱 설정을 저장해 주세요.');
         expire(launches); const ticket = random(); launches.set(ticket, { expires: now() + 600000 });
@@ -250,6 +259,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       <button>앱 설정 암호화 저장</button></form></section>
       <p>앱 시크릿: ${config.appSecret ? '암호화 저장됨' : '미설정'}</p><section><h2>2. Instagram 로그인</h2><p>통합 로그인 구성에서 요청하도록 설정한 권한: ${SCOPES.map(escape).join(', ')}. 승인 전 대상 계정과 실제 표시되는 권한을 확인하세요.</p>
       <form method="post" action="/login">${hidden}<button>Instagram에서 권한 승인하기</button></form>
+      <form method="post" action="/cloud-login">${hidden}<button>운영 서버에서 Instagram 다시 연결하기</button></form>
       <p>접근 토큰: ${stats.tokenSaved ? '암호화 저장됨 (만료 시 다시 로그인)' : '미발급'}</p></section>
       <section><h2>3. 계정의 메시지 웹훅 구독</h2><p>Meta에서 웹훅을 등록하고 messages 필드 구독을 켠 뒤 실행하세요.</p>
       <form method="post" action="/subscribe">${hidden}<button>messages 구독하고 확인하기</button></form><p>${escape(stats.subscription)}</p></section>

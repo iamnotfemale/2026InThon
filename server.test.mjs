@@ -131,6 +131,29 @@ test('failed async receipts are not acknowledged and background replies are regi
   assert.equal(f.stats.replies, 1);
 });
 
+test('cloud replies use the refreshed token and fail closed when token loading fails', async t => {
+  let calls = 0;
+  const f = await fixture(t, { config: { accessToken: 'old-token', userId: IG_ID },
+    loadAccessToken: async () => 'fresh-token', apiFetch: async (url, options) => {
+      calls++; assert.equal(options.headers.Authorization, 'Bearer fresh-token'); return json({ message_id: 'fresh-reply' });
+    } });
+  await deliver(f, [incoming()]); await eventually(() => f.stats.replies === 1);
+  const failed = await fixture(t, { config: { accessToken: 'old-token', userId: IG_ID },
+    loadAccessToken: async () => { throw new Error('storage unavailable'); }, apiFetch: async () => { calls++; return json({}); } });
+  await deliver(failed, [incoming()]); await eventually(() => failed.stats.replyFailures === 1);
+  assert.equal(calls, 1);
+});
+
+test('cloud login launch is CSRF protected and uses a signed operator ticket', async t => {
+  const f = await fixture(t);
+  const r = await f.post('/cloud-login'); assert.equal(r.status, 303);
+  const url = new URL(r.headers.get('location'));
+  assert.equal(url.origin, 'https://inthon-pi.vercel.app');
+  assert.equal(url.pathname, '/auth/start');
+  assert.match(url.searchParams.get('ticket'), /^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/);
+  assert.equal((await f.post('/cloud-login', { csrf: 'wrong' })).status, 403);
+});
+
 test('webhook verification rejects wrong tokens and echoes the exact challenge', async t => {
   const f = await fixture(t);
   assert.equal((await fetch(`${f.publicUrl}/webhooks/instagram?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=00123`)).status, 403);
