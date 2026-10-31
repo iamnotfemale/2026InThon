@@ -2,9 +2,12 @@
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 import { validateRecipe } from './recipe-data.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
+import { validateExhibit, exhibitView, visitCalendarLink } from './exhibit-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
+/** An exhibition post listing several events shows each one as its own item: fc42, fc42-2, fc42-3… */
+export const rowIdOf = id => String(id ?? '').replace(/-\d+$/, '');
 const PENDING_GRACE_MS = 10 * 60 * 1000;
 
 // Our verdicts → the design's five-step scale (사실 · 대체로 사실 · 오해의 소지 · 거짓 · 판단 유보).
@@ -108,7 +111,31 @@ export function factcheckToItem(row, now = new Date()) {
         origin: instagramOrigin(stored.sourceUrl), contestEvents: t.events };
     } catch { return null; } // A malformed contest must not appear as a news verdict or crash the library.
   }
+  if (done && row.topic === 'exhibit') return exhibitRowItems(row, now)[0] ?? null;
   return item;
+}
+
+/**
+ * One stored exhibition row → one dashboard item per event, mapped onto the design's exhibit fields.
+ * Missing values use the design's own "미기재" wording; nothing is filled from outside the post.
+ */
+export function exhibitRowItems(row, now = new Date()) {
+  if (row.status !== 'done' || row.topic !== 'exhibit') return [];
+  let stored; let exhibit;
+  try { stored = JSON.parse(row.reason); exhibit = validateExhibit(stored.exhibit); } catch { return []; }
+  const base = factcheckToItem({ ...row, topic: null }, now);
+  const origin = instagramOrigin(stored.sourceUrl);
+  return exhibit.events.map((event, i) => {
+    const view = exhibitView(event, now);
+    return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, type: 'exhibit', title: event.title,
+      key: view.keyLine, phase: view.phase, phaseCls: view.phaseCls, intro: event.intro ?? '원본에 소개 문구가 없어요.',
+      period: view.period, hours: event.hours ?? '운영 시간 미기재', closed: event.closed ?? '휴무일 미기재',
+      place: event.place ?? event.area ?? '장소 미기재', address: event.address ?? (event.place && event.area) ?? '주소 미기재',
+      mapUrl: view.mapUrl, fee: event.fee ?? '입장료 미기재', booking: event.booking ?? '예약 필요 여부 미기재',
+      conditions: event.conditions ?? '관람 조건 미기재', reserveUrl: event.reserveUrl, officialUrl: event.officialUrl,
+      visitDates: view.visits.map(visit => visit.label), checks: [...event.conflicts, ...event.notices, ...event.checks],
+      origin, exhibitEvent: event, exhibitVisits: view.visits, exhibitEnd: view.ended ? null : event.end, exhibitDaysLeft: view.daysLeft };
+  });
 }
 
 /** Only a canonical public Instagram post/reel URL is shown as the "원본 보기" link. */
@@ -192,7 +219,7 @@ const SCHEDULE_DAYS = 60;
 const EVENT_WHAT = { start: '접수 시작', deadline: '접수 마감', announce: '결과 발표', activity: '활동 시작', event: '행사', other: '일정' };
 
 /**
- * Home "다가오는 일정" from real 공모전·대외활동 results (the design hard-codes demo items c1/e1),
+ * Home "다가오는 일정" from real 공모전·대외활동 and exhibition results (the design hard-codes demo items c1/e1),
  * and "캘린더에 추가" on a contest detail as a Google Calendar link for its deadline.
  */
 export function contestLiveValues(v, s, app) {
@@ -203,13 +230,27 @@ export function contestLiveValues(v, s, app) {
     .sort((a, b) => a.event.date.localeCompare(b.event.date) || (a.event.time ?? '').localeCompare(b.event.time ?? ''))
     .slice(0, 6)
     .map(({ item, event }) => ({
-      mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title,
+      date: event.date, mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title,
       what: (event.type === 'other' || event.type === 'event' ? event.label : EVENT_WHAT[event.type]) + (event.time ? ' · ' + event.time + ' KST' : ''),
       badge: event.days === 0 ? 'D-DAY' : 'D-' + event.days,
       badgeCls: 'badge nodot ' + (event.type === 'deadline' && event.days <= 7 ? 's-warn' : 's-neutral'),
       open: () => app.openDetail(item.id),
     }));
-  const values = { schedule, hasSchedule: schedule.length > 0 };
+  // Exhibitions add their closing day ("전시 종료일"), as in the design's demo schedule.
+  const exhibits = (app.allItems?.() ?? []).filter(item => item.type === 'exhibit' && item.exhibitEnd && item.exhibitDaysLeft <= SCHEDULE_DAYS)
+    .map(item => ({ item, event: { date: item.exhibitEnd, days: item.exhibitDaysLeft } }));
+  const merged = [...schedule.map(entry => ({ entry, date: entry.date })), ...exhibits.map(({ item, event }) => ({ date: event.date, entry: {
+    mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title, what: '전시 종료일 · ' + item.phase,
+    badge: event.days === 0 ? 'D-DAY' : 'D-' + event.days, badgeCls: 'badge nodot s-neutral', open: () => app.openDetail(item.id) } }))]
+    .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6).map(({ entry }) => entry);
+  const values = { schedule: merged, hasSchedule: merged.length > 0 };
+  const shown = v.isDetail ? (app.allItems?.() ?? []).find(item => item.id === s.detailId && item.type === 'exhibit') : null;
+  if (shown && v.d) {
+    // "일정에 추가" opens a Google Calendar event for the chosen visit day instead of the demo toast.
+    values.d = { ...v.d, visitDates: shown.exhibitVisits.map(visit => ({ label: visit.label, pick: () => {
+      app.setState({ visitOpen: false }); app.openExternal(visitCalendarLink(shown.exhibitEvent, visit.date));
+    } })) };
+  }
   const current = v.isDetail ? all.find(item => item.id === s.detailId) : null;
   if (current) {
     const deadline = (current.contestEvents ?? []).find(event => event.type === 'deadline');
