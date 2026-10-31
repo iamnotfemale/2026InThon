@@ -612,6 +612,7 @@ export default class DashboardModel extends DCLogic {
       closeModal: () => this.setState({ modal: null }),
       // delete
       deleteDesc: '이 콘텐츠의 정리 결과와 연결된 공유 링크를 삭제해요. 취향으로 모은 경우 취향에서도 빠져요. 삭제 후에는 되돌릴 수 없어요.',
+      libraryDeleteDesc: '정리 결과·취향 연결·공유 링크가 함께 삭제돼요. 콘텐츠의 더보기 메뉴에서 하나씩 삭제해요.',
       modalDelete: s.modal === 'delete' && !!delItem, delTitle: delItem ? delItem.title : '',
       confirmDelete: () => { const id = s.delTarget; const tasteNext = Object.assign({}, s.taste, { [id]: false }); const sharesNext = Object.assign({}, s.shares); delete sharesNext[id]; const back = s.view === 'detail' && s.detailId === id; this.setState({ deleted: Object.assign({}, s.deleted, { [id]: true }), taste: tasteNext, shares: sharesNext, modal: null, delTarget: null, view: back ? (s.from === 'home' ? 'home' : 'library') : s.view }); this.toast('콘텐츠를 삭제했어요'); },
       // taste

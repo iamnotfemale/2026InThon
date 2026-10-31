@@ -90,6 +90,7 @@ export function applyLiveMode(v, s, app) {
         label, desc, isDefault, checked: s.dmMode === key ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === key ? ' on' : ''), pick: () => app.changeDelivery(key),
       })),
     deleteDesc: '이 콘텐츠를 내 목록에서 제거해요. 삭제 후 알림에서 되돌릴 수 있어요.',
+    libraryDeleteDesc: '콘텐츠의 더보기 메뉴에서 내 목록에서 제거해요. 삭제 후 알림에서 되돌릴 수 있어요.',
     confirmDelete: () => app.removeItem(s.delTarget),
     simulateDm: () => {}, simDisabled: true, simHint: '데모 시나리오에서만 쓸 수 있어요',
     sendFromIg: () => app.openBotDm(), openIgDm: () => app.openBotDm(),
