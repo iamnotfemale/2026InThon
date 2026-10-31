@@ -43,6 +43,7 @@ class DashboardApp extends DashboardModel {
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'full', hidden: [] };
     this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
+    this.state.privateAuthChecking = this.state.privateAuthRequired;
     // Schedules (/api/calendar) and hand-picked taste (/api/taste) live on the server per member.
     this.memberApi = createMemberApi({ token: async () => (await (await loadSupabase()).supabase.auth.getSession()).data.session?.access_token });
     this.calendar = createCalendarDashboard(this, { api: this.memberApi, storage: localStore });
@@ -59,6 +60,7 @@ class DashboardApp extends DashboardModel {
       this.setState(routeState(location.pathname), () => { this.popping = false; });
     };
     this.onKey = event => {
+      if (this.state.privateAuthRequired) return;
       const menu = document.activeElement?.closest('.menu[role="menu"]');
       if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
         const items = [...menu.querySelectorAll('[role="menuitem"]')];
@@ -149,32 +151,54 @@ class DashboardApp extends DashboardModel {
 
   /** Signed-in visitors land on their own data unless they last chose a demo scenario. */
   async restoreSession() {
-    let user = null;
-    try { user = await (await loadSupabase()).currentUser(); } catch { return; }
-    this.setState({ user });
-    if (user && (store.get(MODE_KEY) !== 'demo' || this.state.privateAuthRequired)) {
-      await this.enterLive();
-      this.setState({ privateAuthRequired: false });
+    try {
+      const user = await (await loadSupabase()).currentUser();
+      this.setState({ user });
+      if (user && (store.get(MODE_KEY) !== 'demo' || this.state.privateAuthRequired)) {
+        await this.enterLive();
+        this.setState({ privateAuthRequired: false });
+      }
+    } catch {
+      if (this.state.privateAuthRequired) this.setState({ privateLoginHint: '로그인 상태를 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.' });
+    } finally {
+      if (this.state.privateAuthChecking) this.setState({ privateAuthChecking: false });
     }
   }
 
   async loginForResult() {
+    if (this.state.privateLoginBusy || this.state.privateAuthChecking) return;
+    this.setState({ privateLoginBusy: true, privateLoginHint: '' });
     try {
       const auth = await loadSupabase();
       const { error } = await auth.signInWithGoogle(location.pathname);
       if (error) throw error;
-    } catch { this.setState({ privateLoginHint: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }); }
+    } catch { this.setState({ privateLoginBusy: false, privateLoginHint: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }); }
   }
 
   render() {
     if (!this.state.privateAuthRequired) return this.state.mobile
       ? renderNodes(this.props.mobileTemplate, this.mobileValues(), this.state) : super.render();
-    return h('div', { class: 'app', style: 'min-height:100vh' }, h('div', { class: 'overlay' },
-      h('section', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': '내 정리 결과 보기', style: 'padding:24px;max-width:420px' },
-        h('h1', { class: 'h2' }, '내 정리 결과 보기'),
-        h('p', { class: 'muted', style: 'margin:12px 0 20px' }, this.state.privateLoginHint || '콘텐츠를 보낸 계정으로 Google 로그인해 주세요. 결과는 본인만 볼 수 있어요.'),
-        h('button', { class: 'btn btn-primary', onClick: () => this.loginForResult() }, 'Google로 로그인하고 보기'),
-        h('a', { class: 'btn btn-ghost', href: '/register', style: 'margin-left:8px' }, '처음 이용해요'))));
+    const busy = this.state.privateAuthChecking || this.state.privateLoginBusy;
+    return h('div', { class: 'app result-access-page' },
+      h('header', { class: 'result-access-header' },
+        h('a', { class: 'result-access-brand', href: '/', 'aria-label': '디미 홈으로' },
+          h('img', { src: '/assets/dimi-icon.svg', alt: '', width: 28, height: 28 }), '디미')),
+      h('main', { class: 'result-access-main' },
+        h('section', { class: 'result-access-content', 'aria-labelledby': 'result-access-title' },
+          h('img', { class: 'result-access-orb', src: '/assets/dimi-icon.svg', alt: '', width: 64, height: 64 }),
+          h('h1', { id: 'result-access-title' }, '정리한 콘텐츠를 이어서 보세요'),
+          h('p', { class: 'result-access-description' }, '콘텐츠를 보낸 계정으로 로그인하면', h('br'), '디미가 정리한 내용을 확인할 수 있어요.'),
+          h('button', { type: 'button', class: 'result-access-google', disabled: busy, 'aria-busy': !!busy, onClick: () => this.loginForResult() },
+            h('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true', focusable: 'false' },
+              h('path', { fill: '#4285F4', d: 'M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z' }),
+              h('path', { fill: '#34A853', d: 'M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.97-3.38.97-2.6 0-4.82-1.76-5.62-4.12H3.04v2.59A10 10 0 0 0 12 22Z' }),
+              h('path', { fill: '#FBBC05', d: 'M6.38 13.93a6 6 0 0 1 0-3.86V7.48H3.04a10 10 0 0 0 0 9.04l3.34-2.59Z' }),
+              h('path', { fill: '#EA4335', d: 'M12 5.95c1.47 0 2.78.5 3.82 1.49l2.86-2.87A9.58 9.58 0 0 0 12 2a10 10 0 0 0-8.96 5.48l3.34 2.59A5.97 5.97 0 0 1 12 5.95Z' })),
+            this.state.privateAuthChecking ? '로그인 확인 중…' : this.state.privateLoginBusy ? '로그인 페이지로 이동 중…' : 'Google로 로그인하고 보기'),
+          this.state.privateLoginHint && h('p', { class: 'result-access-error', role: 'alert' }, this.state.privateLoginHint),
+          h('p', { class: 'result-access-secondary' }, '디미가 처음이신가요?', h('a', { href: '/register' }, '시작하기')),
+          h('p', { class: 'result-access-privacy' }, '결과는 로그인한 본인만 볼 수 있어요.'))),
+      h('footer', { class: 'result-access-footer' }, '당신의 가장 가까운 비서 디미'));
   }
 
   async enterLive() {
