@@ -8,7 +8,7 @@
 
 | 항목 | 구현 위치 |
 | --- | --- |
-| 테이블·RLS | `supabase/migrations/20261101090000_calendar_and_taste.sql`: `calendar_events`, `taste_collections`, `member_can_see_result()`. 읽기·추가·수정은 본인 UID + 현재 연결 계정으로 볼 수 있는 정리 완료 결과일 때만, 삭제는 본인 UID면 항상 가능. 회원(`auth.users`)·결과(`factchecks`) 삭제 시 함께 삭제 |
+| 테이블·RLS | `supabase/migrations/20261031180518_calendar_and_taste.sql`: `calendar_events`, `taste_collections`, `member_can_see_result()`. 읽기·추가·수정은 본인 UID + 현재 연결 계정으로 볼 수 있는 정리 완료 결과일 때만, 삭제는 본인 UID면 항상 가능. 회원(`auth.users`)·결과(`factchecks`) 삭제 시 함께 삭제 |
 | API | `member-data.mjs` (`api/calendar.mjs`, `api/taste.mjs`, `vercel.json`의 `/api/calendar/:id`·`/api/taste/:id` rewrite). 사용자 JWT를 PostgREST에 그대로 전달하고 서버 비밀키는 쓰지 않는다. 카드는 서버가 원본 행을 다시 읽어 `rowItems()`로 변환해 확인한다 |
 | 일정 규칙 | `public/js/calendar-rules.js`를 브라우저와 서버가 함께 쓴다(종류·날짜·HH:mm·과거·전시 기간·공고 확정 날짜). 가져오기와 같은 날짜 유지 수정만 과거 날짜 허용 |
 | 오류 코드 | `400` 형식, `401` 재로그인, `403` 다른 화면(Origin), `404` 없는/볼 수 없는 카드·일정, `409` revision 충돌, `422` 날짜·콘텐츠 조건, `503` 저장소 오류 |
