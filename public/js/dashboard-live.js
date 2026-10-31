@@ -73,7 +73,7 @@ export function displayName(user) {
 }
 
 // Demo-only interactions that have no backend yet; in real-data mode they say so instead of pretending to succeed.
-export const NOT_YET = ['openShare', 'requestProcess', 'sendReport', 'fbUp', 'fbDown', 'askWithdraw', 'confirmDelete', 'addCond'];
+export const NOT_YET = ['openShare', 'requestProcess', 'sendReport', 'fbUp', 'fbDown', 'askWithdraw', 'addCond'];
 
 /**
  * Turns the design's demo render values into real-data ones. `v` comes from the generated model's renderVals(),
@@ -84,7 +84,13 @@ export function applyLiveMode(v, s, app) {
     isDemo: false, isLive: true, modeBadge: '내 데이터', scenarioLabel: '내 실제 데이터', email: s.email,
     modeNote: '로그인한 계정의 실제 데이터를 보고 있어요. 위 데모 시나리오를 고르면 데모로 바뀌어요.',
     connectDesc: '@dimi_in에 ‘연결’을 보내면 답장으로 온 링크에서 연결돼요. 연결하면 이 계정으로 전에 보낸 콘텐츠도 함께 보여요.',
-    dmModeDesc: '지금은 정리 결과 전체를 DM으로 보내요. 받는 방식 선택은 준비 중이에요.',
+    dmModeDesc: '기본은 핵심 안내와 개인 결과 링크예요. 링크는 로그인한 본인만 열 수 있어요.',
+    dmModes: [['summary', '핵심 안내와 고유 링크', 'DM으로 안내를 받고, 자세한 정리는 내 결과 페이지에서 봐요.', true],
+      ['full', 'DM에서 전체 받기', '정리한 내용을 DM으로 받아요. 긴 내용은 나눠서 보내요.', false]].map(([key,label,desc,isDefault]) => ({
+        label, desc, isDefault, checked: s.dmMode === key ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === key ? ' on' : ''), pick: () => app.changeDelivery(key),
+      })),
+    deleteDesc: '이 콘텐츠를 내 목록에서 제거해요. 삭제 후 알림에서 되돌릴 수 있어요.',
+    confirmDelete: () => app.removeItem(s.delTarget),
     simulateDm: () => {}, simDisabled: true, simHint: '데모 시나리오에서만 쓸 수 있어요',
     sendFromIg: () => app.openBotDm(), openIgDm: () => app.openBotDm(),
     emptyCta: s.connected ? () => app.openBotDm() : () => app.showLinkGuide(),

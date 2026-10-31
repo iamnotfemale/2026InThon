@@ -8,6 +8,7 @@ import { mediaProbeFromEnv } from '../media-probe.mjs';
 import { mediaFactCheckerFromEnv } from '../media-pipeline.mjs';
 import { dmAssistantFromEnv } from '../dm-assistant.mjs';
 import { createInstagramLink, createSenderHandleLookup } from '../instagram-link.mjs';
+import { createResultPreferences } from '../result-preferences.mjs';
 
 // DM receipts and reply reservations go to Supabase once both variables are set; until then Blob keeps working.
 // Blob stays required either way: cloud OAuth tickets and the renewed access token are stored there.
@@ -42,6 +43,10 @@ export default function handler(req, res) {
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
     // Gemini 일반 대화와 콘텐츠 처리를 분기하며, Continuum-only 구성도 유지한다.
     ...state, loadAccessToken, loadProfileToken, background: task => waitUntil(task),
+    getDeliveryMode: async sender => {
+      const uid = await state.linkedUser?.(sender);
+      return uid ? createResultPreferences({ secret: process.env.META_APP_SECRET }).delivery(uid) : 'summary';
+    },
     verifyInstagramCode: state.issueLinkToken ? (code, sender) => createInstagramLink({
       secret: process.env.META_APP_SECRET, issueLinkToken: state.issueLinkToken,
     }).verify(code, sender, createSenderHandleLookup({ loadAccessToken, loadProfileToken })) : undefined,

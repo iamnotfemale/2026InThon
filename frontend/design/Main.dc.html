@@ -767,7 +767,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                   </button>
                 </span>
                 <sc-if value="{{it.menuOpen}}" hint-placeholder-val="{{ false }}">
-                  <div class="menu" role="menu">
+                  <div class="menu" popover="manual" role="menu">
                     <sc-if value="{{it.hasOrigin}}" hint-placeholder-val="{{ true }}">
                       <a class="menu-item" role="menuitem" href="{{it.origin}}" target="_blank" rel="noopener">
                         <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
@@ -867,7 +867,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <svg class="ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
           </button>
           <sc-if value="{{detailMenu}}" hint-placeholder-val="{{ false }}">
-            <div class="menu" role="menu" style="right: 0; top: calc(100% + 6px)">
+            <div class="menu" popover="manual" role="menu" style="right: 0; top: calc(100% + 6px)">
               <sc-if value="{{d.hasOrigin}}" hint-placeholder-val="{{ true }}">
                 <a class="menu-item" role="menuitem" href="{{d.origin}}" target="_blank" rel="noopener">
                   <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
@@ -1697,7 +1697,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <h2 class="h2">DM 결과 받는 방식</h2>
               <p class="muted" style="font-size: 13px">{{dmModeDesc}}</p>
             </div>
-            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}">
             <div style="padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 16px">
               <div role="radiogroup" aria-label="DM 결과 받는 방식" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px">
                 <sc-for list="{{dmModes}}" as="m" hint-placeholder-count="2">
@@ -1710,6 +1709,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                   </button>
                 </sc-for>
               </div>
+              <sc-if value="{{isDemo}}">
               <div style="border: 1px solid var(--border); border-radius: 14px; overflow: hidden">
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2)">
                   <span class="label">응답 예시</span>
@@ -1739,8 +1739,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                   </div>
                 </div>
               </div>
+              </sc-if>
             </div>
-            </sc-if>
             <sc-if value="{{isLive}}" hint-placeholder-val="{{ false }}"><div style="padding: 0 20px 20px"></div></sc-if>
           </section>
 
@@ -1865,7 +1865,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       <div style="padding: 22px 22px 18px; display: flex; flex-direction: column; gap: 10px">
         <h2 id="del-title" style="font-size: 17px; font-weight: 600">이 콘텐츠를 삭제할까요?</h2>
         <p style="font-size: 14px; font-weight: 500">{{delTitle}}</p>
-        <p class="muted" style="font-size: 13.5px; line-height: 1.6">이 콘텐츠의 정리 결과와 연결된 공유 링크를 삭제해요. 취향으로 모은 경우 취향에서도 빠져요. 삭제 후에는 되돌릴 수 없어요.</p>
+        <p class="muted" style="font-size: 13.5px; line-height: 1.6">{{deleteDesc}}</p>
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end; padding: 14px 22px; border-top: 1px solid var(--border); background: var(--surface-2)">
         <button type="button" class="btn" onClick="{{closeModal}}">취소</button>
@@ -2689,6 +2689,7 @@ class Component extends DCLogic {
       endShare: () => { this.setState({ shareStage: 'ended', shares: Object.assign({}, s.shares, { [raw.id]: 'ended' }) }); this.toast('공유를 종료했어요. 이제 이 링크로 볼 수 없어요.'); },
       closeModal: () => this.setState({ modal: null }),
       // delete
+      deleteDesc: '이 콘텐츠의 정리 결과와 연결된 공유 링크를 삭제해요. 취향으로 모은 경우 취향에서도 빠져요. 삭제 후에는 되돌릴 수 없어요.',
       modalDelete: s.modal === 'delete' && !!delItem, delTitle: delItem ? delItem.title : '',
       confirmDelete: () => { const id = s.delTarget; const tasteNext = Object.assign({}, s.taste, { [id]: false }); const sharesNext = Object.assign({}, s.shares); delete sharesNext[id]; const back = s.view === 'detail' && s.detailId === id; this.setState({ deleted: Object.assign({}, s.deleted, { [id]: true }), taste: tasteNext, shares: sharesNext, modal: null, delTarget: null, view: back ? (s.from === 'home' ? 'home' : 'library') : s.view }); this.toast('콘텐츠를 삭제했어요'); },
       // taste

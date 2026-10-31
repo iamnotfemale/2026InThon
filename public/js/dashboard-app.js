@@ -29,6 +29,7 @@ class DashboardApp extends DashboardModel {
     this.demoDefaults = Object.fromEntries(DEMO_KEYS.map(key => [key, this.state[key]]));
     this.state = { ...this.state, ...routeState(location.pathname), mode: 'demo', user: null, liveItems: [],
       liveGuide: false, liveLoaded: false };
+    this.state.resultPreferences = { delivery: 'summary', hidden: [] };
     if (this.state.detailId === 'r3') this.state.extra = [this.data().R3];
     this.onPop = () => {
       this.popping = true;
@@ -36,6 +37,13 @@ class DashboardApp extends DashboardModel {
       this.setState(routeState(location.pathname), () => { this.popping = false; });
     };
     this.onKey = event => {
+      const menu = document.activeElement?.closest('.menu[role="menu"]');
+      if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        const items = [...menu.querySelectorAll('[role="menuitem"]')];
+        const index = items.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        event.preventDefault(); items[next]?.focus(); return;
+      }
       if (event.key === 'Escape') {
         if (this.state.cook) this.renderVals().closeCook();
         else this.setState({ modal: null, menuId: null, detailMenu: false, demoOpen: false, reportOpen: false });
@@ -51,15 +59,36 @@ class DashboardApp extends DashboardModel {
     };
     // Coming back from Instagram (e.g. after linking on the phone) refreshes the real data.
     this.onVisible = () => { if (document.visibilityState === 'visible' && this.state.mode === 'live') this.loadLive(); };
+    this.onOutsideMenu = event => {
+      if ((this.state.menuId || this.state.detailMenu) && !event.target.closest('.menu,[aria-label="더보기"]')) this.setState({ menuId: null, detailMenu: false });
+    };
+    this.positionMenu = () => {
+      const menu = document.querySelector('.app .menu[popover]');
+      if (!menu?.showPopover) return;
+      const opener = (menu.closest('.row') ?? menu.parentElement).querySelector('button[aria-expanded="true"]');
+      if (!opener) return;
+      const opened = !menu.matches(':popover-open');
+      if (opened) { this.menuOpener = opener; menu.showPopover(); }
+      menu.style.inset = 'auto';
+      const rect = opener.getBoundingClientRect();
+      const top = rect.bottom + menu.offsetHeight + 8 <= innerHeight ? rect.bottom + 4 : rect.top - menu.offsetHeight - 4;
+      Object.assign(menu.style, { left: Math.max(8, Math.min(rect.right - menu.offsetWidth, innerWidth - menu.offsetWidth - 8)) + 'px', top: Math.max(8, top) + 'px' });
+      if (opened) menu.querySelector('[role="menuitem"]')?.focus();
+    };
   }
   componentDidMount() {
     addEventListener('popstate', this.onPop);
     addEventListener('keydown', this.onKey);
     document.addEventListener('visibilitychange', this.onVisible);
+    document.addEventListener('pointerdown', this.onOutsideMenu);
+    document.addEventListener('scroll', this.positionMenu, true);
+    addEventListener('resize', this.positionMenu);
     this.restoreSession();
   }
   componentDidUpdate(previousProps, previousState) {
     super.componentDidUpdate(previousProps);
+    this.positionMenu();
+    if ((previousState.menuId || previousState.detailMenu) && !this.state.menuId && !this.state.detailMenu) this.menuOpener?.focus();
     if (!this.popping && (previousState.view !== this.state.view || previousState.detailId !== this.state.detailId)) {
       const path = this.state.view === 'detail' ? '/items/' + encodeURIComponent(this.state.detailId)
         : this.state.view === 'home' ? '/dashboard' : '/' + this.state.view;
@@ -82,6 +111,9 @@ class DashboardApp extends DashboardModel {
     removeEventListener('popstate', this.onPop);
     removeEventListener('keydown', this.onKey);
     document.removeEventListener('visibilitychange', this.onVisible);
+    document.removeEventListener('pointerdown', this.onOutsideMenu);
+    document.removeEventListener('scroll', this.positionMenu, true);
+    removeEventListener('resize', this.positionMenu);
   }
 
   // --- real data mode -------------------------------------------------------------------------
@@ -121,11 +153,18 @@ class DashboardApp extends DashboardModel {
   /** Loads the linked account and fact-check history. Resolves to false if Supabase could not be read. */
   async loadLive() {
     const { supabase } = await loadSupabase();
-    const [link, rows] = await Promise.all([
+    let results;
+    try { results = await Promise.all([
       supabase.from('account_links').select('linked_at, ig_accounts(username)').maybeSingle(),
       supabase.from('factchecks').select('id, created_at, status, verdict, claim, reason, sources, dm_status, dm_sent_at')
-        .order('created_at', { ascending: false }).limit(200),
-    ]);
+        .eq('status', 'done').order('created_at', { ascending: false }).limit(200),
+      this.resultSettings(),
+    ]); } catch {
+      this.setState({ libLoading: false, libError: true });
+      this.toast('내 기록과 설정을 불러오지 못했어요. 다시 시도해 주세요.');
+      return false;
+    }
+    const [link, rows, preferences] = results;
     if (this.state.mode !== 'live') return false;
     if (link.error || rows.error) {
       this.setState({ libLoading: false, libError: true });
@@ -135,10 +174,43 @@ class DashboardApp extends DashboardModel {
     const next = linkState(link.data);
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
-    this.setState({ ...next, liveItems: rows.data.map(row => factcheckToItem(row, now)), libLoading: false, libError: false,
+    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done').map(row => factcheckToItem(row, now)), resultPreferences: preferences,
+      dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
     return true;
+  }
+
+  async resultSettings(update = {}) {
+    const { supabase } = await loadSupabase();
+    const { data } = await supabase.auth.getSession();
+    const response = await fetch('/api/instagram-link', { method: 'POST', headers: {
+      'Content-Type': 'application/json', Authorization: 'Bearer ' + (data.session?.access_token ?? ''),
+    }, body: JSON.stringify({ action: 'preferences', ...update }) });
+    if (!response.ok) throw new Error('Preferences unavailable');
+    return response.json();
+  }
+
+  async changeDelivery(delivery) {
+    if (this.savingDelivery) return;
+    this.savingDelivery = true;
+    try {
+      const resultPreferences = await this.resultSettings({ delivery });
+      this.setState({ resultPreferences, dmMode: resultPreferences.delivery });
+      this.toast('앞으로 받을 결과에 적용했어요');
+    } catch { this.toast('받는 방식을 저장하지 못했어요. 다시 시도해 주세요.'); }
+    finally { this.savingDelivery = false; }
+  }
+
+  async removeItem(id, hidden = true) {
+    if (!/^fc[1-9]\d*$/.test(id ?? '') || this.removingItem) return;
+    this.removingItem = true;
+    try {
+      const resultPreferences = await this.resultSettings({ item: id, hidden });
+      this.setState({ resultPreferences, modal: null, delTarget: null, ...(hidden && this.state.detailId === id ? { view: 'library', detailId: null } : {}) });
+      this.toast(hidden ? '내 목록에서 삭제했어요' : '목록에 복원했어요', hidden ? '되돌리기' : null, hidden ? () => this.removeItem(id, false) : null);
+    } catch { this.toast('목록을 변경하지 못했어요. 다시 시도해 주세요.'); }
+    finally { this.removingItem = false; }
   }
 
   leaveLive() {
@@ -193,7 +265,7 @@ class DashboardApp extends DashboardModel {
   }
 
   allItems() {
-    return this.state.mode === 'live' ? this.state.liveItems : super.allItems();
+    return this.state.mode === 'live' ? this.state.liveItems.filter(item => !this.state.resultPreferences.hidden.includes(item.id)) : super.allItems();
   }
 
   renderVals() {

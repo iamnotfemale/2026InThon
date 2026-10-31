@@ -92,8 +92,11 @@ test('senders are upserted, link tokens store only a hash with a 10-minute expir
   assert.deepEqual(row, { igsid: '123', status: 'done', verdict: 'refuted', claim: '주장', topic: 'health', reason: '근거와 다름',
     sources: [{ url: 'https://example.org/a', title: 't', source: 's' }] });
 
-  await state.saveFactCheck('123', { status: 'failed', messages: ['x'] });
-  assert.deepEqual(calls.at(-1).body, { igsid: '123', status: 'failed', verdict: null, claim: null, topic: null, reason: null, sources: [] });
+  const before = calls.length;
+  for (const status of ['failed', 'no_input', 'not_checkable', 'unexpected']) {
+    assert.equal(await state.saveFactCheck('123', { status, messages: ['x'] }), null);
+  }
+  assert.equal(calls.length, before, 'unprocessed content is never inserted');
 
   await assert.rejects(state.trackSender('../1'), /Invalid sender id/);
   await assert.rejects(state.saveFactCheck('abc', {}), /Invalid sender id/);

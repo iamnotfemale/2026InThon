@@ -6,6 +6,7 @@ import { join, dirname } from 'node:path';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 import { createLoginTicket } from './oauth-state.mjs';
 import { isContentMessage } from './instagram-source.mjs';
+import { resultLinkMessage } from './result-preferences.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
 export const APP_ID = '2418018855613539';
@@ -62,7 +63,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, loadProfileToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -174,11 +175,17 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;
-          if ((result.kind === 'content' || !respondToMessage) && saveFactCheck) {
+          if ((result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck) {
             await tracking; // The sender row must exist before writing a content result with its foreign key.
             await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
           }
-          for (const text of result.messages) await send(text);
+          let messages = result.messages;
+          if (savedId && config.publicUrl && getDeliveryMode) {
+            let mode = 'summary';
+            try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
+            if (mode !== 'full') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
+          }
+          for (const text of messages) await send(text);
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
           if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
           await backfill;

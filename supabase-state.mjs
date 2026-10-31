@@ -3,7 +3,6 @@ import { randomBytes, createHash } from 'node:crypto';
 export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 const IGSID = /^\d{1,32}$/;
 const USERNAME = /^[A-Za-z0-9._]{1,30}$/;
-const FACTCHECK_STATUSES = new Set(['done', 'not_checkable', 'no_input', 'failed']);
 const VERDICTS = new Set(['supported', 'refuted', 'context', 'unverified', 'not_checkable']);
 const clip = (value, n) => (typeof value === 'string' && value ? value.slice(0, n) : null);
 
@@ -89,7 +88,8 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
     // Fact-check history per sender: the extracted claim, verdict, reason and cited links, never the DM itself.
     async saveFactCheck(igsid, result = {}) {
       checkSender(igsid);
-      const status = FACTCHECK_STATUSES.has(result.status) ? result.status : 'failed';
+      if (result.status !== 'done') return null;
+      const status = 'done';
       const verdict = VERDICTS.has(result.verdict) ? result.verdict : (status === 'not_checkable' ? 'not_checkable' : null);
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
@@ -98,6 +98,11 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
         claim: clip(result.extracted?.claim, 1000), topic: clip(result.extracted?.topic, 50), reason: clip(result.reason, 2000) },
       undefined, true);
       return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };
+    },
+    async linkedUser(igsid) {
+      checkSender(igsid);
+      const rows = await request('GET', `/account_links?igsid=eq.${igsid}&select=user_id`, undefined, undefined, true);
+      return rows[0]?.user_id ?? null;
     },
     // Called only after every result message was confirmed by Meta.
     async markFactCheckSent(id) {

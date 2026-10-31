@@ -84,6 +84,14 @@ test('web requests validate the real Google session and never accept a browser-s
   const invalid = createLinkHandler({fetchImpl:async()=>new Response(null,{status:401})});
   assert.equal((await call(invalid, {action:'status'})).status, 401);
 });
+
+test('result settings can only change the authenticated user preferences',async()=>{
+  let savedUser;
+  const handler=createLinkHandler({preferences:{update:async uid=>{savedUser=uid;return{delivery:'full',hidden:[]};}},
+    fetchImpl:async()=>Response.json({id:UID})});
+  const response=await call(handler,{action:'preferences',delivery:'full',userId:OTHER});
+  assert.equal(response.status,200);assert.equal(savedUser,UID);
+});
 test('only DM-verified proof reaches the atomic link RPC as the authenticated user; repeat polls recover from an already consumed token', async () => {
   const requests = []; let status = {status:'pending',code:'AB12CD'};
   const handler = createLinkHandler({ links: {status:async()=>status}, fetchImpl: async (url, init) => {

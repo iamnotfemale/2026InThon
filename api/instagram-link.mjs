@@ -1,7 +1,8 @@
 import { createInstagramLink } from '../instagram-link.mjs';
+import { createResultPreferences } from '../result-preferences.mjs';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../public/js/supabase-config.js';
 
-export function createLinkHandler({ links, fetchImpl = fetch, origin = 'https://inthon.yeoziphab.com' }) {
+export function createLinkHandler({ links, preferences, fetchImpl = fetch, origin = 'https://inthon.yeoziphab.com' }) {
   const respond = (res, status, value) => {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify(value));
@@ -19,6 +20,8 @@ export function createLinkHandler({ links, fetchImpl = fetch, origin = 'https://
       if (!userResponse.ok) return respond(res, 401, { error: '로그인이 만료됐어요. 다시 로그인해 주세요.' });
       const user = await userResponse.json();
       if (!/^[a-f0-9-]{36}$/i.test(user.id ?? '')) return respond(res, 401, { error: '로그인을 확인하지 못했어요.' });
+      if (body.action === 'preferences') return respond(res, 200, body.delivery !== undefined || body.item !== undefined
+        ? await preferences.update(user.id, body) : await preferences.read(user.id));
       if (body.action === 'issue') return respond(res, 200, { status: 'pending', ...await links.issue(user.id, body.username) });
       if (body.action !== 'status') return respond(res, 400, { error: '지원하지 않는 요청이에요.' });
       const state = await links.status(user.id);
@@ -46,6 +49,7 @@ export default function instagramLinkHandler(req, res) {
     res.statusCode = 503; return res.end('Server configuration is incomplete');
   }
   handler ??= createLinkHandler({ links: createInstagramLink({ secret: process.env.META_APP_SECRET }),
+    preferences: createResultPreferences({ secret: process.env.META_APP_SECRET }),
     origin: process.env.PUBLIC_URL || 'https://inthon.yeoziphab.com' });
   return handler(req, res);
 }

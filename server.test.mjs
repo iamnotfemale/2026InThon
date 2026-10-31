@@ -387,7 +387,7 @@ test('link token failures send a retry message, and storage failures never block
   assert.deepEqual(sent, [LINK_FAILED]);
 });
 
-test('fact-check results are saved per sender, including outages, and save failures still deliver the answer', async t => {
+test('only processed results are saved; processing outages still send the error without saving it', async t => {
   const saved = []; const sent = [];
   const send = async (url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); };
   const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
@@ -400,7 +400,7 @@ test('fact-check results are saved per sender, including outages, and save failu
     saveFactCheck: async (id, result) => { saved.push([id, result.status, result.verdict]); throw new Error('db down'); }, apiFetch: send });
   await deliver(failing, [incoming({ message: { mid: 'fc-2', text: '주장' } })]);
   await eventually(() => failing.stats.replies === 1);
-  assert.deepEqual(saved, [['123456789', 'done', 'refuted'], ['123456789', 'failed', undefined]]);
+  assert.deepEqual(saved, [['123456789', 'done', 'refuted']]);
   assert.deepEqual(sent, [FACTCHECK_ACK, '결과', FACTCHECK_ACK, FACTCHECK_FAILED]);
 });
 
@@ -477,6 +477,22 @@ test('signed six-character verification DMs bypass AI and preserve the authentic
   await deliver(f,[incoming({message:{mid:'verification-dm',text:'ab12cd'}})]);
   await eventually(()=>f.stats.replies===1);
   assert.deepEqual(verified,[['ab12cd','123456789']]); assert.deepEqual(sent,['확인했어요']);
+});
+
+test('processed results default to their saved private URL; full DM mode and failed saves keep the result text', async t => {
+  for (const mode of ['summary','full','storage-error']) {
+    const sent=[];const marked=[];
+    const f=await fixture(t,{config:{accessToken:'test-token',userId:IG_ID,publicUrl:'https://inthon.yeoziphab.com'},
+      factCheck:async()=>({status:'done',extracted:{claim:'검증한 주장'},messages:['전체 분석 결과','근거 링크']}),
+      saveFactCheck:async()=>{if(mode==='storage-error')throw new Error('storage down');return{id:15};},
+      getDeliveryMode:async()=>mode,markFactCheckSent:async id=>marked.push(id),
+      apiFetch:async(_url,options)=>{sent.push(JSON.parse(options.body).message.text);return json({message_id:'out'});}});
+    await deliver(f,[incoming({message:{mid:'delivery-'+mode,text:'주장'}})]);await eventually(()=>f.stats.replies===1);
+    assert.equal(sent[0],FACTCHECK_ACK);
+    if(mode==='summary'){assert.equal(sent.length,2);assert.match(sent[1],/\/items\/fc15/);assert.match(sent[1],/로그인한 본인만/);}
+    else assert.deepEqual(sent.slice(1),['전체 분석 결과','근거 링크']);
+    assert.deepEqual(marked,mode==='storage-error'?[]:[15]);
+  }
 });
 
 test('slow sender tracking does not block a chat reply; content persistence still waits for its sender row', async t => {
