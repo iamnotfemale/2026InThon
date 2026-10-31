@@ -27,10 +27,18 @@
   ],
   "headers": [
     {
-      "source": "/((?!api/|health|webhooks/|auth/).*)",
+      "source": "/((?!api/|health|webhooks/|auth/|(?:dashboard|home|library|taste|calendar|settings)/?$|items/[^/]+/?$).*)",
       "headers": [
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    },
+    {
+      "source": "/((?:dashboard|home|library|taste|calendar|settings)/?|items/[^/]+/?)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net https://dapi.kakao.com https://*.kakaocdn.net; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]
     }
