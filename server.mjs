@@ -58,7 +58,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, setUsername }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, recordUsernameLookup }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -123,17 +123,20 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         const quietly = async (task, label) => { try { await task(); } catch { stats.lastError = label; } };
         let knownUsername = null;
         if (trackSender) await quietly(async () => { knownUsername = (await trackSender(sender))?.username ?? null; }, '발신자 기록 실패');
-        // The handle is only for display; linking and replies work without it. Failures are logged as codes only.
+        // The handle is only for display; linking and replies work without it. Failures are kept as codes only
+        // (Vercel log + ig_accounts.username_lookup_error), never Meta's error text, which can contain user IDs.
         const lookupUsername = async () => {
+          let outcome;
           try {
             const profile = await api(`${GRAPH}/${sender}?fields=username`, { headers: { Authorization: `Bearer ${accessToken}` } });
-            if (USERNAME.test(profile.username ?? '')) return profile.username;
-            console.warn('Instagram profile lookup: no usable username; fields returned:',
-              Object.keys(profile).filter(k => k !== 'id').join(',') || '(none)');
+            outcome = USERNAME.test(profile.username ?? '') ? { username: profile.username }
+              : { error: `no username; fields: ${Object.keys(profile).filter(k => k !== 'id').join(',') || 'none'}` };
           } catch (error) {
-            console.warn('Instagram profile lookup failed:', error.message.startsWith('Meta API') ? error.message : error.name);
+            outcome = { error: error.message.startsWith('Meta API') ? error.message.replace(/^.*?\((.*)\)$/, '$1') : error.name };
           }
-          return undefined;
+          if (outcome.error) console.warn('Instagram profile lookup failed:', outcome.error);
+          if (recordUsernameLookup) await quietly(() => recordUsernameLookup(sender, outcome), '아이디 조회 결과 기록 실패');
+          return outcome.username;
         };
         const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
         if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
@@ -144,9 +147,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           await send(text);
         } else if (factCheck) {
           // Backfill a missing handle alongside the fact-check, without delaying the reply.
-          const backfill = trackSender && setUsername && !knownUsername
-            ? quietly(async () => { const u = await lookupUsername(); if (u) await setUsername(sender, u); }, '아이디 기록 실패')
-            : null;
+          const backfill = trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null;
           await send(FACTCHECK_ACK);
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.

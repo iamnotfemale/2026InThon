@@ -65,11 +65,17 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       checkSender(igsid);
       return upsertSender(igsid);
     },
-    // Fills in the handle once Meta returns it; earlier lookups may have failed.
-    async setUsername(igsid, username) {
+    // Saves the outcome of a Meta profile lookup: the handle on success, otherwise the error codes.
+    async recordUsernameLookup(igsid, { username, error } = {}) {
       checkSender(igsid);
-      if (!USERNAME.test(username ?? '')) throw new Error('Invalid username');
-      await request('PATCH', `/ig_accounts?igsid=eq.${igsid}`, { username });
+      const checked = { username_checked_at: new Date(now()).toISOString() };
+      if (USERNAME.test(username ?? '')) {
+        await request('PATCH', `/ig_accounts?igsid=eq.${igsid}`, { username, username_lookup_error: null, ...checked });
+      } else {
+        // Codes and field names only; strip anything else so free text can't end up stored.
+        const reason = String(error ?? 'unknown').replace(/[^\w ,.:;()=-]/g, '').trim().slice(0, 200) || 'unknown';
+        await request('PATCH', `/ig_accounts?igsid=eq.${igsid}`, { username_lookup_error: reason, ...checked });
+      }
     },
     // Returns a one-time token for the web link page. Only its SHA-256 hash is stored.
     async issueLinkToken({ igsid, username }) {

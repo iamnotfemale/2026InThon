@@ -99,19 +99,30 @@ test('senders are upserted, link tokens store only a hash with a 10-minute expir
   await assert.rejects(state.saveFactCheck('abc', {}), /Invalid sender id/);
 });
 
-test('trackSender reports the stored handle and setUsername fills it in only with a valid handle', async () => {
+test('trackSender reports the stored handle; lookup outcomes store the handle or sanitized error codes', async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {
     calls.push({ url, method: init.method, body: JSON.parse(init.body) });
     return init.method === 'POST' ? new Response('[{"username":"tester.one"}]', { status: 201 }) : new Response(null, { status: 204 });
   };
-  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl });
+  const at = '2026-10-31T00:00:00.000Z';
+  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl, now: () => Date.parse(at) });
   assert.deepEqual(await state.trackSender('123'), { username: 'tester.one' });
-  await state.setUsername('123', 'new.handle');
+
+  await state.recordUsernameLookup('123', { username: 'new.handle' });
   assert.equal(calls[1].method, 'PATCH');
   assert.equal(calls[1].url, 'https://x.supabase.co/rest/v1/ig_accounts?igsid=eq.123');
-  assert.deepEqual(calls[1].body, { username: 'new.handle' });
-  await assert.rejects(state.setUsername('123', 'bad name'), /Invalid username/);
-  await assert.rejects(state.setUsername('1&x=1', 'ok'), /Invalid sender id/);
-  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[1].body, { username: 'new.handle', username_lookup_error: null, username_checked_at: at });
+
+  await state.recordUsernameLookup('123', { error: 'HTTP 400, code 100, subcode 33, GraphMethodException' });
+  assert.deepEqual(calls[2].body, { username_lookup_error: 'HTTP 400, code 100, subcode 33, GraphMethodException', username_checked_at: at });
+
+  // Invalid handles are treated as failures, and stray characters are stripped from stored errors.
+  await state.recordUsernameLookup('123', { username: 'bad name', error: 'x<script>"y"' });
+  assert.deepEqual(calls[3].body, { username_lookup_error: 'xscripty', username_checked_at: at });
+  await state.recordUsernameLookup('123', {});
+  assert.equal(calls[4].body.username_lookup_error, 'unknown');
+
+  await assert.rejects(state.recordUsernameLookup('1&x=1', { username: 'ok' }), /Invalid sender id/);
+  assert.equal(calls.length, 5);
 });
