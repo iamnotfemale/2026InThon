@@ -2,7 +2,7 @@ import { h, render } from './vendor/preact.module.js';
 import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
-import { BOT_DM_URL, factcheckToItem, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { BOT_DM_URL, factcheckToItem, exhibitRowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
   const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/settings': 'settings' }[path];
@@ -34,7 +34,7 @@ class DashboardApp extends DashboardModel {
     this.state = { ...this.state, ...routeState(location.pathname), mode: 'demo', user: null, liveItems: [],
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'summary', hidden: [] };
-    this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*\/?$/.test(location.pathname);
+    this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
     this.mobileMedia = matchMedia('(max-width: 767px)');
     this.state.mobile = this.mobileMedia.matches;
     this.mobileValues = createMobileDashboard(this);
@@ -211,7 +211,8 @@ class DashboardApp extends DashboardModel {
     const next = linkState(link.data);
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
-    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done').map(row => factcheckToItem(row, now)).filter(Boolean), resultPreferences: preferences,
+    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done')
+      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
@@ -240,11 +241,13 @@ class DashboardApp extends DashboardModel {
   }
 
   async removeItem(id, hidden = true) {
+    // Events from one exhibition post share their stored row, so hiding one hides the post.
+    id = rowIdOf(id);
     if (!/^fc[1-9]\d*$/.test(id ?? '') || this.removingItem) return;
     this.removingItem = true;
     try {
       const resultPreferences = await this.resultSettings({ item: id, hidden });
-      this.setState({ resultPreferences, modal: null, delTarget: null, ...(hidden && this.state.detailId === id ? { view: 'library', detailId: null } : {}) });
+      this.setState({ resultPreferences, modal: null, delTarget: null, ...(hidden && rowIdOf(this.state.detailId) === id ? { view: 'library', detailId: null } : {}) });
       this.toast(hidden ? '내 목록에서 삭제했어요' : '목록에 복원했어요', hidden ? '되돌리기' : null, hidden ? () => this.removeItem(id, false) : null);
     } catch { this.toast('목록을 변경하지 못했어요. 다시 시도해 주세요.'); }
     finally { this.removingItem = false; }
@@ -303,7 +306,7 @@ class DashboardApp extends DashboardModel {
   }
 
   allItems() {
-    return this.state.mode === 'live' ? this.state.liveItems.filter(item => !this.state.resultPreferences.hidden.includes(item.id)) : super.allItems();
+    return this.state.mode === 'live' ? this.state.liveItems.filter(item => !this.state.resultPreferences.hidden.includes(item.rowId ?? item.id)) : super.allItems();
   }
 
   renderVals() {

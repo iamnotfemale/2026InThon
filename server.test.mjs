@@ -451,7 +451,7 @@ test('signed content shares send three quick replies; clicks route the original 
   assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
   assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
-  assert.equal(sent.filter(m => m.text?.includes('주최, 마감일, 지원 조건')).length, 1, 'schedule has its own acknowledgement');
+  assert.equal(sent.filter(m => m.text?.includes('일정, 장소·주최, 조건')).length, 1, 'schedule has its own acknowledgement');
   assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe'); assert.equal(saved[2].action, 'schedule');
   assert.deepEqual(marked, ['saved-result', 'saved-result', 'saved-result']); assert.equal(blobs.size, 0);
 });
