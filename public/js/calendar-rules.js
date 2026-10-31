@@ -38,8 +38,7 @@ export function calendarContent(item) {
   const facts = item.type === 'recipe' ? []
     : item.type === 'exhibit' ? [['기간', item.period], ['운영', item.hours], ['휴무', item.closed], ['장소', item.place], ['입장료', item.fee]]
       : item.type === 'contest' ? [['주최', item.host], ['마감', item.deadline]]
-        : item.type === 'restaurant' ? [['분류', item.category], ['주소', item.address]]
-          : [['분류', item.category], ['주소', item.address], ['운영', item.hours], ['휴무', item.closed], ['예약', item.reservation]];
+        : [['분류', item.category], ['주소', item.address]];
   const fixed = Object.fromEntries((item.contestEvents || []).filter(e => ['deadline', 'announce'].includes(e.type) && validCalendarDate(e.date))
     .map(e => [e.type === 'announce' ? 'result' : 'deadline', [e.date, VALID_TIME.test(e.time) ? e.time : null]]));
   return { type: item.type, title: item.title, sub: item.key || '', summary: item.summary || item.intro || '',
