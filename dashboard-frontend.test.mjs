@@ -21,6 +21,11 @@ test('all supplied sample records and initial derived views still render using t
     model.state.view = 'detail'; model.state.detailId = item.id;
     assert.ok(model.renderVals().isDetail, item.id);
   }
+  model.state.view='settings';
+  for(const type of ['recipe','news','exhibit','contest','restaurant','space']){
+    model.state.dmType=type;
+    assert.doesNotThrow(()=>model.renderVals(),type);
+  }
 });
 
 test('the template adapter preserves handler functions, CSS strings, control values and loop scope', async () => {

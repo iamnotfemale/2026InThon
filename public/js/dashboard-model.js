@@ -541,7 +541,7 @@ export default class DashboardModel extends DCLogic {
 
     // settings
     const f = s.flow; const mm = String(Math.floor(s.codeLeft / 60)).padStart(2, '0'); const ss = String(s.codeLeft % 60).padStart(2, '0');
-    const dmSample = D.DM[s.dmType];
+    const dmSample = D.DM[s.dmType] || D.DM.recipe;
     const activeShares = items.filter(it => s.shares[it.id] === 'active').map(it => ({ title: it.title, orbCls: it.orbCls, open: () => this.openDetail(it.id) }));
 
     // modals

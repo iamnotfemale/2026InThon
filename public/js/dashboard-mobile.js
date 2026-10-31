@@ -38,6 +38,7 @@ export function createMobileDashboard(app) {
     applyTasteOrbitValues(v, s, app);
     applyDmPreview(v, s, app);
     v.d.hasTips = Array.isArray(v.d.tips) && v.d.tips.length > 0;
+    v.d.hasComparisons = Array.isArray(v.d.cmp) && v.d.cmp.length > 0;
     v.d.showExtraTasteAction = v.d.tasteable && (v.d.isContest || v.d.isRestaurant || v.d.isSpace);
     Object.assign(v, {
       isLive: live, modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',
@@ -80,6 +81,7 @@ export function createMobileDashboard(app) {
       v.d.cmpSummary = v.d.sourceCount ? '' : '확보한 근거 자료가 없어요';
       // The real fact-check has one verdict and cited sources, not fabricated per-claim comparisons.
       v.d.cmp = [];
+      v.d.hasComparisons = false;
       v.d.oneLine = v.d.reason || v.d.oneLine;
     }
     return applyIndexValues(v, s, app);

@@ -164,7 +164,7 @@ export default class MobileModel extends DCLogic {
         d.needleDeg = ({ false: -101.25, mis: -33.75, mostly: 33.75, true: 101.25 }[raw.verdict] || 0) + 'deg'; d.gaugeAria = '판단: ' + VL[raw.verdict];
         d.cmp = raw.checks.map(c => Object.assign({}, c, { cls: 'cmp ' + c.st, isMatch: c.st === 'match', isDiff: c.st === 'diff', isMissing: c.st === 'missing' }));
         const n = st => raw.checks.filter(c => c.st === st).length; d.cmpSummary = '일치 ' + n('match') + ' · 다름 ' + n('diff') + ' · 확인 안 됨 ' + n('missing');
-        d.sources = raw.sources.map(x => Object.assign({}, x, { href: x.url, ini: x.org.charAt(0) })); d.sourceCount = raw.sources.length;
+        d.sources = raw.sources.map(x => Object.assign({}, x, { href: x.url, ini: (x.org || '출처').trim().charAt(0) })); d.sourceCount = raw.sources.length; d.noSources = !d.sourceCount;
       }
       if (raw.type === 'exhibit' && done) {
         const mv = v => /미기재/.test(v) ? 'v miss' : 'v'; d.closedCls = mv(raw.closed); d.bookingCls = mv(raw.booking);

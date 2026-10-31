@@ -15,7 +15,7 @@
 .settings-layout{display:grid;grid-template-columns:180px minmax(0,1fr);gap:32px;align-items:start}
 .settings-menu{position:sticky;top:24px;display:flex;flex-direction:column;gap:28px;max-height:calc(100dvh - 48px);overflow-y:auto}
 .settings-page section{scroll-margin-top:24px}
-.account-change{border:0;box-shadow:none}
+.app .account-change,.m .account-change{border:0;box-shadow:none}
 .dm-preview .seg{max-width:100%;flex-wrap:wrap;gap:2px}
 .dm-preview .seg button{height:28px;padding-inline:8px;font-size:12px;flex:0 0 auto}
 .dm-preview .bubble{max-width:90%;padding:9px 13px;border-radius:18px;font-size:13px;line-height:1.5;white-space:pre-line}

@@ -51,6 +51,19 @@ test('mobile contest and restaurant details can be collected into taste without 
   app.state.detailId='n1'; assert.equal(values().d.showExtraTasteAction,false);
 });
 
+test('mobile fact-check sources preserve long titles and show a safe empty-source state',()=>{
+  const {app,values}=fixture();
+  const news=app.allItems().find(item=>item.id==='n1');
+  app.allItems=()=>[news];
+  news.sources=[{title:'긴 근거 제목 '.repeat(30),org:'',date:'',url:'https://example.test/evidence'}];
+  Object.assign(app.state,{view:'detail',detailId:'n1'});
+  assert.equal(values().d.sources[0].title,news.sources[0].title);
+  assert.equal(values().d.sources[0].href,'https://example.test/evidence');
+  assert.equal(values().d.sources[0].ini,'출'); assert.equal(values().d.noSources,false);
+  assert.equal(values().d.hasComparisons,false);
+  news.sources=[]; assert.equal(values().d.noSources,true);
+});
+
 test('mobile delivery, deletion and login call the real existing actions', () => {
   const {app,values,calls}=fixture();
   Object.assign(app.state,{view:'detail',detailId:'n1'});
