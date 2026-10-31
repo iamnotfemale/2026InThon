@@ -13,13 +13,18 @@
     { "source": "/webhooks/instagram", "destination": "/api/instagram" },
     { "source": "/auth/start", "destination": "/api/instagram" },
     { "source": "/auth/instagram/callback", "destination": "/api/instagram" },
-    { "source": "/auth/result", "destination": "/api/instagram" }
+    { "source": "/auth/result", "destination": "/api/instagram" },
+    { "source": "/home", "destination": "/index.html" },
+    { "source": "/library", "destination": "/index.html" },
+    { "source": "/taste", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
+    { "source": "/items/:id", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/((?!api/|health|webhooks/|auth/).*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]

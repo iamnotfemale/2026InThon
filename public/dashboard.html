@@ -4,46 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>내 대시보드 · inthon2team 팩트체크</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <script type="module" src="/js/dashboard.js"></script>
+  <title>DM 콘텐츠 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <script type="module" src="/js/dashboard-app.js"></script>
 </head>
-<body>
-<main>
-  <h1>내 대시보드</h1>
-  <p id="loading" class="muted">불러오는 중…</p>
-
-  <section id="signed-out" hidden>
-    <p>대시보드를 보려면 구글로 로그인해 주세요.</p>
-    <div class="row"><button id="login" class="primary">구글로 로그인</button></div>
-    <p id="inapp" class="muted" hidden>Instagram 등 앱 안에서는 구글 로그인이 막혀 있어요. 오른쪽 위 메뉴에서 <strong>외부 브라우저로 열기</strong>를 선택해 주세요.</p>
-  </section>
-
-  <section id="signed-in" hidden>
-    <p class="muted">로그인: <span id="email"></span></p>
-
-    <div class="card">
-      <h2>연결된 Instagram 계정</h2>
-      <div id="linked" hidden>
-        <p><strong id="handle"></strong></p>
-        <p class="muted">연결 시각: <span id="linked-at"></span></p>
-        <div class="row"><button id="unlink">연결 해제</button></div>
-      </div>
-      <div id="unlinked" hidden>
-        <p>아직 연결된 계정이 없어요.</p>
-        <p>Instagram에서 <strong>@inthon2team</strong>에 <code>연결</code>이라고 DM을 보내면 연결 링크를 받을 수 있어요.</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>팩트체크 기록</h2>
-      <p class="muted">곧 이곳에서 내가 보낸 콘텐츠의 확인 결과를 볼 수 있어요.</p>
-    </div>
-
-    <div class="row"><button id="logout">로그아웃</button></div>
-  </section>
-
-  <p id="error" class="error" hidden></p>
-</main>
-</body>
+<body><div id="app"></div><noscript>화면을 보려면 JavaScript를 켜주세요.</noscript></body>
 </html>
