@@ -30,8 +30,8 @@ a{color:#0A0A0A}a:hover{color:#404040}
 .orb.inline{position:relative;flex:none}
 .o-recipe::before{background:radial-gradient(circle at 28% 32%,#FDE68A 0,transparent 38%),radial-gradient(circle at 72% 64%,#FB7185 0,transparent 42%),conic-gradient(from 20deg,#FDBA74,#FB7185,#FDE68A,#F97316,#FDBA74)}
 .o-news::before{background:radial-gradient(circle at 30% 30%,#BAE6FD 0,transparent 38%),radial-gradient(circle at 70% 62%,#6366F1 0,transparent 42%),conic-gradient(from 90deg,#93C5FD,#6366F1,#BAE6FD,#3B82F6,#93C5FD)}
-.o-exhibit::before{background:radial-gradient(circle at 30% 30%,#FBCFE8 0,transparent 38%),radial-gradient(circle at 70% 64%,#A78BFA 0,transparent 42%),conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
-.o-contest::before{background:radial-gradient(circle at 30% 30%,#FDE047 0,transparent 38%),radial-gradient(circle at 70% 62%,#34D399 0,transparent 42%),conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
+.o-exhibit::before{background:radial-gradient(circle at 30% 30%,#DCFCE7 0,transparent 38%),radial-gradient(circle at 70% 64%,#22C55E 0,transparent 42%),conic-gradient(from 200deg,#86EFAC,#6EE7B7,#22C55E,#DCFCE7,#86EFAC)}
+.o-contest::before{background:radial-gradient(circle at 30% 30%,#DDD6FE 0,transparent 38%),radial-gradient(circle at 70% 62%,#8B5CF6 0,transparent 42%),conic-gradient(from 300deg,#A78BFA,#DDD6FE,#8B5CF6,#BAE6FD,#A78BFA)}
 .o-news{animation-duration:11s;animation-delay:-3s}.o-exhibit{animation-duration:10s;animation-delay:-6s;animation-direction:reverse}.o-contest{animation-duration:8s;animation-delay:-2s}
 .soft{filter:blur(2px);opacity:.9}
 .hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}

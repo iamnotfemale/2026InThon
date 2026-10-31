@@ -393,9 +393,11 @@ export default class DashboardModel extends DCLogic {
     const libFirst = items.length === 0;
     const libSearchEmpty = !libFirst && lib.length === 0 && !!q;
     const libFilterEmpty = !libFirst && lib.length === 0 && !q;
-    const typeTabs = [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space], ['beauty', '미용', 'dot t-beauty', counts.beauty]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
+    const TYPE_GROUPS = [['가볼 곳', [['exhibit', '전시·팝업'], ['space', '취향공간'], ['restaurant', '맛집']]], ['챙길 정보', [['news', '뉴스·정보'], ['contest', '공모전·대외활동']]], ['생활', [['recipe', '레시피'], ['beauty', '미용']]]];
+    const typeTabs = [['all', '전체', null, items.length, false, '']].concat(TYPE_GROUPS.flatMap(([group, list]) => list.map(([k, label], i) => [k, label, 'dot t-' + k, counts[k], i === 0, group]))).map(([k, label, dot, count, groupStart, group]) => ({ label, dot, hasDot: !!dot, count, group, groupStart, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
     const statusChips = [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k, menuId: null }) }));
-    const sideTypes = [['recipe', '레시피'], ['news', '뉴스·정보'], ['exhibit', '전시·팝업'], ['contest', '공모전·대외활동'], ['restaurant', '맛집'], ['space', '취향공간'], ['beauty', '미용']].map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) }));
+    const sideGroups = TYPE_GROUPS.map(([name, list]) => ({ name, types: list.map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) })) }));
+    const sideTypes = sideGroups.flatMap(g => g.types);
 
     // home
     const active = items.filter(it => it.status === 'processing' || it.status === 'needtype').sort((a, b) => b.ts - a.ts);
@@ -586,7 +588,7 @@ export default class DashboardModel extends DCLogic {
       setViewList: () => this.setState({ libView: 'list', menuId: null }), setViewGrid: () => this.setState({ libView: 'grid', menuId: null }),
       name: s.name, initial: s.name.slice(0, 1), account: s.account, connectedAt: s.connectedAt,
       connected: s.connected, notConnected: !s.connected,
-      totalCount: items.length, tasteCount: tasteItemsAll.length, sideTypes,
+      totalCount: items.length, tasteCount: tasteItemsAll.length, sideTypes, sideGroups,
       navHome: 'nav-item' + (s.view === 'home' ? ' on' : ''), navLib: 'nav-item' + (s.view === 'library' || (s.view === 'detail' && s.from !== 'home' && s.from !== 'taste') ? ' on' : ''), navTaste: 'nav-item' + (s.view === 'taste' ? ' on' : ''), navSettings: 'nav-item' + (s.view === 'settings' ? ' on' : ''),
       goHome: () => this.go('home'), goLibrary: () => this.go('library'), goTaste: () => this.go('taste'), goSettings: () => this.go('settings'),
       goLibraryNew: () => this.go('library', { sort: 'new' }),
@@ -642,7 +644,7 @@ export default class DashboardModel extends DCLogic {
       copyIngredients: () => { if (!raw || !raw.ingredients) return; this.copy(raw.title + ' 재료\n' + raw.ingredients.map(g => '- ' + g.name + ' ' + g.qty).join('\n'), '재료 목록을 복사했어요'); },
       visitOpen: s.visitOpen, visitExpanded: s.visitOpen ? 'true' : 'false', toggleVisit: () => this.setState({ visitOpen: !s.visitOpen }),
       addDeadline: () => this.toast('마감 일정(11.14 18:00 KST)을 캘린더에 추가하도록 열었어요 (데모)'),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['restaurant', '맛집', '위치·메뉴·가격'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['recipe', '레시피', '재료·분량, 조리 순서'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
       requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       fbUpCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'up' ? ' btn-primary' : ''), fbDownCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'down' ? ' btn-primary' : ''),

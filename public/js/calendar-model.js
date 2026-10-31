@@ -194,7 +194,7 @@ export default class CalendarModel extends DCLogic {
       next: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() + 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, 7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
       goToday: () => this.setState({ sel: today, cursor: today.slice(0,7) + '-01' }),
       openAddSel: () => this.openModal({ date: s.sel < today ? today : s.sel }),
-      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => {
+      filters: [['all', '전체', null, events.length], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['space', '취향공간', 'dot t-space', counts.space], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['recipe', '레시피', 'dot t-recipe', counts.recipe]].map(([k, label, dot, count]) => {
         const on = k === 'all' ? allOn : (!allOn && s.filter[k]);
         return { label, dot, hasDot: !!dot, count, cls: on ? 'on' : '', pressed: on ? 'true' : 'false',
           toggle: () => this.setState({ filter: Object.fromEntries(Object.keys(C.KINDS).map(type => [type, k === 'all' || type === k])) }) };
