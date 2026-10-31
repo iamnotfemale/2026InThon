@@ -32,6 +32,7 @@ Python 표준 라이브러리로 원본의 `sc-if`·`sc-for`·바인딩을 컴�
 - 생성물은 `public/index.html`, `register.html`, `dashboard.html` 및 각 페이지 이름의 CSS·template JSON·model JS다. `landing-app.js`, `register-app.js`는 얇은 진입점이다.
 - **회원가입은 제공 ZIP에 명시된 데모 시뮬레이션이다.** Google 버튼은 데모 대화를 진행하며 계정을 생성하지 않는다. 이름·나이도 서버에 저장하지 않는다. 이후 실제 가입 연결은 `RegisterModel`을 상속하는 진입점에서 구현한다. 대시보드의 기존 실제 Google 로그인·Supabase 데이터 모드는 그대로 동작한다.
 - 대시보드 실제 모드의 DM 이동 URL은 `https://ig.me/m/dimi_in`다. Meta 앱 ID·Instagram 숫자 ID·운영 권한은 변경하지 않는다.
+- `public/css/page-layout.css`는 추가 요청한 레이아웃만 덮어쓴다. 랜딩은 90% 표시, 회원가입은 `100dvh` 안에 헤더·마스코트·입력 영역을 배치하고 대화 목록만 내부 스크롤한다. 원본 CSS 파일은 그대로 유지한다.
 
 ### 데모와 실제 데이터 모드
 

@@ -98,6 +98,7 @@ def compile_page(source_path, name, model_name, output):
   <link rel="stylesheet" href="__FONTS__">
   <link rel="stylesheet" href="/css/__PAGE__.css">
   <link rel="stylesheet" href="/css/brand.css">
+  <link rel="stylesheet" href="/css/page-layout.css">
   <script type="module" src="/js/__PAGE__-app.js"></script>
 </head>
 <body><div id="app"></div><noscript>화면을 보려면 JavaScript를 켜주세요.</noscript></body>
