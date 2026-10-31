@@ -27,7 +27,8 @@ export async function loginThenDashboard(loadAuth, location) {
 export function withGoogleSignup(RegisterModel, loadAuth, fetchImpl = fetch) {
   return class RegisterApp extends RegisterModel {
     constructor(props) {
-      super({ ...props, services: createRegistrationServices({ loadAuth, fetchImpl }) });
+      super(props);
+      this.services = createRegistrationServices({ loadAuth, fetchImpl });
     }
   };
 }

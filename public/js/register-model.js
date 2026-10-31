@@ -2,9 +2,10 @@ import { DCLogic } from './dashboard-runtime.js';
 
 export default class RegisterModel extends DCLogic {
   constructor(props) {
-    super(props); this._timers = []; this._run = 0;
+    super(props); this.services = props.services; this._timers = []; this._run = 0;
     this.state = this.initialState();
   }
+  errorText(error) { return /[가-힣]/.test(error?.message || '') ? error.message : '연결을 확인하지 못했어요. 잠시 후 다시 시도해 주세요.'; }
   initialState() { return { msgs: [], typing: false, step: 'intro', stage: 0, name: '', age: '', nameDraft: '', ageDraft: '', ageError: false, seq: 0, cheer: false, handleDraft: '', linkCode: '', linkBusy: false, error: '', linkNotice: '', copied: false }; }
   componentDidMount() { this.onFocus = () => this.checkLink(false); addEventListener('focus', this.onFocus); this.start(); }
   componentWillUnmount() { this._run++; this.stopPoll(); this._timers.forEach(clearTimeout); removeEventListener('focus', this.onFocus); }
@@ -23,32 +24,32 @@ export default class RegisterModel extends DCLogic {
     const run = ++this._run; this.stopPoll(); this._timers.forEach(clearTimeout); this._timers = [];
     this.setState(this.initialState());
     try {
-      const user = await this.props.services.user(); if (run !== this._run) return;
+      const user = await this.services.user(); if (run !== this._run) return;
       if (!user) return this.botSay(['안녕하세요! 당신의 가장 가까운 비서, 디미예요.', '먼저 Google 계정으로 로그인해 주세요.'], { step: 'google' });
       this.push('me', 'Google 계정으로 로그인했어요' + (user.email ? ' · ' + user.email : ''));
-      this.setState({ stage: 1, nameDraft: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || '' });
-      const status = await this.props.services.status(); if (run !== this._run) return;
+      this.setState({ stage: 1, nameDraft: [user.user_metadata?.display_name, user.user_metadata?.full_name, user.user_metadata?.name].find(v => typeof v === 'string' && v.trim()) || '' });
+      const status = await this.services.status(); if (run !== this._run) return;
       if (status.status === 'linked') return this.linked(status.username);
       if (status.status === 'pending') this.setState({ handleDraft: status.username, linkCode: status.code });
       this.botSay(['Instagram 아이디를 입력해 주세요.', '발급받은 인증번호를 그 계정에서 @dimi_in에게 DM으로 보내면 연결돼요.'], { step: 'instagram' });
       if (status.status === 'pending') this.startPoll();
-    } catch (e) { if (run === this._run) this.setState({ step: 'google', error: e.message }); }
+    } catch (e) { if (run === this._run) this.setState({ step: 'google', error: this.errorText(e) }); }
   }
   async googleLogin() {
     if (this.state.step !== 'google') return;
     this.setState({ step: 'googleBusy', error: '' });
-    try { await this.props.services.login(); }
-    catch (e) { this.setState({ step: 'google', error: e.message }); }
+    try { await this.services.login(); }
+    catch (e) { this.setState({ step: 'google', error: this.errorText(e) }); }
   }
   async issueCode() {
     if (this.state.linkBusy || this.state.step !== 'instagram') return;
     this.setState({ linkBusy: true, error: '' }); const run = this._run;
     try {
-      const result = await this.props.services.issue(this.state.handleDraft);
+      const result = await this.services.issue(this.state.handleDraft);
       if (run !== this._run) return;
       this.setState({ handleDraft: result.username, linkCode: result.code, copied: false, linkNotice: 'DM 인증을 기다리고 있어요.' });
       this.startPoll();
-    } catch (e) { if (run === this._run) this.setState({ error: e.message }); }
+    } catch (e) { if (run === this._run) this.setState({ error: this.errorText(e) }); }
     finally { if (run === this._run) this.setState({ linkBusy: false }); }
   }
   startPoll() { this.stopPoll(); this._poll = setInterval(() => this.checkLink(false), 5000); }
@@ -57,12 +58,12 @@ export default class RegisterModel extends DCLogic {
     if (this._checking || this.state.step !== 'instagram' || !this.state.linkCode) return;
     this._checking = true; const run = this._run;
     try {
-      const result = await this.props.services.status(); if (run !== this._run) return;
+      const result = await this.services.status(); if (run !== this._run) return;
       if (result.status === 'linked') this.linked(result.username);
       else if (result.status === 'expired' || result.status === 'none') {
         this.stopPoll(); this.setState({ linkCode: '', error: '인증번호가 만료됐어요. 새 번호를 받아 주세요.', linkNotice: '' });
       } else if (manual) this.setState({ linkNotice: '아직 DM이 확인되지 않았어요. 입력한 계정에서 인증번호만 보내 주세요.' });
-    } catch (e) { if (run === this._run && manual) this.setState({ error: e.message }); }
+    } catch (e) { if (run === this._run && manual) this.setState({ error: this.errorText(e) }); }
     finally { this._checking = false; }
   }
   linked(username) {
@@ -70,7 +71,7 @@ export default class RegisterModel extends DCLogic {
     this.botSay(['@' + username + ' 계정이 연결됐어요!', '뭐라고 불러드리면 될까요?'], { step: 'name' });
   }
   async copyCode() {
-    try { await this.props.services.copy(this.state.linkCode); this.setState({ copied: true, error: '' }); }
+    try { await this.services.copy(this.state.linkCode); this.setState({ copied: true, error: '' }); }
     catch { this.setState({ error: '자동 복사를 못했어요. 인증번호를 직접 선택해 복사해 주세요.' }); }
   }
   changeHandle() { this._run++; this.stopPoll(); this.setState({ linkCode: '', error: '', linkNotice: '', copied: false, linkBusy: false }); }
@@ -89,11 +90,11 @@ export default class RegisterModel extends DCLogic {
   async finish(age) {
     this.setState({ step: 'saving', error: '' }); const run = this._run;
     try {
-      await this.props.services.profile(this.state.name, age); if (run !== this._run) return;
+      await this.services.profile(this.state.name, age); if (run !== this._run) return;
       try { localStorage.setItem('inthon-dashboard-mode', JSON.stringify('live')); } catch {}
       this.setState({ stage: 4 });
       this.botSay(['가입이 완료됐어요!', this.state.name + '님, 이제 @dimi_in에 콘텐츠를 보내 주세요. 내 대시보드에서 다시 볼 수 있어요.'], { step: 'done', cheer: true });
-    } catch (e) { if (run === this._run) this.setState({ step: 'age', error: e.message }); }
+    } catch (e) { if (run === this._run) this.setState({ step: 'age', error: this.errorText(e) }); }
   }
   renderVals() {
     const s = this.state;
