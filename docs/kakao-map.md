@@ -5,12 +5,7 @@
 ## 설정
 
 1. `public/js/kakao-config.js`의 `KAKAO_JS_KEY`에 Kakao Developers의 **JavaScript 키**를 넣는다. 브라우저에 전달되는 공개 키이며, 보호는 Kakao Developers → 내 애플리케이션 → 플랫폼 → **Web 사이트 도메인**(`https://inthon.yeoziphab.com`, 필요 시 `https://inthon-pi.vercel.app`) 등록으로 한다. 카카오맵 서비스(지도·로컬)가 활성화돼 있어야 한다.
-2. CSP(`vercel.json` 헤더)에 다음을 추가한다.
-   - `script-src`: `https://dapi.kakao.com https://t1.daumcdn.net` (SDK, 지도 엔진, 주소·장소 검색 JSONP)
-   - `img-src`: `https://*.daumcdn.net` (지도 타일 `map0~3.daumcdn.net`, 마커 이미지 `t1.daumcdn.net`)
-   - `connect-src`: `https://dapi.kakao.com`
-   브라우저 콘솔에 CSP 차단이 보이면 그 도메인을 같은 지시어에 추가한다.
-3. 대시보드 페이지만 `<meta name="referrer" content="strict-origin-when-cross-origin">`이다(`scripts/build-dashboard.py`). 카카오가 JavaScript 키를 요청 사이트 도메인으로 확인하기 때문이다. 다른 사이트에는 경로 없이 `https://inthon.yeoziphab.com`만 전달된다. 다른 페이지는 계속 `no-referrer`다. HTTP 헤더 `Referrer-Policy`가 `no-referrer`여도 이 meta가 문서 정책을 덮어쓴다.
+2. 대시보드 경로의 CSP·`Referrer-Policy: strict-origin-when-cross-origin`과 대시보드 페이지의 referrer meta는 [`docs/map-headers.md`](map-headers.md)에서 다룬다(`script-src`·`connect-src`에 `dapi.kakao.com`·`t1.daumcdn.net`·`*.kakaocdn.net`, `img-src`에 `*.daumcdn.net`·`*.kakaocdn.net`). 카카오가 JavaScript 키를 요청 사이트 도메인으로 확인하므로 대시보드 문서는 경로 없이 출처(`https://inthon.yeoziphab.com`)만 보낸다. SDK `<script>`에도 같은 정책을 지정한다. 브라우저 콘솔에 CSP 차단이 보이면 그 도메인을 해당 지시어에 추가한다.
 
 ## 동작 (`public/js/kakao-map.js`)
 

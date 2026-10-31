@@ -98,7 +98,7 @@ def compile_page(source_path, name, model_name, output):
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="__REFERRER__">
+  <meta name="referrer" content="no-referrer">
   <link rel="icon" href="/assets/dimi-icon.svg" type="image/svg+xml">
   <title>__TITLE__</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -112,9 +112,7 @@ def compile_page(source_path, name, model_name, output):
 <body><div id="app"></div><noscript>화면을 보려면 JavaScript를 켜주세요.</noscript></body>
 </html>
 '''
-    # The dashboard shows Kakao maps, whose JavaScript key is checked against the requesting site: send the origin only.
-    referrer = "strict-origin-when-cross-origin" if name == "dashboard" else "no-referrer"
-    shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts).replace("__REFERRER__", referrer)
+    shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts)
     if name == 'dashboard':
         shell = shell.replace('name="referrer" content="no-referrer"', 'name="referrer" content="strict-origin-when-cross-origin"')
         shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n  <link rel="stylesheet" href="/css/taste.css">\n  <link rel="stylesheet" href="/css/calendar.css">\n</head>')
