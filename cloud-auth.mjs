@@ -1,6 +1,6 @@
 import { randomBytes, createHash, createCipheriv, createDecipheriv, timingSafeEqual } from 'node:crypto';
 import { put, get, list } from '@vercel/blob';
-import { APP_ID, CONFIG_ID, IG_ID, GRAPH } from './server.mjs';
+import { APP_ID, CONFIG_ID, IG_ID, GRAPH, isBotAccount } from './server.mjs';
 import { signState, readState } from './oauth-state.mjs';
 import { createCloudState } from './cloud-state.mjs';
 
@@ -82,7 +82,7 @@ export async function handleCloudAuth(req, res) {
     const headers = { Authorization: `Bearer ${token.access_token}` };
     stage = '대상 Instagram 계정 확인';
     const account = await api(`/${IG_ID}?fields=id,username`, { headers });
-    if (account.id !== IG_ID || account.username?.toLowerCase() !== 'inthon2team') throw new Error('Wrong account');
+    if (!isBotAccount(account)) throw new Error('Wrong account');
     stage = 'messages 구독';
     const subscribed = await api(`/${IG_ID}/subscribed_apps`, { method: 'POST', headers,
       body: new URLSearchParams({ subscribed_fields: 'messages' }) });

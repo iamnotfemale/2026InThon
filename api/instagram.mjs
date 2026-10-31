@@ -30,7 +30,7 @@ export default function handler(req, res) {
   }
   if (path === '/auth/result') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.end('Instagram 연결 처리가 완료되었습니다. 다른 계정에서 @inthon2team으로 새 DM을 보내 답장을 확인해 주세요.');
+    return res.end('Instagram 연결 처리가 완료되었습니다. 다른 계정에서 @dimi_in으로 새 DM을 보내 답장을 확인해 주세요.');
   }
   if (path.startsWith('/auth/')) return handleCloudAuth(req, res);
   publicHandler ??= createServers({

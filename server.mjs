@@ -12,6 +12,8 @@ export const APP_ID = '2418018855613539';
 export const CONFIG_ID = '2085773485459248';
 export const IG_ID = '17841414630453998';
 export const GRAPH = 'https://graph.facebook.com/v26.0';
+// A username can change; the configured numeric account ID is the authorization boundary.
+export const isBotAccount = account => account?.id === IG_ID;
 const root = dirname(fileURLToPath(import.meta.url));
 const random = () => randomBytes(32).toString('hex');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string'
@@ -84,12 +86,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     const result = await api(`${GRAPH}/me/assigned_instagram_accounts?fields=id,username&limit=100`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const account = result.data?.find(a => a.id === IG_ID && a.username?.toLowerCase() === 'inthon2team');
+    const account = result.data?.find(isBotAccount);
     if (account) return account;
     // The assigned-accounts edge may omit the target; verify the explicitly configured account with the same token.
     const target = await api(`${GRAPH}/${IG_ID}?fields=id,username`, { headers: { Authorization: `Bearer ${token}` } });
-    if (target.id !== IG_ID || target.username?.toLowerCase() !== 'inthon2team') {
-      throw new Error('@inthon2team 계정의 토큰인지 확인해 주세요.');
+    if (!isBotAccount(target)) {
+      throw new Error('@dimi_in 계정의 토큰인지 확인해 주세요.');
     }
     return target;
   }

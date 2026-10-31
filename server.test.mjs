@@ -261,7 +261,7 @@ test('Unified Login uses the registered config and protects against unsolicited,
   clock += 600001;
   assert.equal((await fetch(callback, { headers: { Cookie: cookie } })).status, 403);
 });
-test('OAuth exchanges code server-side, validates the target account, and stores token plus business ID', async t => {
+test('OAuth accepts the configured numeric account after a handle rename and stores token plus business ID', async t => {
   let calls = 0;
   const f = await fixture(t, { apiFetch: async (url, options) => {
     calls++;
@@ -274,7 +274,7 @@ test('OAuth exchanges code server-side, validates the target account, and stores
       return json({ access_token: 'private-access-token', expires_in: 3600 });
     }
     assert.equal(options.headers.Authorization, 'Bearer private-access-token');
-    if (u.pathname.endsWith('/assigned_instagram_accounts')) return json({ data: [{ id: '17841414630453998', username: 'inthon2team' }] });
+    if (u.pathname.endsWith('/assigned_instagram_accounts')) return json({ data: [{ id: '17841414630453998', username: 'dimi_in' }] });
     return json({ client_business_id: '1430869132503969' });
   } });
   const { auth, cookie } = await begin(f);
