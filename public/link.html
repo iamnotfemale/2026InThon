@@ -4,36 +4,59 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>Instagram 계정 연결 · inthon2team 팩트체크</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <title>Instagram 계정 연결 · DM 콘텐츠 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/link.css">
   <script type="module" src="/js/link.js"></script>
 </head>
 <body>
-<main>
-  <h1>Instagram 계정 연결</h1>
-  <p id="loading" class="muted">확인하는 중…</p>
+<div class="app link-page">
+  <main class="card link-card">
+    <div class="link-brand">
+      <span class="link-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--accent-fg)" stroke-width="2.4" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"/></svg>
+      </span>
+      <span class="muted">@inthon2team</span>
+    </div>
+    <h1 class="h1 link-title">Instagram 계정 연결</h1>
 
-  <section id="inapp" hidden>
-    <p>Instagram 앱 안에서는 구글 로그인이 막혀 있어요.</p>
-    <p>오른쪽 위 <strong>⋯</strong> 메뉴에서 <strong>외부 브라우저로 열기</strong>를 선택한 뒤 계속해 주세요.</p>
-    <div class="row"><button id="copy">링크 복사</button></div>
-    <p id="copied" class="muted" hidden>복사했어요. Chrome이나 Safari 주소창에 붙여 넣으세요.</p>
-  </section>
+    <p id="loading" class="muted">확인하는 중…</p>
 
-  <section id="need-login" hidden>
-    <p>구글로 로그인하면 DM을 보낸 Instagram 계정이 이 구글 계정에 연결돼요.</p>
-    <div class="row"><button id="login" class="primary">구글로 로그인하고 연결하기</button></div>
-  </section>
+    <section id="inapp" hidden>
+      <div class="link-stack">
+        <p>Instagram 앱 안에서는 구글 로그인이 막혀 있어요.</p>
+        <p class="muted">오른쪽 위 <b>⋯</b> 메뉴에서 <b>외부 브라우저로 열기</b>를 선택한 뒤 계속해 주세요.</p>
+        <div><button type="button" id="copy" class="btn">링크 복사</button></div>
+        <p id="copied" class="muted" hidden>복사했어요. Chrome이나 Safari 주소창에 붙여 넣으세요.</p>
+      </div>
+    </section>
 
-  <section id="done" hidden>
-    <p class="ok"><strong id="handle"></strong> 계정이 연결됐어요.</p>
-    <div class="row"><a class="button primary" href="/dashboard">대시보드로 가기</a></div>
-  </section>
+    <section id="need-login" hidden>
+      <div class="link-stack">
+        <p>구글로 로그인하면 DM을 보낸 Instagram 계정이 이 구글 계정에 연결돼요.</p>
+        <p class="muted">대시보드에서 쓰는 구글 계정과 같은 계정으로 로그인해 주세요. 연결하면 전에 보낸 콘텐츠도 함께 보여요.</p>
+        <div><button type="button" id="login" class="btn btn-primary btn-lg">구글로 로그인하고 연결하기</button></div>
+      </div>
+    </section>
 
-  <section id="failed" hidden>
-    <p id="error" class="error"></p>
-    <p>Instagram에서 <strong>@inthon2team</strong>에 <code>연결</code>이라고 다시 보내면 새 링크를 받을 수 있어요.</p>
-  </section>
-</main>
+    <section id="done" hidden>
+      <div class="link-stack">
+        <p><span class="live"></span> <b id="handle"></b> 계정이 연결됐어요.</p>
+        <div><a class="btn btn-primary btn-lg" href="/dashboard">대시보드로 가기</a></div>
+      </div>
+    </section>
+
+    <section id="failed" hidden>
+      <div class="link-stack">
+        <p id="error" class="link-error"></p>
+        <p class="muted">Instagram에서 <b>@inthon2team</b>에 <span class="mono">연결</span>이라고 다시 보내면 새 링크를 받을 수 있어요.</p>
+        <div><a class="btn" href="/dashboard">대시보드로 가기</a></div>
+      </div>
+    </section>
+  </main>
+</div>
 </body>
 </html>

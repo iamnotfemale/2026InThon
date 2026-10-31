@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { factcheckToItem, relative, stamp, linkState, displayName } from './public/js/dashboard-live.js';
+import { factcheckToItem, relative, stamp, linkState, displayName, firstSentence, applyLiveMode, NOT_YET } from './public/js/dashboard-live.js';
 
 const NOW = new Date('2026-10-31T12:00:00Z'); // 21:00 KST
 const row = (over = {}) => ({ id: 7, created_at: '2026-10-31T05:20:00Z', status: 'done', verdict: 'refuted',
@@ -73,4 +73,89 @@ test('real items render through the original design logic in every view, includi
   assert.equal(d.verdictLabel, '거짓');
   assert.equal(d.sources[0].relText, '근거 자료');
   assert.deepEqual([...d.pipeline].map(p => p.label), ['접수됨', '정리 완료', 'DM 발송 확인']);
+});
+
+function designModel(items) {
+  const source = readFileSync('frontend/design/Main.dc.html', 'utf8');
+  const script = /<script type="text\/x-dc"[^>]*>([\s\S]*?)<\/script>/.exec(source)[1];
+  class Base { constructor(props) { this.props = props; } setState() {} }
+  const model = runInNewContext(script + '\nnew Component({theme:"light"})', { DCLogic: Base });
+  if (items) model.allItems = () => items;
+  return model;
+}
+const stubApp = () => {
+  const calls = [];
+  const record = name => (...args) => { calls.push([name, ...args]); };
+  return { calls, app: Object.fromEntries(['openBotDm', 'showLinkGuide', 'setState', 'copy', 'checkLink', 'unlinkInstagram',
+    'signOut', 'saveDisplayName', 'loadLive', 'toast'].map(name => [name, record(name)])) };
+};
+
+test('every template binding has a value in both demo and real-data mode, on every screen', () => {
+  const template = readFileSync('public/data/dashboard-template.json', 'utf8');
+  assert.doesNotMatch(template, /jimin@example\.com/, 'the login email must come from state, not markup');
+  const loopVars = new Set([...template.matchAll(/"as":\s*"(\w+)"/g)].map(m => m[1]));
+  const roots = new Set([...template.matchAll(/{{\s*([\w]+)[\w.]*\s*}}/g)].map(m => m[1])
+    .filter(root => !loopVars.has(root) && root !== 'true' && root !== 'false'));
+
+  const model = designModel();
+  const views = [['home'], ['library'], ['taste'], ['settings'], ['detail', 'n1'], ['detail', 'r1']];
+  for (const [view, detailId] of views) {
+    Object.assign(model.state, { view, detailId: detailId ?? null });
+    const demo = model.renderVals();
+    const live = applyLiveMode(model.renderVals(), { ...model.state, email: 'me@example.org', connected: false }, stubApp().app);
+    // Some original values (e.g. cook mode) exist only behind their own condition; the live layer must not add gaps.
+    for (const root of roots) {
+      if (demo[root] !== undefined) assert.notEqual(live[root], undefined, `live ${view}: ${root}`);
+    }
+    for (const root of MODE_BINDINGS) {
+      assert.notEqual(demo[root], undefined, `demo ${view}: ${root}`);
+      assert.notEqual(live[root], undefined, `live ${view}: ${root}`);
+    }
+  }
+  for (const root of MODE_BINDINGS) assert.ok(roots.has(root), `template uses ${root}`);
+});
+const MODE_BINDINGS = ['email', 'isDemo', 'isLive', 'modeBadge', 'modeNote', 'connectDesc', 'dmModeDesc', 'linkGuideOn',
+  'copyLinkWord', 'checkLink'];
+
+test('demo mode keeps the original design values', () => {
+  const values = designModel().renderVals();
+  assert.equal(values.isDemo, true); assert.equal(values.modeBadge, 'DEMO');
+  assert.equal(values.email, 'jimin@example.com'); assert.equal(values.linkGuideOn, false);
+  assert.match(values.connectDesc, /연결 전에는 보낸 콘텐츠가 내 기록에 들어오지 않아요/);
+});
+
+test('real-data mode describes our actual workflow and never pretends demo-only actions succeeded', () => {
+  const model = designModel([]);
+  Object.assign(model.state, { view: 'settings', connected: false, account: '', email: 'me@example.org' });
+  const { app, calls } = stubApp();
+  const v = applyLiveMode(model.renderVals(), model.state, app);
+  assert.equal(v.isDemo, false); assert.equal(v.modeBadge, '내 데이터'); assert.equal(v.email, 'me@example.org');
+  assert.equal(v.linkGuideOn, true, 'not linked: show the DM-link steps');
+  for (const flow of ['flowStart', 'flowIssuing', 'flowCode', 'flowVerifying', 'flowVerified', 'flowExpired', 'flowConflict']) {
+    assert.equal(v[flow], false, flow);
+  }
+  assert.match(v.connectDesc, /전에 보낸 콘텐츠도 함께 보여요/);
+  assert.equal(v.simDisabled, true);
+  v.copyLinkWord(); v.startCode(); v.goConnect();
+  assert.deepEqual(calls.map(c => c[0]), ['copy', 'showLinkGuide', 'showLinkGuide']);
+  assert.equal(calls[0][1], '연결');
+  calls.length = 0;
+  for (const name of NOT_YET) v[name]();
+  assert.equal(calls.filter(c => c[0] === 'toast').length, NOT_YET.length);
+  assert.ok(calls.filter(c => c[0] === 'toast').every(c => /준비 중/.test(c[1])));
+
+  Object.assign(model.state, { connected: true, account: '@tester.one', connModal: 'disconnect' });
+  const linked = applyLiveMode(model.renderVals(), { ...model.state, liveGuide: false }, app);
+  assert.equal(linked.linkGuideOn, false); assert.equal(linked.showConnected, true);
+  assert.match(linked.connModalDesc, /기록은 지워지지 않고, 다시 연결하면 돌아와요/);
+  const changing = applyLiveMode(model.renderVals(), { ...model.state, liveGuide: true }, app);
+  assert.equal(changing.linkGuideOn, true); assert.equal(changing.changing, true); assert.equal(changing.showConnected, false);
+});
+
+test('first sentence for the verdict card and saved display names', () => {
+  assert.equal(firstSentence('조건을 충족한 신청자만 받아요. 공고에 따르면 소득 조건이 있어요.'), '조건을 충족한 신청자만 받아요.');
+  assert.equal(firstSentence('마침표 없는 이유'), '마침표 없는 이유');
+  assert.equal(firstSentence('버전 2.5는 아직 없어요. 다음 문장'), '버전 2.5는 아직 없어요.');
+  assert.equal(firstSentence(null), '');
+  assert.equal(displayName({ user_metadata: { display_name: '지원', full_name: '배지원' } }), '지원');
 });

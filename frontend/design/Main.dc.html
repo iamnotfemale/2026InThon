@@ -431,7 +431,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg,#C4B5FD,#93C5FD); display: grid; place-content: center; font-size: 11px; font-weight: 600; color: #1E1B4B">{{initial}}</span>
     <span style="display: flex; flex-direction: column; line-height: 1.25; min-width: 0">
       <span style="font-size: 13px; color: var(--text)">{{name}}</span>
-      <span class="muted" style="font-size: 11.5px; font-weight: 400">jimin@example.com</span>
+      <span class="muted" style="font-size: 11.5px; font-weight: 400">{{email}}</span>
     </span>
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" style="margin-left: auto"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
     <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">설정</span>
@@ -450,7 +450,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     </div>
     <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; position: relative">
       <button type="button" class="btn btn-ghost" onClick="{{toggleDemo}}" aria-expanded="{{demoExpanded}}" style="color: var(--muted)">
-        <span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">DEMO</span>
+        <span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">{{modeBadge}}</span>
         <span>{{scenarioLabel}}</span>
         <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
       </button>
@@ -493,7 +493,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <span>다크 모드</span>
             <span class="muted" style="margin-left: auto; font-size: 12px">{{darkState}}</span>
           </button>
-          <p class="muted" style="font-size: 11.5px; padding: 8px 10px 4px; line-height: 1.5">로그인·Instagram 연결·DM·분석은 모두 시뮬레이션이에요. 데모 기준일 2026.10.31 (KST)</p>
+          <p class="muted" style="font-size: 11.5px; padding: 8px 10px 4px; line-height: 1.5">{{modeNote}}</p>
         </div>
       </sc-if>
     </div>
@@ -512,7 +512,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <div style="flex: 999 1 380px; display: flex; flex-direction: column; gap: 14px">
             <span class="badge s-neutral" style="align-self: flex-start">연결 전</span>
             <h2 style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3">Instagram을 연결하고 첫 콘텐츠를 보내보세요.</h2>
-            <p class="muted" style="font-size: 14px; max-width: 520px">어느 계정에서 보낸 콘텐츠인지 확인해 내 대시보드에 모아드려요. 연결 전에는 보낸 콘텐츠가 내 기록에 들어오지 않아요.</p>
+            <p class="muted" style="font-size: 14px; max-width: 520px">{{connectDesc}}</p>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px">
               <button type="button" class="btn btn-primary btn-lg" onClick="{{goConnect}}">Instagram 연결하기</button>
             </div>
@@ -533,7 +533,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <p class="muted" style="font-size: 14px">Instagram에서 게시물이나 릴스를 <b style="color: var(--text); font-weight: 500">@inthon2team</b>에 공유해 보세요. 종류에 맞게 정리해 DM으로 알려드려요.</p>
           <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px">
             <button type="button" class="btn btn-primary btn-lg" onClick="{{sendFromIg}}">Instagram에서 보내기</button>
-            <button type="button" class="btn btn-lg" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button>
+            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-lg" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button></sc-if>
           </div>
         </section>
       </sc-if>
@@ -558,7 +558,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <p style="font-size: 15px; font-weight: 500; letter-spacing: -0.01em">보던 게시물·릴스를 <span class="mono" style="font-size: 14px">@inthon2team</span>에 DM으로 공유하세요</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap">
-            <button type="button" class="btn" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button>
+            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button></sc-if>
             <button type="button" class="btn btn-primary" onClick="{{sendFromIg}}">Instagram에서 보내기</button>
           </div>
         </section>
@@ -1522,7 +1522,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <button type="button" class="btn" onClick="{{saveName}}" disabled="{{nameSaveDisabled}}" style="height: 36px">저장</button>
               </div>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
-                <div style="display: flex; flex-direction: column; gap: 3px"><span class="label">로그인 이메일</span><span style="font-size: 14px">jimin@example.com</span></div>
+                <div style="display: flex; flex-direction: column; gap: 3px"><span class="label">로그인 이메일</span><span style="font-size: 14px">{{email}}</span></div>
                 <div style="display: flex; flex-direction: column; gap: 3px"><span class="label">로그인 방식</span><span style="font-size: 14px">Google</span></div>
               </div>
             </div>
@@ -1566,6 +1566,25 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <div class="callout info">
                   <svg class="ico ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
                   <span>새 계정 확인이 끝날 때까지 기존 연결({{account}})을 유지해요.</span>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{linkGuideOn}}" hint-placeholder-val="{{ false }}">
+                <div class="enter" style="display: flex; flex-direction: column; gap: 14px">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px">
+                    <div class="ex-card" style="gap: 6px"><span class="mono muted" style="font-size: 12px">01</span><span style="font-weight: 500">@inthon2team에 ‘연결’ 보내기</span><span class="muted" style="font-size: 12.5px">연결할 Instagram 계정으로 DM을 보내요</span></div>
+                    <div class="ex-card" style="gap: 6px"><span class="mono muted" style="font-size: 12px">02</span><span style="font-weight: 500">답장으로 온 링크 열기</span><span class="muted" style="font-size: 12.5px">10분 동안 한 번만 쓸 수 있어요. Instagram 앱 안이라면 외부 브라우저로 열어 주세요</span></div>
+                    <div class="ex-card" style="gap: 6px"><span class="mono muted" style="font-size: 12px">03</span><span style="font-weight: 500">구글로 로그인하면 연결 완료</span><span class="muted" style="font-size: 12.5px">{{email}} 계정으로 로그인해야 이 대시보드에 연결돼요</span></div>
+                  </div>
+                  <p class="muted" style="font-size: 12.5px; line-height: 1.6">비밀번호나 접근 권한을 묻지 않아요. 연결하면 이 계정으로 전에 보낸 콘텐츠도 함께 보여요.</p>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                    <button type="button" class="btn btn-primary" onClick="{{openIgDm}}">Instagram DM 열기
+                      <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+                    </button>
+                    <button type="button" class="btn" onClick="{{copyLinkWord}}">‘연결’ 복사</button>
+                    <button type="button" class="btn btn-ghost" onClick="{{checkLink}}">연결 상태 새로고침</button>
+                    <sc-if value="{{connected}}" hint-placeholder-val="{{ false }}"><button type="button" class="btn btn-ghost" onClick="{{cancelFlow}}" style="color: var(--muted)">취소</button></sc-if>
+                  </div>
                 </div>
               </sc-if>
 
@@ -1676,8 +1695,9 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <section id="sec-dm" class="card" style="overflow: hidden">
             <div style="padding: 18px 20px 4px; display: flex; flex-direction: column; gap: 4px">
               <h2 class="h2">DM 결과 받는 방식</h2>
-              <p class="muted" style="font-size: 13px">앞으로 받을 응답에 적용돼요. 이미 받은 DM은 바뀌지 않고, 개인 결과 페이지는 어느 방식이든 만들어져요.</p>
+              <p class="muted" style="font-size: 13px">{{dmModeDesc}}</p>
             </div>
+            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}">
             <div style="padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 16px">
               <div role="radiogroup" aria-label="DM 결과 받는 방식" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px">
                 <sc-for list="{{dmModes}}" as="m" hint-placeholder-count="2">
@@ -1720,6 +1740,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 </div>
               </div>
             </div>
+            </sc-if>
+            <sc-if value="{{isLive}}" hint-placeholder-val="{{ false }}"><div style="padding: 0 20px 20px"></div></sc-if>
           </section>
 
           <section id="sec-data" class="card" style="overflow: hidden">
@@ -2079,7 +2101,7 @@ class Component extends DCLogic {
       feedback: {}, reportOpen: false, reportReason: null,
       visitOpen: false, retype: null,
       cook: null, cookDir: 'fwd', timer: null, reasonOpen: false, srcOpen: false, libView: 'list',
-      name: '지민', nameDraft: '지민',
+      name: '지민', nameDraft: '지민', email: 'jimin@example.com',
       demoOpen: false, dark: props && props.theme === 'dark'
     };
   }
@@ -2594,6 +2616,12 @@ class Component extends DCLogic {
       goSearch: () => this.go('library'),
       goConnect: () => { this.go('settings'); },
       crumbRoot: s.view === 'detail' ? fromLabel : viewLabels[s.view], hasCrumbLeaf: s.view === 'detail' && !!raw, crumbLeaf: raw ? raw.title : '',
+      // mode: the demo defaults below; the real-data mode (public/js/dashboard-app.js) overrides them
+      isDemo: true, isLive: false, modeBadge: 'DEMO', email: s.email,
+      modeNote: '로그인·Instagram 연결·DM·분석은 모두 시뮬레이션이에요. 데모 기준일 2026.10.31 (KST)',
+      connectDesc: '어느 계정에서 보낸 콘텐츠인지 확인해 내 대시보드에 모아드려요. 연결 전에는 보낸 콘텐츠가 내 기록에 들어오지 않아요.',
+      dmModeDesc: '앞으로 받을 응답에 적용돼요. 이미 받은 DM은 바뀌지 않고, 개인 결과 페이지는 어느 방식이든 만들어져요.',
+      linkGuideOn: false, copyLinkWord: () => {}, checkLink: () => {},
       // demo
       demoOpen: s.demoOpen, demoExpanded: s.demoOpen ? 'true' : 'false', toggleDemo: () => this.setState({ demoOpen: !s.demoOpen, menuId: null }),
       scenarioLabel: scenLabels[scen],

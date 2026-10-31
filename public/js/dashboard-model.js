@@ -23,7 +23,7 @@ export default class DashboardModel extends DCLogic {
       feedback: {}, reportOpen: false, reportReason: null,
       visitOpen: false, retype: null,
       cook: null, cookDir: 'fwd', timer: null, reasonOpen: false, srcOpen: false, libView: 'list',
-      name: '지민', nameDraft: '지민',
+      name: '지민', nameDraft: '지민', email: 'jimin@example.com',
       demoOpen: false, dark: props && props.theme === 'dark'
     };
   }
@@ -538,6 +538,12 @@ export default class DashboardModel extends DCLogic {
       goSearch: () => this.go('library'),
       goConnect: () => { this.go('settings'); },
       crumbRoot: s.view === 'detail' ? fromLabel : viewLabels[s.view], hasCrumbLeaf: s.view === 'detail' && !!raw, crumbLeaf: raw ? raw.title : '',
+      // mode: the demo defaults below; the real-data mode (public/js/dashboard-app.js) overrides them
+      isDemo: true, isLive: false, modeBadge: 'DEMO', email: s.email,
+      modeNote: '로그인·Instagram 연결·DM·분석은 모두 시뮬레이션이에요. 데모 기준일 2026.10.31 (KST)',
+      connectDesc: '어느 계정에서 보낸 콘텐츠인지 확인해 내 대시보드에 모아드려요. 연결 전에는 보낸 콘텐츠가 내 기록에 들어오지 않아요.',
+      dmModeDesc: '앞으로 받을 응답에 적용돼요. 이미 받은 DM은 바뀌지 않고, 개인 결과 페이지는 어느 방식이든 만들어져요.',
+      linkGuideOn: false, copyLinkWord: () => {}, checkLink: () => {},
       // demo
       demoOpen: s.demoOpen, demoExpanded: s.demoOpen ? 'true' : 'false', toggleDemo: () => this.setState({ demoOpen: !s.demoOpen, menuId: null }),
       scenarioLabel: scenLabels[scen],
