@@ -115,8 +115,8 @@ class DashboardApp extends DashboardModel {
     const overlay = activeOverlay();
     if (overlay && overlay !== this.overlay) {
       this.returnFocus = document.activeElement;
-      overlay.querySelector('button:not(:disabled),input:not(:disabled),a[href]')?.focus();
-    } else if (!overlay && this.overlay && this.returnFocus?.isConnected) this.returnFocus.focus();
+      overlay.querySelector('button:not(:disabled),input:not(:disabled),a[href]')?.focus({ preventScroll: true });
+    } else if (!overlay && this.overlay && this.returnFocus?.isConnected) this.returnFocus.focus({ preventScroll: true });
     this.overlay = overlay;
   }
   componentWillUnmount() {
@@ -147,9 +147,6 @@ class DashboardApp extends DashboardModel {
   async loginForResult() {
     try {
       const auth = await loadSupabase();
-      if (auth.inAppBrowser()) {
-        this.setState({ privateLoginHint: 'Instagram의 ⋯ 메뉴에서 외부 브라우저로 연 뒤 로그인해 주세요.' }); return;
-      }
       const { error } = await auth.signInWithGoogle(location.pathname);
       if (error) throw error;
     } catch { this.setState({ privateLoginHint: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }); }
@@ -172,9 +169,6 @@ class DashboardApp extends DashboardModel {
     catch { return this.toast('로그인 기능을 불러오지 못했어요. 새로고침해 주세요.'); }
     const user = this.state.user ?? await auth.currentUser();
     if (!user) {
-      if (auth.inAppBrowser()) {
-        return this.toast('Instagram 앱 안에서는 구글 로그인이 막혀 있어요. 외부 브라우저로 열어 주세요.', null, null, 6000);
-      }
       store.set(MODE_KEY, 'live');
       const { error } = await auth.signInWithGoogle('/dashboard');
       if (error) this.toast('로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -263,10 +257,11 @@ class DashboardApp extends DashboardModel {
   async loadInterests() {
     if (this.loadingInterests || this.state.mode !== 'live') return;
     this.loadingInterests = true; const uid = this.state.user?.id;
+    this.setState({ interestState: 'loading' });
     try {
       const result = await this.indexRequest({ action: 'interests' });
-      if (this.state.mode === 'live' && this.state.user?.id === uid) this.setState({ indexInterests: result.interests, interestIds: result.ids });
-    } catch { /* Existing collections remain usable if interest inference is unavailable. */ }
+      if (this.state.mode === 'live' && this.state.user?.id === uid) this.setState({ indexInterests: result.interests, interestIds: result.ids, interestState: 'ready' });
+    } catch { if (this.state.user?.id === uid) this.setState({ interestState: 'error' }); }
     finally { this.loadingInterests = false; }
   }
 

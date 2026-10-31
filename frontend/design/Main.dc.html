@@ -652,52 +652,21 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
   <!-- ============ LIBRARY ============ -->
   <sc-if value="{{isLibrary}}" hint-placeholder-val="{{ false }}">
     <div class="enter pad" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; flex-direction: column; gap: 18px">
-      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
-        <div style="display: flex; flex-direction: column; gap: 6px">
-          <h1 class="h1">내 콘텐츠</h1>
-          <p class="muted" style="font-size: 14px">Instagram에서 보낸 콘텐츠와 정리 결과를 다시 찾아보세요.</p>
+      <div><h1 class="h1">내 콘텐츠</h1><p class="muted" style="font-size:14px;margin-top:6px">Instagram에서 보낸 콘텐츠와 정리 결과를 다시 찾아보세요.</p></div>
+      <div class="library-toolbar">
+        <div class="library-search">
+          <button type="button" class="library-search-button" aria-label="검색" onClick="{{searchContents}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200">
+          <sc-if value="{{hasQuery}}"><button type="button" class="library-clear" aria-label="검색어 지우기" onClick="{{clearQuery}}">×</button></sc-if>
         </div>
-        <div style="margin-left: auto; display: flex; gap: 8px; align-items: center">
-          <label class="label" for="sort-sel">정렬</label>
-          <select id="sort-sel" class="select" value="{{sort}}" onChange="{{onSort}}">
-            <option value="new">최근 보낸 순</option>
-            <option value="old">오래된 순</option>
-          </select>
-        </div>
-      </div>
-
-      <sc-if value="{{isLive}}"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-sm" type="button" onClick="{{searchContents}}">의미로 찾기</button><span class="muted" role="status" style="font-size:12px">{{searchStatus}}</span></div></sc-if>
-      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
-        <div style="position: relative; flex: 1 1 320px; max-width: 460px">
-          <svg class="ico muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 11px; top: 10px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200" style="padding-left: 34px; padding-right: 36px">
-          <sc-if value="{{hasQuery}}" hint-placeholder-val="{{ false }}">
-            <button type="button" class="btn btn-ghost btn-icon btn-sm" aria-label="검색어 지우기" onClick="{{clearQuery}}" style="position: absolute; right: 4px; top: 4px">
-              <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-            </button>
-          </sc-if>
-        </div>
-        <button type="button" class="{{favChipCls}}" aria-pressed="{{favOnlyPressed}}" onClick="{{toggleFavOnly}}">
-          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>
-          즐겨찾기
-        </button>
-      </div>
-
-      <div style="display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center">
-        <div class="seg" role="group" aria-label="유형 필터">
-          <sc-for list="{{typeTabs}}" as="t" hint-placeholder-count="5">
-            <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}">
-              <sc-if value="{{t.hasDot}}" hint-placeholder-val="{{ false }}"><span class="{{t.dot}}"></span></sc-if>
-              {{t.label}}<span class="n">{{t.count}}</span>
-            </button>
-          </sc-for>
-        </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap" role="group" aria-label="상태 필터">
-          <sc-for list="{{statusChips}}" as="c" hint-placeholder-count="5">
-            <button type="button" class="{{c.cls}}" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}">{{c.label}}</button>
-          </sc-for>
+        <div class="library-controls" role="group" aria-label="콘텐츠 필터와 정렬">
+          <select class="select" aria-label="상태" value="{{statusF}}" onChange="{{onStatus}}"><option value="all">전체 상태</option><option value="processing">처리 중</option><option value="done">정리 완료</option><option value="check">확인 필요</option><option value="failed">처리하지 못함</option></select>
+          <button type="button" class="{{favChipCls}}" aria-pressed="{{favOnlyPressed}}" onClick="{{toggleFavOnly}}">☆ 즐겨찾기</button>
+          <select class="select" aria-label="정렬" value="{{sort}}" onChange="{{onSort}}"><option value="new">최근 보낸 순</option><option value="old">오래된 순</option></select>
         </div>
       </div>
+      <sc-if value="{{isLive}}"><span class="screen-reader-only" role="status">{{searchStatus}}</span></sc-if>
+      <div class="library-types seg" role="group" aria-label="유형 필터"><sc-for list="{{typeTabs}}" as="t"><button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><sc-if value="{{t.hasDot}}"><span class="{{t.dot}}"></span></sc-if>{{t.label}}<span class="n">{{t.count}}</span></button></sc-for></div>
 
       <sc-if value="{{libShowError}}" hint-placeholder-val="{{ false }}">
         <div class="card enter" style="padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
@@ -1390,6 +1359,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         </div>
       </div>
 
+      <sc-if value="{{isLive}}"><div style="display:flex;gap:8px;flex-wrap:wrap" role="group" aria-label="관심 패턴"><sc-for list="{{interestPatterns}}" as="p"><button type="button" class="{{p.cls}}" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}">{{p.label}}</button></sc-for></div><sc-if value="{{showInterestNotice}}"><section class="card" style="padding:20px"><h2 class="h2">{{interestNoticeTitle}}</h2><p class="muted" style="font-size:13px;margin:8px 0 12px">{{interestNoticeDesc}}</p><button class="btn btn-sm" type="button" onClick="{{refreshInterests}}">다시 살펴보기</button></section></sc-if></sc-if>
       <sc-if value="{{tasteShowCard}}" hint-placeholder-val="{{ true }}">
         <section class="card enter" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
           <div style="flex: 999 1 360px; display: flex; flex-direction: column; gap: 8px; min-width: 0">
@@ -2444,7 +2414,7 @@ class Component extends DCLogic {
     const q = s.query.trim().toLowerCase();
     const matchQ = it => this.matchesContent ? this.matchesContent(it, s.query) : !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
     let lib = items.filter(it => matchQ(it) && (s.typeF === 'all' || it.type === s.typeF) && (s.statusF === 'all' || it.group === s.statusF) && (!s.favOnly || s.fav[it.id]));
-    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = s.typeF !== 'all' || s.statusF !== 'all' || s.favOnly || !!q;
     const libBlocked = s.libError || s.libLoading;
     const libFirst = items.length === 0;
@@ -2646,6 +2616,7 @@ class Component extends DCLogic {
       hasSchedule: schedule.length > 0, schedule, hasTaste: tasteItemsAll.length > 0,
       // library
       isLibrary: s.view === 'library',
+      statusF: s.statusF, onStatus: e => this.setState({ statusF: e.target.value }),
       sort: s.sort, onSort: e => this.setState({ sort: e.target.value }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value, menuId: null }), hasQuery: !!s.query, clearQuery: () => this.setState({ query: '' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),

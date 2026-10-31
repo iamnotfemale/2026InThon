@@ -1,5 +1,6 @@
 /* /link page: layout only. Colours, type and components come from the dashboard design (dashboard.css). */
 body { margin: 0; }
+.link-page [hidden] { display: none !important; }
 .link-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .link-card { width: 100%; max-width: 460px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
 .link-brand { display: flex; align-items: center; gap: 8px; font-size: 13px; }

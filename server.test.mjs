@@ -19,7 +19,16 @@ async function fixture(t, options = {}) {
   const config = { publicUrl: 'https://example.ngrok-free.dev', verifyToken: 'test-verification',
     appSecret: 'a'.repeat(32), webhookSecret: 'a'.repeat(32), ...options.config };
   const saved = []; const receipts = [];
-  const { config: ignored, ...serverOptions } = options;
+  const { config: ignored, senderActionFetch, ...serverOptions } = options;
+  const actions = []; const outbound = serverOptions.apiFetch;
+  serverOptions.apiFetch = (url, init) => {
+    const value = typeof init?.body === 'string' && init.body.startsWith('{') ? JSON.parse(init.body) : null;
+    if (value?.sender_action) {
+      actions.push(value);
+      return senderActionFetch ? senderActionFetch(url, init) : json({ recipient_id: value.recipient.id });
+    }
+    return outbound ? outbound(url, init) : fetch(url, init);
+  };
   const servers = createServers({ config, persist: value => saved.push(value), record: value => receipts.push(value), ...serverOptions });
   for (const server of [servers.publicServer, servers.adminServer]) {
     // fetch() refuses the WHATWG "bad ports"; Windows sometimes hands one out as an ephemeral port, so pick again.
@@ -37,7 +46,7 @@ async function fixture(t, options = {}) {
     headers: { Origin: adminUrl, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ csrf, ...values }) });
   const sign = raw => 'sha256=' + createHmac('sha256', config.webhookSecret).update(raw).digest('hex');
-  return { ...servers, config, saved, receipts, publicUrl, adminUrl, html, post, sign };
+  return { ...servers, config, saved, receipts, publicUrl, adminUrl, html, post, sign, actions };
 }
 async function begin(f) {
   const launch = await f.post('/login'); assert.equal(launch.status, 303);
@@ -77,6 +86,47 @@ test('optional media diagnostics only observe verified events and do not delay a
   assert.equal(r.status, 200);
   await eventually(() => observed === 1); release();
   assert.equal((await fetch(f.publicUrl + '/health')).status, 200);
+});
+
+test('seen and typing use separate sender actions, stay non-blocking and do not repeat for a retried webhook', async t => {
+  let release; const messages = [];
+  const f = await fixture(t, { config: { accessToken: 'token', userId: IG_ID },
+    respondToMessage: async () => { await new Promise(resolve => { release = resolve; }); return { kind: 'chat', messages: ['안녕, 디미예요!'] }; },
+    senderActionFetch: async (url, init) => {
+      assert.equal(url, `https://graph.facebook.com/v26.0/${IG_ID}/messages`);
+      assert.equal(init.headers.Authorization, 'Bearer token');
+      const value = JSON.parse(init.body); assert.deepEqual(Object.keys(value).sort(), ['recipient', 'sender_action']);
+      return json({ recipient_id: '123456789' }); // Sender actions have no message_id.
+    }, apiFetch: async (_, init) => { messages.push(JSON.parse(init.body).message); return json({ message_id: 'reply' }); } });
+  assert.equal((await deliver(f, [incoming()])).status, 200);
+  await eventually(() => release && f.actions.length === 2);
+  assert.deepEqual(f.actions.map(a => a.sender_action), ['mark_seen', 'typing_on']);
+  assert.equal(messages.length, 0); release();
+  await eventually(() => f.actions.at(-1)?.sender_action === 'typing_off');
+  const calls = f.actions.length; await deliver(f, [incoming()]); assert.equal(f.actions.length, calls);
+  assert.equal(f.stats.replyFailures, 0); assert.equal(messages.length, 1);
+});
+
+test('sender action failures never prevent the actual reply or create message-send failures', async t => {
+  let sent = 0;
+  const f = await fixture(t, { config: { accessToken: 'token', userId: IG_ID },
+    senderActionFetch: async () => new Response(JSON.stringify({ error: { code: 100, message: 'secret-echo' } }), { status: 400 }),
+    apiFetch: async () => { sent++; return json({ message_id: 'reply' }); } });
+  await deliver(f, [incoming()]); await eventually(() => f.stats.senderActionFailures >= 1 && f.stats.replies === 1);
+  assert.equal(sent, 1); assert.equal(f.stats.replyFailures, 0); assert.doesNotMatch(f.stats.lastError || '', /secret-echo/);
+});
+
+test('the shared-post choice is delivered and typing stops before sender/profile housekeeping', async t => {
+  const sequence = []; let release;
+  const f = await fixture(t, { config: { accessToken: 'token', userId: IG_ID },
+    respondToMessage: async () => { sequence.push('offer'); return { kind: 'choice', messages: [{ text: '디미가 어떻게 정리해드릴까요?', quick_replies: [] }] }; },
+    trackSender: async () => { sequence.push('track'); await new Promise(resolve => { release = resolve; }); return { username: 'tester' }; },
+    apiFetch: async (_, init) => { sequence.push('sent'); assert.match(JSON.parse(init.body).message.text, /어떻게/); return json({ message_id: 'choice' }); } });
+  await deliver(f, [incoming({ message: { mid: 'fast-share', attachments: [{ type: 'ig_post', payload: { url: 'https://example.test/post' } }] } })]);
+  await eventually(() => release);
+  assert.deepEqual(sequence, ['offer', 'sent', 'track']);
+  assert.ok(f.actions.at(-1).sender_action !== 'typing_on');
+  release(); await eventually(() => f.stats.replies === 1);
 });
 
 test('auto reply sends the exact greeting, acknowledges promptly and deduplicates concurrent/restarted deliveries', async t => {

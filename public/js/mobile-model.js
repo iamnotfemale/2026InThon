@@ -102,9 +102,9 @@ export default class MobileModel extends DCLogic {
     const items = ITEMS.map(deco);
     const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
-    let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF));
-    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
-    const isFiltered = !!q || s.typeF !== 'all' || s.statusF !== 'all';
+    let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF) && (!s.favOnly || s.fav[i.id]));
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
+    const isFiltered = !!q || s.typeF !== 'all' || s.statusF !== 'all' || !!s.favOnly;
     const tasteAll = items.filter(i => s.taste[i.id] && (i.type === 'recipe' || i.type === 'exhibit'));
     const tasteType = s.tab === 'taste' && s.tasteTab === 'exhibit' ? 'exhibit' : (s.tasteTab || 'recipe');
     const tasteItems = tasteAll.filter(i => i.type === tasteType).map(i => Object.assign({}, i, { remove: () => { this.setState({ taste: Object.assign({}, this.state.taste, { [i.id]: false }) }); this.toast('취향에서 뺐어요. 정리 결과는 그대로예요.'); } }));
@@ -182,6 +182,9 @@ export default class MobileModel extends DCLogic {
       sendFromIg: () => this.toast('Instagram 앱에서 @dimi_in에 공유해 주세요 (데모)'),
       hasActive: items.some(i => i.status === 'needtype' || i.status === 'processing'), activeItems: items.filter(i => i.status === 'needtype' || i.status === 'processing'), activeCount: items.filter(i => i.status === 'needtype' || i.status === 'processing').length,
       recentItems: items.filter(i => i.status === 'done').sort((a, b) => b.ts - a.ts).slice(0, 8), schedule: sched,
+      statusF: s.statusF, onStatus: e => this.setState({ statusF: e.target.value }),
+      sort: s.sortNew ? 'new' : 'old', onSort: e => this.setState({ sortNew: e.target.value === 'new' }),
+      favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value }),
       typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
       statusChips: [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k }) })),

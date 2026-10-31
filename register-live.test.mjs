@@ -67,7 +67,7 @@ test('returning with verified Instagram proof resumes at name with the real emai
   } finally { delete globalThis.localStorage; }
 });
 
-test('skipping age saves only the name, and in-app browsers are told to open an external browser', async () => {
+test('skipping age saves only the name, and in-app login delegates to the central browser handoff', async () => {
   const { RegisterModel, flush } = designModel();
   const { auth, calls, fetchImpl } = fakeAuth({ user: { email: 'a@b.c', user_metadata: {} } });
   const c = new (withGoogleSignup(RegisterModel, async () => auth, fetchImpl))({});
@@ -79,7 +79,7 @@ test('skipping age saves only the name, and in-app browsers are told to open an 
   const d = new (withGoogleSignup(designModel().RegisterModel, async () => inApp.auth))({});
   d.state.step = 'google'; d.auth = inApp.auth;
   await d.googleLogin();
-  assert.deepEqual(inApp.calls, [], 'no sign-in attempt inside the Instagram webview');
+  assert.deepEqual(inApp.calls, [['signIn', '/register']], 'the centralized auth entry point handles the safe browser handoff');
 });
 
 test('landing "로그인" signs in first, or goes straight to the dashboard when already signed in', async () => {

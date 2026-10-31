@@ -8,6 +8,7 @@ import { createLoginTicket } from './oauth-state.mjs';
 import { isContentMessage } from './instagram-source.mjs';
 import { resultLinkMessage } from './result-preferences.mjs';
 import { CONTEST_ACK } from './contest.mjs';
+import { createSenderActivities } from './sender-activity.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
 export const APP_ID = '2418018855613539';
@@ -67,12 +68,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
   observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
-    tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
+    tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null, senderActionFailures: 0 };
   const callback = () => `${config.publicUrl}/auth/instagram/callback`;
   const expire = map => { for (const [key, item] of map) if (item.expires < now()) map.delete(key); };
   const save = updates => { const next = { ...config, ...updates }; persist(next); Object.assign(config, updates); };
   async function api(url, options = {}) {
-    const response = await apiFetch(url, { ...options, signal: AbortSignal.timeout(15000), redirect: 'error' });
+    const response = await apiFetch(url, { ...options, signal: options.signal ?? AbortSignal.timeout(15000), redirect: 'error' });
     const data = await response.json();
     if (!response.ok || data.error || data.error_type) {
       // API errors can echo credentials, so expose only numeric codes.
@@ -84,6 +85,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     }
     return data;
   }
+  const beginActivity = createSenderActivities({
+    sendAction: (recipient, action, token) => api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
+      signal: AbortSignal.timeout(2000), headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient: { id: recipient }, sender_action: action }) }),
+    onFailure: action => { stats.senderActionFailures++; console.warn('Instagram sender action failed:', action); },
+  });
   async function profile(token) {
     const result = await api(`${GRAPH}/me/assigned_instagram_accounts?fields=id,username&limit=100`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -113,11 +120,13 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       const key = createHash('sha256').update(`${IG_ID}:${m.message.mid}`).digest('hex');
       if (handledReplies.has(key)) continue;
       handledReplies.add(key);
+      let activity;
       try {
         // Reserve before sending: retries, concurrent deliveries and restarts must not send the greeting twice.
         if (reserveReply) {
           if (!await reserveReply(key)) continue;
         } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
+        activity = beginActivity(m.sender.id, accessToken);
         const send = async message => {
           const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -128,9 +137,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         // Storage problems must not stop the reply itself; they only cost history.
         const quietly = async (task, label) => { try { await task(); } catch { stats.lastError = label; } };
         let knownUsername = null;
-        const tracking = trackSender
+        let tracking;
+        const track = () => tracking ??= trackSender
           ? quietly(async () => { knownUsername = (await trackSender(sender))?.username ?? null; }, '발신자 기록 실패')
           : Promise.resolve();
+        // The choice prompt needs only a durable content ticket; record/profile work follows its delivery.
+        if (!respondToMessage || !isContentMessage(m.message) || m.message.quick_reply) track();
         // The handle is only for display; linking and replies work without it. Failures are kept as codes only
         // (Vercel log + ig_accounts.username_lookup_error), never Meta's error text, which can contain user IDs.
         const lookupUsername = async () => {
@@ -152,13 +164,13 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
         const isCode = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{6}$/i.test(command);
         if (verifyInstagramCode && isCode && !isContentMessage(m.message)) {
-          await tracking;
+          await track();
           let reply;
           try { reply = await verifyInstagramCode(command, sender); }
           catch { reply = '인증을 확인하지 못했어요. 잠시 후 같은 번호를 다시 보내 주세요.'; }
           await send(reply);
         } else if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
-          await tracking;
+          await track();
           const username = knownUsername ?? await lookupUsername();
           let text;
           try { text = linkMessage(`${config.publicUrl}/link#token=${await issueLinkToken({ igsid: sender, username })}`); }
@@ -167,19 +179,19 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         } else if (respondToMessage || factCheck) {
           const content = !respondToMessage || isContentMessage(m.message);
           // Backfill a missing handle alongside the AI response, without delaying the reply.
-          const backfill = tracking.then(() => trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null);
-          if (!respondToMessage) await send(FACTCHECK_ACK);
+          const backfill = () => track().then(() => trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null);
+          if (!respondToMessage) { await send(FACTCHECK_ACK); activity.typing(); }
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, {
-            senderId: sender, acknowledge: action => send(action === 'recipe'
+            senderId: sender, acknowledge: async action => { await send(action === 'recipe'
               ? '디미가 금방 정리해드릴게요! 재료와 조리 순서까지 함께 살펴볼게요.'
-              : action === 'schedule' ? CONTEST_ACK : FACTCHECK_ACK),
+              : action === 'schedule' ? CONTEST_ACK : FACTCHECK_ACK); activity.typing(); },
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;
           if ((result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck) {
-            await tracking; // The sender row must exist before writing a content result with its foreign key.
+            await track(); // The sender row must exist before writing a content result with its foreign key.
             await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
           }
           let messages = result.messages;
@@ -189,18 +201,19 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
             if (mode !== 'full') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
           }
           for (const text of messages) await send(text);
+          await activity.finish();
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
           if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
-          await backfill;
+          await backfill();
         } else await send('안녕, 디미예요!');
-        await tracking;
+        await track();
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
       } catch (error) {
         stats.replyFailures++;
         stats.lastError = '자동 답장: ' + (error.message.startsWith('Meta API') ? error.message : '전송 결과를 확인하지 못했습니다.');
         // shortcut: failed or uncertain sends are not retried; add a durable outbox before using this beyond a local test.
-      }
+      } finally { await activity?.finish(); }
     }
   }
   const protect = handler => async (req, res) => {

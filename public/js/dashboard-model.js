@@ -365,7 +365,7 @@ export default class DashboardModel extends DCLogic {
     const q = s.query.trim().toLowerCase();
     const matchQ = it => this.matchesContent ? this.matchesContent(it, s.query) : !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
     let lib = items.filter(it => matchQ(it) && (s.typeF === 'all' || it.type === s.typeF) && (s.statusF === 'all' || it.group === s.statusF) && (!s.favOnly || s.fav[it.id]));
-    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = s.typeF !== 'all' || s.statusF !== 'all' || s.favOnly || !!q;
     const libBlocked = s.libError || s.libLoading;
     const libFirst = items.length === 0;
@@ -567,6 +567,7 @@ export default class DashboardModel extends DCLogic {
       hasSchedule: schedule.length > 0, schedule, hasTaste: tasteItemsAll.length > 0,
       // library
       isLibrary: s.view === 'library',
+      statusF: s.statusF, onStatus: e => this.setState({ statusF: e.target.value }),
       sort: s.sort, onSort: e => this.setState({ sort: e.target.value }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value, menuId: null }), hasQuery: !!s.query, clearQuery: () => this.setState({ query: '' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),

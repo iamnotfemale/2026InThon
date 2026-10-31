@@ -14,7 +14,6 @@ export function createRegistrationServices({ loadAuth, fetchImpl = fetch, origin
     async user() { return (await loadAuth()).currentUser(); },
     async login() {
       const auth = await loadAuth();
-      if (auth.inAppBrowser()) throw new Error('외부 브라우저에서 Google 로그인을 진행해 주세요.');
       const { error } = await auth.signInWithGoogle('/register');
       if (error) throw new Error('Google 로그인을 시작하지 못했어요. 다시 시도해 주세요.');
     },

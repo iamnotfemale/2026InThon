@@ -14,10 +14,14 @@ export function createOpenAIDecisions({ apiKey, fetchImpl = fetch }) {
   };
   return {
     async embed(text) {
-      const data = await request('embeddings', { model: 'text-embedding-3-small', dimensions: 256, input: text.slice(0, 3000) });
-      const vector = data.data?.[0]?.embedding;
-      if (!Array.isArray(vector) || vector.length !== 256 || !vector.every(Number.isFinite)) throw new Error('Invalid embedding');
-      return { model: 'text-embedding-3-small', textHash: hash(text), vector };
+      const texts = Array.isArray(text) ? text.slice(0, 15) : [text];
+      const data = await request('embeddings', { model: 'text-embedding-3-small', dimensions: 256, input: texts.map(value => value.slice(0, 3000)) });
+      const embeddings = texts.map((value, i) => {
+        const vector = data.data?.find(item => item.index === i)?.embedding ?? (texts.length === 1 ? data.data?.[0]?.embedding : undefined);
+        if (!Array.isArray(vector) || vector.length !== 256 || !vector.every(Number.isFinite)) throw new Error('Invalid embedding');
+        return { model: 'text-embedding-3-small', textHash: hash(value), vector };
+      });
+      return Array.isArray(text) ? embeddings : embeddings[0];
     },
     async rank({ query = '', interests = [], candidates }) {
       if (!candidates.length) return new Map();

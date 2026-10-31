@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
-import { normalizeContentIndex, indexFromRow, inferInterests, matchesContent } from './public/js/content-index.js';
+import { normalizeContentIndex, indexFromRow, indexedItems, inferInterests, matchesContent } from './public/js/content-index.js';
 import { createOpenAIDecisions, embeddingMatches } from './openai-decisions.mjs';
 import { createContentSearchHandler } from './api/content-search.mjs';
 import { createRecipeProcessor } from './recipe.mjs';
 import { createSupabaseState } from './supabase-state.mjs';
-import { factcheckToItem } from './public/js/dashboard-live.js';
+import { factcheckToItem, exhibitRowItems } from './public/js/dashboard-live.js';
+import { normalizeExhibit } from './public/js/exhibit-data.js';
 import { applyIndexValues } from './public/js/dashboard-index.js';
 
 const rawIndex = { description: '우삼겹과 면으로 만드는 국물 요리', tags: [{ label: '국물 요리', evidence: '영상1 00:05 국물에 면을 넣음' }],
@@ -19,7 +20,8 @@ test('one bounded factual index supports search; unknown attributes and uneviden
   const index = normalizeContentIndex({ ...rawIndex, tags: [...rawIndex.tags, { label: '건강식' }] }, { category: 'recipe', title: '우동' });
   assert.equal(index.attributes.length, 0); assert.equal(index.tags.length, 1);
   assert.ok(matchesContent({ id: 'fc1', contentIndex: index }, '우삼겹'));
-  assert.ok(matchesContent({ rowId: 'fc1', id: 'fc1-2' }, '고기 국수', { query: '고기 국수', ids: ['fc1'] }));
+  assert.equal(matchesContent({ rowId: 'fc1', id: 'fc1-2' }, '고기 국수', { query: '고기 국수', ids: ['fc1'] }), false);
+  assert.ok(matchesContent({ rowId: 'fc1', id: 'fc1-2' }, '고기 국수', { query: '고기 국수', ids: ['fc1-2'] }));
   assert.equal(matchesContent({ id: 'fc2', contentIndex: index }, '고기 국수', { query: '고기 국수', ids: ['fc1'] }), false);
   const legacy = indexFromRow({ topic: 'recipe', claim: '우동', reason: JSON.stringify({ recipe: { summary: '요약', ingredients: [{ name: '우삼겹' }] } }) });
   assert.equal(legacy.origin, 'stored_result'); assert.match(legacy.searchText, /우삼겹/);
@@ -117,4 +119,45 @@ test('live interest cards show actual indexed evidence, no questionnaire or fabr
   assert.equal(values.tasteEditable, false); assert.equal(values.tasteShowCard, true);
   assert.match(values.tasteCardLabel, /국물 요리/); assert.match(values.tasteCardDesc, /추정/);
   assert.equal(values.tasteEvidence.length, 2); assert.equal(values.tasteRecommendations[0].title, '국수');
+});
+
+test('multi-exhibition posts index and search the individual cards without leaking sibling venues', async () => {
+  const exhibit = normalizeExhibit({ is_event: true, events: [
+    { title: '현대미술 기획전', kind: '전시', intro: '국립현대미술관의 기획전', place: '국립현대미술관 서울관', media: '이미지1', evidence: { place: '이미지1' } },
+    { title: '주얼리 전시', kind: '전시', intro: '주얼리를 소개하는 전시', place: '송은', media: '이미지2', evidence: { place: '이미지2' } },
+  ] }, { reference: '2026-11-01', sourceText: '' });
+  const parent = { id: 99, status: 'done', topic: 'exhibit', claim: '국립현대미술관과 송은 전시', created_at: '2026-11-01T00:00:00Z',
+    reason: JSON.stringify({ exhibit, contentIndex: normalizeContentIndex({ description: '국립현대미술관과 송은' }) }) };
+  const items = exhibitRowItems(parent); assert.equal(items.length, 2);
+  assert.equal(matchesContent(items[0], '국립현대미술관'), true);
+  assert.equal(matchesContent(items[1], '국립현대미술관'), false);
+  assert.equal(matchesContent(items[1], '국립현대미술관', { query: '국립현대미술관', ids: ['fc99'] }), false);
+  assert.deepEqual(indexedItems(parent).map(item => item.id), ['fc99', 'fc99-2']);
+  assert.deepEqual(inferInterests([parent]), [], 'two events in the same original are one interest sample');
+  const handler = createContentSearchHandler({ preferences: { read: async () => ({ hidden: [] }) },
+    fetchImpl: async url => Response.json(url.includes('/auth/') ? { id: uid } : [parent]),
+    decisions: { rank: async ({ candidates }) => {
+      assert.deepEqual(candidates.map(c => c.id), ['fc99']);
+      assert.ok(!JSON.stringify(candidates).includes('송은'));
+      return new Map([['fc99', { score: 2 }]]);
+    } } });
+  const result = await invoke(handler, { action: 'search', query: '국립현대미술관' });
+  assert.deepEqual(result.payload.ids, ['fc99']);
+});
+
+test('embedding a multi-event post uses one batch request and maps out-of-order answers correctly', async () => {
+  let calls = 0;
+  const client = createOpenAIDecisions({ apiKey: 'mock-key', fetchImpl: async (_, init) => {
+    calls++; assert.deepEqual(JSON.parse(init.body).input, ['행사 A', '행사 B']);
+    return Response.json({ data: [{ index: 1, embedding: Array(256).fill(0.2) }, { index: 0, embedding: Array(256).fill(0.1) }] });
+  } });
+  const results = await client.embed(['행사 A', '행사 B']);
+  assert.equal(calls, 1); assert.equal(results[0].vector[0], 0.1); assert.equal(results[1].vector[0], 0.2);
+});
+
+test('taste tabs preserve the counts of the manual collections when no repeated interest exists', () => {
+  const values = applyIndexValues({ tasteCount: 3, tasteTabs: [{ count: 2 }, { count: 1 }] },
+    { mode: 'live', indexInterests: [], tasteTab: 'recipe' }, { allItems: () => [] });
+  assert.equal(values.tasteCount, 3); assert.deepEqual(values.tasteTabs.map(t => t.count), [2, 1]);
+  assert.equal(values.showInterestNotice, true); assert.match(values.interestNoticeTitle, /아직/);
 });

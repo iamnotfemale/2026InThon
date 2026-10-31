@@ -15,7 +15,7 @@ export async function loginThenDashboard(loadAuth, location) {
   preferLiveDashboard();
   try {
     const auth = await loadAuth();
-    if (!(await auth.currentUser()) && !auth.inAppBrowser()) {
+    if (!(await auth.currentUser())) {
       const { error } = await auth.signInWithGoogle('/dashboard');
       if (!error) return;
     }

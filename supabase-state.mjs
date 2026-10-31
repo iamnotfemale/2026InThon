@@ -98,11 +98,17 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       const contest = result.action === 'schedule' && !exhibit ? validateContest(result.contest) : null;
       const verdict = !recipe && !contest && !exhibit && VERDICTS.has(result.verdict) ? result.verdict : null;
       const contentIndex = result.contentIndex;
+      const contentIndexes = exhibit ? result.contentIndexes : null;
       if (contentIndex && embedIndex) {
-        try { contentIndex.embedding = await embedIndex(contentIndex.searchText); }
+        try {
+          if (contentIndexes?.length) {
+            const embeddings = await embedIndex(contentIndexes.map(index => index.searchText));
+            contentIndexes.forEach((index, i) => { index.embedding = embeddings[i]; });
+          } else contentIndex.embedding = await embedIndex(contentIndex.searchText);
+        }
         catch { /* Search can use the textual index if embedding is temporarily unavailable. */ }
       }
-      const indexed = contentIndex ? { contentIndex } : {};
+      const indexed = contentIndex ? { contentIndex, ...(contentIndexes ? { contentIndexes } : {}) } : {};
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));

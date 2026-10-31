@@ -1,7 +1,7 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 import { validateRecipe } from './recipe-data.js';
-import { indexFromRow, storedContent } from './content-index.js';
+import { indexFromRow, storedContent, indexedItems } from './content-index.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 
@@ -128,13 +128,14 @@ export function exhibitRowItems(row, now = new Date()) {
   try { stored = JSON.parse(row.reason); exhibit = validateExhibit(stored.exhibit); } catch { return []; }
   const base = { ...factcheckToItem({ ...row, topic: null }, now), contentIndex: indexFromRow(row) };
   const origin = instagramOrigin(stored.sourceUrl);
+  const indexes = indexedItems(row);
   return exhibit.events.map((event, i) => {
     const view = exhibitView(event, now);
     // Values found on the web (not in the post) are marked so they never read as the post's own.
     const show = (field, missing) => { const { value, web } = shownValue(event, field); return value ? (web ? value + ' (웹 확인)' : value) : missing; };
     const sources = webSources(event).map(source => `웹에서 찾은 ${source.fields.join('·')}: ${source.title ?? source.url}`
       + `${source.basis === 'venue' ? ' (장소 일반 안내)' : ''} ${source.url}`);
-    return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, type: 'exhibit', title: event.title,
+    return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, contentIndex: indexes[i]?.index, type: 'exhibit', title: event.title,
       key: view.keyLine, phase: view.phase, phaseCls: view.phaseCls, intro: event.intro ?? '원본에 소개 문구가 없어요.',
       period: view.period, hours: show('hours', '운영 시간 미기재'), closed: show('closed', '휴무일 미기재'),
       place: event.place ?? event.area ?? '장소 미기재', address: show('address', (event.place && event.area) ?? '주소 미기재'),

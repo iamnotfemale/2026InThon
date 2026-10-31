@@ -4,6 +4,7 @@ import { normalizeExhibit, exhibitView, kstDate } from './public/js/exhibit-data
 import { parseJson, splitBytes, htmlToText, excerpt } from './factcheck.mjs';
 import { missingFields, applyWebFills, shownValue, webSources } from './public/js/exhibit-data.js';
 import { INDEX_INSTRUCTION, resultIndex } from './content-index.mjs';
+import { eventContentIndex } from './public/js/content-index.js';
 export { validateExhibit, exhibitView } from './public/js/exhibit-data.js';
 
 // Prompt v3 step 2: fills only what the post left empty, from pages the code searched and opened itself.
@@ -181,6 +182,7 @@ export function createExhibitExtractor({ model, fill, now = () => new Date() }) 
     const result = { status: 'done', action: 'schedule', exhibit, extracted: { claim, topic: 'exhibit' },
       reason: first.intro ?? claim, messages: exhibitMessages(exhibit, now()) };
     result.contentIndex = resultIndex(raw.content_index, result, input);
+    result.contentIndexes = exhibit.events.map(eventContentIndex);
     return result;
   };
 }

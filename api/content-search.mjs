@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createOpenAIDecisions, cosine, embeddingMatches } from '../openai-decisions.mjs';
-import { indexFromRow, inferInterests, lexicalScore } from '../public/js/content-index.js';
+import { indexedItems, inferInterests, lexicalScore, normalizeSearch } from '../public/js/content-index.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../public/js/supabase-config.js';
 import { createResultPreferences } from '../result-preferences.mjs';
 
@@ -42,7 +42,16 @@ export function createContentSearchHandler({ fetchImpl = fetch, preferences, dec
       const key = createHash('sha256').update(JSON.stringify([user.id, query, rows])).digest('hex');
       const cached = cache.get(key);
       if (cached && cached.expires > Date.now()) return reply(res, 200, cached.value);
-      let candidates = rows.map(row => ({ id: 'fc' + row.id, index: indexFromRow(row) }));
+      let candidates = rows.flatMap(indexedItems);
+      // A known venue name is a constraint, not a reason to include every museum in the same post.
+      if (query) {
+        const compact = value => normalizeSearch(value).replace(/\s+/g, '');
+        const words = [query, ...query.split(/\s+/)].map(compact).filter(word => word.length >= 3);
+        const anchors = candidates.flatMap(c => c.index.attributes.filter(a => a.name === '장소')
+          .flatMap(a => words.filter(word => compact(a.value).includes(word))));
+        const anchor = anchors.sort((a, b) => b.length - a.length)[0];
+        if (anchor) candidates = candidates.filter(c => c.index.attributes.some(a => a.name === '장소' && compact(a.value).includes(anchor)));
+      }
       let degraded = !decisions; let rankedBy = 'index';
       let queryVector;
       if (query && decisions && candidates.some(c => embeddingMatches(c.index))) {
