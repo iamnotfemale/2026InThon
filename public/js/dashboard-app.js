@@ -3,10 +3,12 @@ import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
+import { applyTasteOrbitValues } from './dashboard-taste.js';
+import { createCalendarDashboard } from './dashboard-calendar.js';
 import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
-  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/settings': 'settings' }[path];
+  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/settings': 'settings' }[path];
   if (view) return { view, cook: null, timer: null, modal: null };
   const item = /^\/items\/([\w-]+)\/?$/.exec(path);
   return item ? { view: 'detail', detailId: item[1], from: 'library', cook: null, timer: null, modal: null } : { view: 'home' };
@@ -36,6 +38,7 @@ class DashboardApp extends DashboardModel {
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'summary', hidden: [] };
     this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
+    this.calendar = createCalendarDashboard(this);
     this.mobileMedia = matchMedia('(max-width: 767px)');
     this.state.mobile = this.mobileMedia.matches;
     this.mobileValues = createMobileDashboard(this);
@@ -55,7 +58,8 @@ class DashboardApp extends DashboardModel {
         event.preventDefault(); items[next]?.focus(); return;
       }
       if (event.key === 'Escape') {
-        if (this.state.cook) this.renderVals().closeCook();
+        if (this.state.view === 'calendar' && (this.calendar.model.state.modal || this.calendar.model.state.viewItem)) this.calendar.close();
+        else if (this.state.cook) this.renderVals().closeCook();
         else if (this.state.mobile && ['detail', 'settings'].includes(this.state.view)) this.go(this.state.from || 'library', { liveGuide: false });
         else this.setState({ modal: null, menuId: null, detailMenu: false, demoOpen: false, reportOpen: false });
       }
@@ -99,6 +103,7 @@ class DashboardApp extends DashboardModel {
   }
   componentDidUpdate(previousProps, previousState) {
     super.componentDidUpdate(previousProps);
+    if (previousState.view === 'calendar' && this.state.view !== 'calendar') this.calendar.close();
     this.positionMenu();
     if (this.state.mode === 'live' && previousState.view !== 'taste' && this.state.view === 'taste') this.loadInterests();
     if ((previousState.menuId || previousState.detailMenu) && !this.state.menuId && !this.state.detailMenu) this.menuOpener?.focus();
@@ -357,12 +362,20 @@ class DashboardApp extends DashboardModel {
       dotCls: live ? 'live' : 'off',
       pick: () => (live ? this.setState({ demoOpen: false }) : this.enterLive()),
     }]);
-    return live ? applyIndexValues(applyLiveMode(v, s, this), s, this) : v;
+    Object.assign(v, this.pageValues());
+    return applyTasteOrbitValues(live ? applyIndexValues(applyLiveMode(v, s, this), s, this) : v, s, this);
+  }
+  pageValues() {
+    const isCalendar = this.state.view === 'calendar';
+    const active = isCalendar || (this.state.view === 'detail' && this.state.from === 'calendar');
+    return { isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
+      goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values() : {},
+      ...(active ? { navLib: 'nav-item' } : {}),
+      ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}) };
   }
 }
 
-const response = await fetch('/data/dashboard-template.json');
+const [response, mobileResponse] = await Promise.all([fetch('/data/dashboard-template.json'), fetch('/data/mobile-template.json')]);
 if (!response.ok) throw new Error('Dashboard template unavailable');
-const mobileResponse = await fetch('/data/mobile-template.json');
 if (!mobileResponse.ok) throw new Error('Mobile dashboard template unavailable');
 render(h(DashboardApp, { theme: 'light', template: await response.json(), mobileTemplate: await mobileResponse.json() }), document.getElementById('app'));

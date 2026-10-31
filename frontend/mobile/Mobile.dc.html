@@ -334,61 +334,9 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       </div>
     </sc-if>
 
-    <!-- TASTE -->
-    <sc-if value="{{isTaste}}" hint-placeholder-val="{{ false }}">
-      <div class="fadein" style="display: flex; flex-direction: column; gap: 18px; padding: 4px 20px 28px">
-        <p class="muted" style="font-size: 14.5px">{{tasteIntro}}</p>
-        <div class="seg" role="group" aria-label="취향 분야">
-          <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="2">
-            <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><span class="{{t.dot}}"></span>{{t.label}}<span class="mono" style="font-size: 11.5px; opacity: .6">{{t.count}}</span></button>
-          </sc-for>
-        </div>
-        <sc-if value="{{isLive}}"><div style="display:flex;gap:8px;flex-wrap:wrap" role="group" aria-label="관심 패턴"><sc-for list="{{interestPatterns}}" as="p"><button type="button" class="{{p.cls}}" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}">{{p.label}}</button></sc-for></div><sc-if value="{{showInterestNotice}}"><section class="card" style="padding:16px"><h2 style="font-size:16px">{{interestNoticeTitle}}</h2><p class="muted" style="font-size:13px;margin:8px 0 12px">{{interestNoticeDesc}}</p><button class="btn btn-sm" type="button" onClick="{{refreshInterests}}">다시 살펴보기</button></section></sc-if></sc-if>
-        <sc-if value="{{tasteShowCard}}" hint-placeholder-val="{{ true }}">
-          <section class="card fadein" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
-            <div style="display: flex; align-items: center; gap: 8px"><span class="label">정리된 취향</span><span class="{{tasteBadgeCls}}">{{tasteBadge}}</span></div>
-            <p style="font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">{{tasteCardLabel}}</p>
-            <p class="muted" style="font-size: 14px">{{tasteCardDesc}}</p><sc-if value="{{isLive}}"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12px">근거</span><sc-for list="{{tasteEvidence}}" as="e"><button type="button" class="chip" onClick="{{e.open}}">{{e.title}}</button></sc-for></div></sc-if><sc-if value="{{isLive}}"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12px">다시 살펴볼 콘텐츠</span><sc-for list="{{tasteRecommendations}}" as="r"><button class="chip" type="button" onClick="{{r.open}}">{{r.title}}</button></sc-for></div></sc-if>
-            <div style="display: flex; gap: 8px; padding-top: 4px">
-              <sc-if value="{{tasteEditable}}"><button type="button" class="btn btn-sm" onClick="{{confirmTaste}}" disabled="{{tasteConfirmed}}" style="flex: 1">맞아요</button>
-              <button type="button" class="btn btn-sm" onClick="{{editTaste}}" style="flex: 1">수정하기</button></sc-if>
-              <button type="button" class="btn btn-sm btn-ghost" onClick="{{removeTasteCard}}" style="color: #DC2626">삭제</button>
-            </div>
-          </section>
-        </sc-if>
-        <sc-if value="{{tasteSingle}}" hint-placeholder-val="{{ false }}">
-          <div class="flagtile" style="background: var(--surface-2)">모은 콘텐츠가 하나뿐이라 취향을 단정하지 않았어요. 더 모으면 정리해 드릴게요.</div>
-        </sc-if>
-        <section style="display: flex; flex-direction: column">
-          <div class="sec-title" style="margin-bottom: 4px">취향으로 모은 콘텐츠</div>
-          <sc-for list="{{tasteItems}}" as="ti" hint-placeholder-count="2">
-            <div class="rise" style="display: flex; align-items: center; border-bottom: 1px solid var(--border)">
-              <button type="button" class="row" onClick="{{ti.open}}" style="border-bottom: 0; flex: 1; min-width: 0">
-                <span class="{{ti.orbCls}}" style="width: 42px; height: 42px"></span>
-                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="row-title">{{ti.title}}</span><span class="row-sub">{{ti.key}}</span></span>
-              </button>
-              <button type="button" class="btn btn-ghost btn-sm" onClick="{{ti.remove}}" style="color: var(--muted)">빼기</button>
-            </div>
-          </sc-for>
-          <sc-if value="{{tasteEmpty}}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 0; text-align: center">
-              <span class="orb o-unknown" style="width: 44px; height: 44px"></span>
-              <span style="font-weight: 600">아직 모아둔 취향이 없어요.</span>
-              <span class="muted" style="font-size: 13.5px">레시피나 전시 상세에서 ‘취향으로 모으기’를 눌러보세요.</span>
-            </div>
-          </sc-if>
-        </section>
-        <sc-if value="{{tasteEditable}}"><section class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
-          <span class="sec-title" style="font-size: 15px">내 생활 조건</span>
-          <span class="muted" style="font-size: 13px">직접 입력한 조건만 써요. 원래 정리 결과는 바뀌지 않아요.</span>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap">
-            <span class="uchip" style="padding-left: 12px">조리도구 · 프라이팬</span>
-            <span class="uchip" style="padding-left: 12px">조리도구 · 전자레인지</span>
-            <span class="uchip" style="padding-left: 12px">요리 시간 · 20분 이내</span>
-          </div>
-        </section></sc-if>
-      </div>
-    </sc-if>
+    <design-include name="taste"></design-include>
+    <sc-if value="{{isCalendar}}"><sc-scope value="{{calendar}}"><design-include name="calendar"></design-include></sc-scope></sc-if>
+
   </div>
 
   <!-- ===== TAB BAR ===== -->
@@ -402,7 +350,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <button type="button" class="{{tabTaste}}" onClick="{{goTaste}}" aria-label="내 취향">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg>내 취향
     </button>
-  </nav>
+  <button type="button" class="{{navCalendar}}" onClick="{{goCalendar}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>캘린더</span></button></nav>
 
   <sc-if value="{{missingDetail}}"><div class="layer" role="dialog" aria-modal="true" aria-label="결과를 찾을 수 없어요"><div class="topbar"><button type="button" class="btn btn-ghost" onClick="{{closeDetail}}">내 콘텐츠로</button></div><div style="padding: 24px 20px"><h2 style="font-size: 22px">결과를 찾을 수 없어요</h2><p class="muted" style="margin-top: 12px">이 계정으로 볼 수 있는 결과인지 확인해 주세요.</p></div></div></sc-if>
   <!-- ===== DETAIL LAYER ===== -->

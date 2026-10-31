@@ -62,6 +62,13 @@ def compile_page(source_path, name, model_name, output):
     source = (ROOT / source_path).read_text(encoding="utf-8")
     style = re.search(r"<style>(.*?)</style>", source, re.S).group(1)
     markup = re.search(r"</helmet>(.*?)</x-dc>", source, re.S).group(1)
+    for include, path in [('taste', 'frontend/taste-redesign/Taste.fragment.html'), ('calendar', 'frontend/calendar/Calendar.dc.html')]:
+        if f'<design-include name="{include}"></design-include>' not in markup:
+            continue
+        fragment = (ROOT / path).read_text(encoding='utf-8')
+        if include == 'calendar':
+            fragment = re.search(r'</helmet>(.*?)</x-dc>', fragment, re.S).group(1)
+        markup = markup.replace(f'<design-include name="{include}"></design-include>', fragment)
     # The only source asset change is resolving the design tool's private blob URL.
     markup = markup.replace("/_blob/3651456fa0784f684fd353c526fe36bf", "/assets/mascot.png")
     markup = markup.replace("./assets/643336e9e4b4897d48e1aefd9715f721.png", "/assets/onboarding-mascot.png")
@@ -85,7 +92,7 @@ def compile_page(source_path, name, model_name, output):
         "class Component extends DCLogic", f"export default class {model_name} extends DCLogic", 1).replace('서비스명이에요', '디미예요').replace('서비스명', '디미').replace('inthon2team', 'dimi_in')
     (public / f"js/{name}-model.js").write_text(module, encoding="utf-8")
     fonts = re.search(r'<link rel="stylesheet" href="([^"]+)"', source).group(1)
-    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 당신의 가장 가까운 비서', 'register': '디미 · 회원가입', 'mobile': '디미 · 대시보드'}[name]
+    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 당신의 가장 가까운 비서', 'register': '디미 · 회원가입', 'mobile': '디미 · 대시보드', 'calendar': '디미 · 캘린더'}[name]
     shell = '''<!doctype html>
 <html lang="ko">
 <head>
@@ -107,7 +114,7 @@ def compile_page(source_path, name, model_name, output):
 '''
     shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts)
     if name == 'dashboard':
-        shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n</head>')
+        shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n  <link rel="stylesheet" href="/css/taste.css">\n  <link rel="stylesheet" href="/css/calendar.css">\n</head>')
     if output:
         (public / output).write_text(shell, encoding="utf-8")
     print(f"{name}: {parser.sequence} original elements; CSS and source state logic preserved")
@@ -118,6 +125,7 @@ def build():
     compile_page("frontend/landing/Landing.dc.html", "landing", "LandingModel", "index.html")
     compile_page("frontend/register/Signup.dc.html", "register", "RegisterModel", "register.html")
     compile_page("frontend/mobile/Mobile.dc.html", "mobile", "MobileModel", None)
+    compile_page("frontend/calendar/Calendar.dc.html", "calendar", "CalendarModel", None)
     public = ROOT / "public"
     shutil.copyfile(ROOT / "frontend/assets/mascot.png", public / "assets/mascot.png")
     shutil.copyfile(ROOT / "frontend/assets/onboarding-mascot.png", public / "assets/onboarding-mascot.png")

@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>캘린더</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Noto+Sans+KR:wght@400;500;600;700&amp;display=swap">
+<style>.calendar-page{--bg:#FAFAFA;--surface:#FFFFFF;--surface-2:#F5F5F5;--surface-3:#EBEBEB;--border:#EAEAEA;--border-strong:#D4D4D4;--text:#0A0A0A;--text-2:#404040;--muted:#666666;--accent:#0A0A0A;--accent-hover:#3A3A3A;--accent-fg:#FFFFFF;--ring:rgba(10,10,10,.08);--today:#F7F7F2;--shadow:0 1px 2px rgba(0,0,0,.04);--shadow-lg:0 24px 64px -16px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.04);font-family:'Geist','Noto Sans KR',system-ui,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
+.calendar-page.dark{--bg:#0A0A0A;--surface:#111111;--surface-2:#191919;--surface-3:#262626;--border:#232323;--border-strong:#333333;--text:#EDEDED;--text-2:#C9C9C9;--muted:#A1A1A1;--accent:#EDEDED;--accent-hover:#D4D4D4;--accent-fg:#0A0A0A;--ring:rgba(255,255,255,.08);--today:#151515}
+.calendar-page *,.calendar-page *::before,.calendar-page *::after{box-sizing:border-box}
+.calendar-page button,.calendar-page input{font:inherit;letter-spacing:inherit}
+.calendar-page :where(.calendar-page) :where(button,.calendar-page input){color:inherit}
+.calendar-page h1,.calendar-page h2,.calendar-page p{margin:0}
+.calendar-page :focus-visible{outline:2px solid #5E6AD2;outline-offset:2px;border-radius:8px}
+.calendar-page a{color:var(--text)}
+.calendar-page a:hover{color:var(--text-2)}
+.calendar-page{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;word-break:keep-all;overflow-wrap:break-word}
+.calendar-page .dfont,.calendar-page .num,.calendar-page .wh .n,.calendar-page .md{font-family:'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.calendar-page .chip,.calendar-page .seg button{line-height:1}
+.calendar-page .mono{font-family:'Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.calendar-page .muted{color:var(--muted)}
+.calendar-page .label{font-size:12px;font-weight:500;color:var(--muted)}
+.calendar-page .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;white-space:nowrap;text-decoration:none;box-shadow:var(--shadow);transition:background .15s ease,border-color .15s ease,transform .12s ease,box-shadow .15s ease}
+.calendar-page .btn:hover{background:var(--surface-2);border-color:var(--border-strong);color:var(--text)}
+.calendar-page .btn:active{transform:scale(.97)}
+.calendar-page .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.calendar-page .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.calendar-page .btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:var(--accent-fg);box-shadow:0 0 0 4px var(--ring)}
+.calendar-page .btn-ghost{background:transparent;border-color:transparent;box-shadow:none}
+.calendar-page .btn-ghost:hover{background:var(--surface-2);border-color:transparent}
+.calendar-page .btn-icon{width:32px;padding:0}
+.calendar-page .btn-danger{color:#DC2626}
+.calendar-page .ico{width:16px;height:16px;flex:none}
+.calendar-page .ico-sm{width:14px;height:14px;flex:none}
+.calendar-page .nav-item{display:flex;align-items:center;gap:10px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--text-2);font-size:13.5px;font-weight:500;cursor:pointer;text-decoration:none;transition:background .15s ease,color .15s ease}
+.calendar-page .nav-item:hover{background:var(--surface-2);color:var(--text)}
+.calendar-page .nav-item.on{background:var(--surface-3);color:var(--text)}
+.calendar-page .nav-item .new{margin-left:auto;font-size:10.5px;font-weight:600;height:18px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;border:1px solid var(--border);color:var(--muted)}
+.calendar-page .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border)}
+.calendar-page .seg button{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .2s ease,color .2s ease,box-shadow .2s ease}
+.calendar-page .seg button:hover{color:var(--text)}
+.calendar-page .seg .n{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted)}
+.calendar-page .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}
+.calendar-page .chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;white-space:nowrap;transition:all .18s ease}
+.calendar-page .chip:hover{border-color:var(--border-strong);color:var(--text)}
+.calendar-page .chip.on{background:var(--surface);border-color:var(--text);color:var(--text)}
+.calendar-page .chip:not(.on) .dot{opacity:.35}
+.calendar-page .chip:disabled{opacity:.4;cursor:not-allowed}
+.calendar-page .dot{width:7px;height:7px;border-radius:50%;flex:none;display:inline-block}
+.calendar-page .t-recipe{background:#F97316}
+.calendar-page .t-exhibit{background:#A855F7}
+.calendar-page .t-contest{background:#22C55E}
+.calendar-page .t-news{background:#3B82F6}
+.calendar-page .cal{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
+.calendar-page .cal-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border);background:var(--bg)}
+.calendar-page .cal-head span{padding:10px 0;text-align:center;font-size:12px;font-weight:500;color:var(--muted)}
+.calendar-page .cal-head span.sun{color:#DC2626}
+.calendar-page .month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.calendar-page .mc{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:124px;padding:8px;border:0;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface);text-align:left;cursor:pointer;transition:background .15s ease;animation:calendar-page-cellIn .4s cubic-bezier(.16,1,.3,1) both}
+.calendar-page .mc:nth-child(7n){border-right:0}
+.calendar-page .mc:hover{background:var(--surface-2)}
+.calendar-page .mc.out{background:var(--bg)}
+.calendar-page .mc.out .num{color:var(--border-strong)}
+.calendar-page .mc.today{background:var(--today)}
+.calendar-page .mc.sel{box-shadow:inset 0 0 0 2px var(--text);z-index:1}
+.calendar-page .num{display:inline-grid;place-content:center;align-self:flex-start;min-width:26px;height:26px;padding:0 6px;border-radius:999px;font-size:13px;font-weight:500;color:var(--text)}
+.calendar-page .num.sun{color:#DC2626}
+.calendar-page .mc.today .num{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.calendar-page .ev{display:flex;align-items:center;gap:6px;height:24px;padding:0 7px;border-radius:7px;background:var(--surface-2);font-size:12px;color:var(--text-2);white-space:nowrap;overflow:hidden;animation:calendar-page-evIn .35s cubic-bezier(.34,1.4,.64,1) both}
+.calendar-page .ev .t{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.calendar-page .ev .k{font-weight:600;color:var(--text);flex:none}
+.calendar-page .ev.past{opacity:.55}
+.calendar-page .more{font-size:11.5px;color:var(--muted);padding-left:6px}
+.calendar-page .bell{width:11px;height:11px;flex:none;color:var(--muted);margin-left:auto}
+.calendar-page .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));min-height:620px}
+.calendar-page .wc{min-width:0;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:10px 6px;border-right:1px solid var(--border);transition:background .2s ease}
+.calendar-page .wc:last-child{border-right:0}
+.calendar-page .wc.today{background:var(--today)}
+.calendar-page .wc:not(.sel):hover{background:var(--surface-2)}
+.calendar-page .wc.sel{box-shadow:inset 0 0 0 1px var(--border-strong);background:var(--surface-2)}
+.calendar-page .wc.today.sel{background:var(--today)}
+.calendar-page .wh{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 10px;border:0;background:transparent;cursor:pointer;border-radius:10px}
+.calendar-page .wh:hover{background:var(--surface-2)}
+.calendar-page .wh .d{font-size:12px;color:var(--muted)}
+.calendar-page .wh .n{display:grid;place-content:center;width:32px;height:32px;border-radius:50%;font-size:16px;font-weight:600}
+.calendar-page .wc.today .wh .n{background:var(--accent);color:var(--accent-fg)}
+.calendar-page .wev{display:flex;flex-direction:column;gap:5px;width:100%;min-width:0;padding:9px;border-radius:12px;border:1px solid var(--border);background:var(--surface);text-align:left;cursor:pointer;transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,border-color .15s ease;animation:calendar-page-evIn .4s cubic-bezier(.34,1.4,.64,1) both}
+.calendar-page .wev:hover{transform:translateY(-2px);border-color:var(--border-strong);box-shadow:0 10px 22px -14px rgba(0,0,0,.3)}
+.calendar-page .wev .meta{display:flex;align-items:center;gap:5px;min-width:0;font-size:11.5px;line-height:1.3;color:var(--muted);white-space:nowrap;overflow:hidden}
+.calendar-page .wev .meta .ks{font-weight:600;color:var(--text-2)}
+.calendar-page .wev .meta .dot{width:6px;height:6px}
+.calendar-page .wev .tt{font-size:13px;font-weight:600;line-height:1.4;letter-spacing:-0.02em;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.calendar-page .wev.deadline{border-color:#F3C9C3}
+.calendar-page.dark .wev.deadline{border-color:#5A2A24}
+.calendar-page .wadd{margin-top:auto;height:30px;border:1px dashed var(--border-strong);border-radius:10px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;opacity:0;transition:opacity .2s ease,background .15s ease}
+.calendar-page .wc:hover .wadd{opacity:1}
+.calendar-page .wadd:hover{background:var(--surface-2)}
+.calendar-page .wempty{text-align:center;color:var(--border-strong);padding-top:20px}
+.calendar-page .pcard{position:relative;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);animation:calendar-page-evIn .35s cubic-bezier(.16,1,.3,1) both}
+.calendar-page .kind{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-2)}
+.calendar-page .rem{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+.calendar-page .rem .st{margin-left:auto;font-size:11px;font-weight:500;height:20px;padding:0 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);color:var(--muted)}
+.calendar-page .rem .st::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--c,var(--muted))}
+.calendar-page .st-sched{--c:#2563EB}
+.calendar-page .st-sent{--c:#16A34A}
+.calendar-page .st-off{--c:#BDBDBD}
+.calendar-page .switch{position:relative;width:34px;height:20px;flex:none;border:0;border-radius:999px;background:var(--surface-3);cursor:pointer;padding:0;transition:background .2s ease}
+.calendar-page .switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.calendar-page .switch.on{background:#16A34A}
+.calendar-page .switch.on::after{transform:translateX(14px)}
+.calendar-page .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,10,10,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:calendar-page-fade .22s ease both}
+.calendar-page .modal{width:min(820px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-lg);overflow:hidden;animation:calendar-page-modalIn .34s cubic-bezier(.16,1,.3,1) both}
+.calendar-page .pc-sw{position:absolute;top:14px;right:14px;z-index:1}
+.calendar-page .pc-head{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:calc(100% + 16px);margin:-8px -8px 0;padding:8px 52px 8px 8px;border:0;border-radius:10px;background:transparent;text-align:left;cursor:pointer;transition:background .18s ease}
+.calendar-page .pc-head:hover{background:var(--surface-2)}
+.calendar-page .pc-title{display:inline-flex;align-items:center;gap:4px;font-size:15px;font-weight:600;letter-spacing:-0.02em;line-height:1.4;color:var(--text)}
+.calendar-page .pc-arrow{color:var(--muted);opacity:0;transform:translateX(-4px);transition:all .2s ease}
+.calendar-page .pc-head:hover .pc-arrow{opacity:1;transform:none}
+.calendar-page .cv{width:min(520px,100%)}
+.calendar-page .cv-sec{display:flex;flex-direction:column;gap:8px}
+.calendar-page .cv-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 16px;padding:14px;border:1px solid var(--border);border-radius:12px}
+.calendar-page .cv-facts .k{font-size:11.5px;color:var(--muted)}
+.calendar-page .cv-facts .v{font-size:13.5px;font-weight:500;line-height:1.45}
+.calendar-page .cv-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.calendar-page .cv-row:last-child{border-bottom:0}
+.calendar-page .cv-row .b{margin-left:auto;color:var(--text-2);font-size:13px;text-align:right}
+.calendar-page .cv-row .b.miss{color:var(--muted)}
+.calendar-page .cv-ev{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);text-align:left;cursor:pointer;font-size:13px;transition:border-color .18s ease}
+.calendar-page .cv-ev:hover{border-color:var(--border-strong)}
+.calendar-page .cv-ev.cur{border-color:var(--text)}
+.calendar-page .uprow{display:flex;align-items:center;gap:10px;width:calc(100% + 16px);margin:0 -8px;padding:9px 8px;border:0;border-radius:10px;background:transparent;text-align:left;cursor:pointer;transition:background .18s ease,transform .18s ease}
+.calendar-page .uprow:hover{background:var(--surface-2)}
+.calendar-page .uprow:active{transform:scale(.99)}
+.calendar-page .uprow .uk{font-size:11.5px;color:var(--muted);transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.calendar-page .uprow .ua{flex:none;width:14px;margin-left:-14px;color:var(--text);opacity:0;transform:translateX(-6px);transition:opacity .2s ease,transform .22s cubic-bezier(.16,1,.3,1),margin .22s cubic-bezier(.16,1,.3,1)}
+.calendar-page .uprow:hover .ua,.calendar-page .uprow:focus-visible .ua{opacity:1;transform:none;margin-left:0}
+.calendar-page .uprow:hover .uk{color:var(--text-2)}
+.calendar-page .opt{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-align:left;cursor:pointer;transition:all .18s ease}
+.calendar-page .opt:hover{border-color:var(--border-strong)}
+.calendar-page .opt.on{border-color:var(--text);box-shadow:0 0 0 3px var(--ring)}
+.calendar-page .opt:disabled{opacity:.45;cursor:not-allowed}
+.calendar-page .orb{position:relative;display:block;flex:none;border-radius:50%;overflow:hidden}
+.calendar-page .orb::before{content:'';position:absolute;inset:-30%;filter:blur(8px)}
+.calendar-page .orb::after{content:'';position:absolute;inset:-10%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,255,255,0) 46%)}
+.calendar-page .o-recipe::before{background:conic-gradient(from 20deg,#FDBA74,#FB7185,#FDE68A,#F97316,#FDBA74)}
+.calendar-page .o-exhibit::before{background:conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
+.calendar-page .o-contest::before{background:conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
+.calendar-page .mini{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.calendar-page .mini span.h{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}
+.calendar-page .md{height:34px;border:0;border-radius:9px;background:transparent;font-size:13px;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.calendar-page .md:hover{background:var(--surface-2)}
+.calendar-page .md.out{color:var(--border-strong)}
+.calendar-page .md.today{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.calendar-page .md.on{background:var(--accent);color:var(--accent-fg);font-weight:600;animation:calendar-page-pick .3s cubic-bezier(.34,1.56,.64,1)}
+.calendar-page .md:disabled{color:var(--border-strong);text-decoration:line-through;cursor:not-allowed;background:transparent}
+.calendar-page .tinput{height:34px;padding:0 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;color:var(--text)}
+.calendar-page .tinput:disabled{opacity:.45}
+.calendar-page .bubble{max-width:100%;padding:10px 14px;border-radius:16px;border-bottom-left-radius:5px;background:var(--surface-2);font-size:13px;line-height:1.55}
+.calendar-page .lock{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.calendar-page .toast{position:fixed;right:24px;bottom:24px;z-index:60;display:flex;align-items:center;gap:12px;max-width:460px;padding:11px 16px;border-radius:12px;background:var(--text);color:var(--bg);font-size:13.5px;box-shadow:var(--shadow-lg);animation:calendar-page-toastIn .4s cubic-bezier(.16,1,.3,1) both}
+.calendar-page-enter{animation:calendar-page-enter .4s cubic-bezier(.16,1,.3,1) both}
+@keyframes calendar-page-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes calendar-page-cellIn{from{opacity:0}to{opacity:1}}
+@keyframes calendar-page-evIn{from{opacity:0;transform:translateY(4px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes calendar-page-fade{from{opacity:0}to{opacity:1}}
+@keyframes calendar-page-modalIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes calendar-page-toastIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes calendar-page-pick{0%{transform:scale(.8)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.calendar-page *,.calendar-page *::before,.calendar-page *::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+
+
+.calendar-page .calendar-note{padding:20px 32px 0;font-size:12px;color:var(--muted)}
+.calendar-page .calendar-grid-column{min-inline-size:0}
+.calendar-page .calendar-agenda{min-inline-size:0;max-width:none!important}
+.calendar-page .opt{min-width:0}.calendar-page .opt>span{overflow:hidden}
+.calendar-page .week{min-height:440px}.calendar-page .wadd{opacity:1}
+.calendar-page button:disabled{cursor:not-allowed}
+.m .calendar-page .calendar-layout{padding:16px 20px 28px!important}
+.m .calendar-page .calendar-note{padding:4px 20px 0}
+.m .calendar-page .mc{min-height:76px;padding:4px;overflow:hidden}
+.m .calendar-page .num{min-width:20px;height:22px;padding:0;font-size:11px}
+.m .calendar-page .ev{padding:0 3px;height:20px;gap:3px;font-size:10px}.m .calendar-page .ev .k{display:none}
+.m .calendar-page .week{min-height:300px;overflow:auto}.m .calendar-page .wev{padding:5px}.m .calendar-page .wev .tt{font-size:10px}
+.m .calendar-page .wev .meta{font-size:9px;flex-wrap:wrap}.m .calendar-page .wc{padding:4px 1px}
+.m .calendar-page .overlay{padding:12px}.m .calendar-page .modal{max-height:calc(100dvh - 24px)}
+.m .calendar-page .modal>div:last-child{flex-wrap:wrap}.m .calendar-page .modal .tinput{font-size:16px}
+</style>
+</helmet>
+<div class="calendar-page {{themeClass}}">
+<p class="calendar-note" role="status">{{storageNote}}</p>
+
+
+    <div class="calendar-layout" style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px 32px 48px; align-items: flex-start">
+      <!-- calendar column -->
+      <section class="calendar-grid-column" style="flex: 999 1 680px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+          <h1 class="enter dfont" style="font-size: 26px; font-weight: 700; line-height: 1.25; margin-right: auto">{{title}}</h1>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="이전" onClick="{{prev}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="다음" onClick="{{next}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+          <button type="button" class="btn" onClick="{{goToday}}">오늘</button>
+          <button type="button" class="btn btn-primary" onClick="{{openAddSel}}">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>일정 추가
+          </button>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+          <div class="seg" role="group" aria-label="유형 필터">
+            <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+              <button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.toggle}}"><sc-if value="{{f.hasDot}}" hint-placeholder-val="{{ true }}"><span class="{{f.dot}}"></span></sc-if>{{f.label}}<span class="n">{{f.count}}</span></button>
+            </sc-for>
+          </div>
+          <div class="seg" style="margin-left: auto" role="group" aria-label="보기 방식">
+            <button type="button" class="{{segMonth}}" onClick="{{viewMonth}}">월</button>
+            <button type="button" class="{{segWeek}}" onClick="{{viewWeek}}">주</button>
+          </div>
+        </div>
+
+        <sc-if value="{{isMonth}}" hint-placeholder-val="{{ true }}">
+          <div class="cal enter">
+            <div class="cal-head"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+            <div class="month">
+              <sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+                <button type="button" class="{{c.cls}}" onClick="{{c.pick}}" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}">
+                  <span class="{{c.numCls}}">{{c.d}}</span>
+                  <sc-for list="{{c.evs}}" as="e" hint-placeholder-count="1">
+                    <span class="{{e.cls}}"><span class="{{e.dot}}"></span><span class="k">{{e.kindShort}}</span><span class="t">{{e.title}}</span>
+                      <sc-if value="{{e.hasBell}}" hint-placeholder-val="{{ false }}"><svg class="bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg></sc-if>
+                    </span>
+                  </sc-for>
+                  <sc-if value="{{c.hasMore}}" hint-placeholder-val="{{ false }}"><span class="more">+{{c.more}}개 더</span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isWeek}}" hint-placeholder-val="{{ false }}">
+          <div class="cal enter">
+            <div class="week">
+              <sc-for list="{{weekCols}}" as="w" hint-placeholder-count="7">
+                <div class="{{w.cls}}" onClick="{{w.pick}}">
+                  <button type="button" class="wh" onClick="{{w.pick}}" aria-label="{{w.aria}}"><span class="d">{{w.dow}}</span><span class="n">{{w.d}}</span></button>
+                  <sc-for list="{{w.evs}}" as="e" hint-placeholder-count="1">
+                    <button type="button" class="{{e.wcls}}" onClick="{{w.pick}}">
+                      <span class="meta"><span class="{{e.dot}}"></span><span class="ks">{{e.kindShort}}</span><span class="mono">{{e.timeLabel}}</span></span>
+                      <span class="tt">{{e.title}}</span>
+                      <sc-if value="{{e.hasBell}}" hint-placeholder-val="{{ false }}">
+                        <span class="meta"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>DM {{e.remCount}}개</span>
+                      </sc-if>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{w.empty}}" hint-placeholder-val="{{ false }}"><span class="wempty">—</span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <p class="muted" style="font-size: 12px">내 콘텐츠로 직접 등록한 일정만 보여요. 예약·지원 완료를 뜻하지 않아요.</p>
+      </section>
+
+      <!-- side panel -->
+      <aside class="calendar-agenda" style="flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 20px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <h2 class="enter dfont" style="font-size: 18px; font-weight: 700">{{selLabel}}</h2>
+          <sc-if value="{{selIsToday}}" hint-placeholder-val="{{ true }}"><span class="chip" style="height: 22px; font-size: 11px; padding: 0 8px; cursor: default">오늘</span></sc-if>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <sc-for list="{{selEvents}}" as="e" hint-placeholder-count="2">
+            <article class="pcard">
+              <button type="button" class="{{e.swCls}} pc-sw" role="switch" aria-checked="{{e.dmChecked}}" aria-label="DM 리마인드" onClick="{{e.toggleDm}}" disabled="{{dmUnavailable}}"></button>
+              <button type="button" class="pc-head" onClick="{{e.view}}" aria-label="{{e.viewAria}}">
+                <span style="display: flex; align-items: center; gap: 8px">
+                  <span class="kind"><span class="{{e.dot}}"></span>{{e.kindLabel}}</span>
+                  <span class="muted mono" style="font-size: 12px">{{e.timeLabel}}</span>
+                </span>
+                <span class="pc-title">{{e.title}}<svg class="ico-sm pc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></span>
+              </button>
+              <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border)">
+                <sc-for list="{{e.rems}}" as="r" hint-placeholder-count="1">
+                  <span class="rem">
+                    <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+                    <span class="mono" style="font-size: 12.5px; white-space: nowrap">{{r.at}}</span><span class="muted">{{r.label}}</span>
+                  </span>
+                </sc-for>
+                <sc-if value="{{e.noRems}}" hint-placeholder-val="{{ false }}"><span class="muted" style="font-size: 12.5px">리마인드 없음</span></sc-if>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 2px; margin: 0 -6px -4px">
+                <button type="button" class="btn btn-ghost" onClick="{{e.edit}}" style="height: 28px; font-size: 12.5px">수정</button>
+                <button type="button" class="btn btn-ghost btn-danger" onClick="{{e.remove}}" style="height: 28px; font-size: 12.5px">삭제</button>
+              </div>
+            </article>
+          </sc-for>
+          <sc-if value="{{selEmpty}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border: 1px dashed var(--border-strong); border-radius: 14px; text-align: center">
+              <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width: 72px; filter: drop-shadow(0 6px 8px rgba(120,80,30,.15))">
+              <span style="font-size: 14px; font-weight: 600">이 날은 일정이 없어요</span>
+              <span class="muted" style="font-size: 12.5px">레시피 해먹을 날과 전시 갈 날을 정해보세요.</span>
+              <button type="button" class="btn" onClick="{{openAddSel}}" style="margin-top: 4px">일정 추가</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <section style="display: flex; flex-direction: column; gap: 4px; padding-top: 18px; border-top: 1px solid var(--border)">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+            <span style="font-size: 14px; font-weight: 600">{{upcomingTitle}}</span>
+            <span class="mono muted" style="font-size: 12px">{{upCount}}</span>
+          </div>
+          <sc-for list="{{upcoming}}" as="u" hint-placeholder-count="4">
+            <button type="button" class="uprow" onClick="{{u.pick}}" aria-label="{{u.aria}}">
+              <span class="mono" style="font-size: 12.5px; width: 112px; flex: none; white-space: nowrap; color: var(--text-2)">{{u.at}}</span>
+              <span class="{{u.dot}}"></span>
+              <span style="flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{u.title}}</span>
+              <span class="uk">{{u.kind}}</span>
+              <svg class="ico-sm ua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+          </sc-for>
+          <p class="muted" style="font-size: 11.5px; line-height: 1.55; padding-top: 8px">{{reminderNote}}</p>
+        </section>
+      </aside>
+    </div>
+
+
+  <!-- CONTENT VIEW MODAL -->
+  <sc-if value="{{cvOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="overlay">
+      <div class="modal cv" role="dialog" aria-modal="true" aria-labelledby="cv-title">
+        <div style="display: flex; align-items: flex-start; gap: 14px; padding: 20px 20px 16px; border-bottom: 1px solid var(--border)">
+          <span class="{{cvOrb}}" style="width: 48px; height: 48px"></span>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted)"><span class="{{cvDot}}"></span>{{cvType}}</span>
+            <h2 id="cv-title" style="font-size: 19px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.35">{{cvTitle}}</h2>
+          </div>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="닫기" onClick="{{closeCv}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 18px; padding: 18px 20px; overflow: auto">
+          <p style="font-size: 14px; line-height: 1.65; color: var(--text-2)">{{cvSummary}}</p>
+          <div class="cv-facts">
+            <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
+            </sc-for>
+          </div>
+          <sc-if value="{{cvHasList}}" hint-placeholder-val="{{ true }}">
+            <div class="cv-sec">
+              <span class="label">{{cvListTitle}}</span>
+              <div>
+                <sc-for list="{{cvList}}" as="l" hint-placeholder-count="4">
+                  <div class="cv-row"><span>{{l.a}}</span><span class="{{l.bCls}}">{{l.b}}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{cvHasEvents}}" hint-placeholder-val="{{ true }}">
+            <div class="cv-sec">
+              <span class="label">캘린더에 잡힌 일정 <span class="mono muted">{{cvEvCount}}</span></span>
+              <sc-for list="{{cvEvents}}" as="v" hint-placeholder-count="2">
+                <button type="button" class="{{v.cls}}" onClick="{{v.pick}}"><span class="mono" style="white-space: nowrap">{{v.label}}</span><span class="muted" style="margin-left: auto">{{v.kind}}</span></button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border)">
+          <button type="button" class="btn btn-primary" onClick="{{openFullContent}}" style="margin-left:auto">전체 내용 보기</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ADD / EDIT MODAL -->
+  <sc-if value="{{modalOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="overlay">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ev-title">
+        <div style="display: flex; align-items: center; padding: 18px 20px 14px; border-bottom: 1px solid var(--border)">
+          <h2 id="ev-title" style="font-size: 17px; font-weight: 700; letter-spacing: -0.02em">{{modalTitle}}</h2>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="닫기" onClick="{{closeModal}}" style="margin-left: auto"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; overflow: auto">
+          <!-- left: content -->
+          <div style="flex: 1 1 300px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--border)">
+            <span class="label" style="margin-bottom: 2px">1 · 어떤 콘텐츠의 일정인가요?</span>
+            <sc-if value="{{noContentOptions}}"><p class="muted" style="font-size:13px">아직 일정으로 만들 콘텐츠가 없어요. @dimi_in으로 보낸 레시피·전시·공모전을 먼저 정리해 주세요.</p></sc-if>
+            <sc-for list="{{contentOpts}}" as="o" hint-placeholder-count="6">
+              <button type="button" class="{{o.cls}}" onClick="{{o.pick}}" disabled="{{o.disabled}}" aria-pressed="{{o.pressed}}">
+                <span class="{{o.orb}}" style="width: 30px; height: 30px"></span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+                  <span style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{o.title}}</span>
+                  <span class="muted" style="font-size: 12px">{{o.sub}}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+          <!-- right: when -->
+          <div style="flex: 1 1 380px; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span class="label">2 · 일정 종류</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                <sc-for list="{{kindOpts}}" as="k" hint-placeholder-count="1">
+                  <button type="button" class="{{k.cls}}" aria-pressed="{{k.pressed}}" onClick="{{k.pick}}">{{k.label}}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 6px">
+                <span class="label">3 · 날짜</span>
+                <span class="mono" style="font-size: 12.5px; font-weight: 600; margin-left: 4px">{{draftDateLabel}}</span>
+                <sc-if value="{{dateLocked}}" hint-placeholder-val="{{ false }}">
+                  <span class="lock" style="margin-left: auto"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>공고에서 확인된 날짜예요</span>
+                </sc-if>
+                <sc-if value="{{dateFree}}" hint-placeholder-val="{{ true }}">
+                  <span style="margin-left: auto; display: flex; align-items: center; gap: 2px">
+                    <button type="button" class="btn btn-ghost btn-icon" aria-label="이전 달" onClick="{{miniPrev}}" style="width: 26px; height: 26px"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+                    <span style="font-size: 12.5px; font-weight: 500; min-width: 70px; text-align: center">{{miniTitle}}</span>
+                    <button type="button" class="btn btn-ghost btn-icon" aria-label="다음 달" onClick="{{miniNext}}" style="width: 26px; height: 26px"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+                  </span>
+                </sc-if>
+              </div>
+              <div class="mini">
+                <span class="h" style="color: #DC2626">일</span><span class="h">월</span><span class="h">화</span><span class="h">수</span><span class="h">목</span><span class="h">금</span><span class="h">토</span>
+                <sc-for list="{{miniDays}}" as="m" hint-placeholder-count="35">
+                  <button type="button" class="{{m.cls}}" onClick="{{m.pick}}" disabled="{{m.disabled}}" aria-label="{{m.aria}}" title="{{m.why}}">{{m.d}}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{hasDateHint}}" hint-placeholder-val="{{ false }}"><span class="muted" style="font-size: 12px">{{dateHint}}</span></sc-if>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <span class="label">4 · 시간</span>
+              <input class="tinput mono" type="time" aria-label="시간" value="{{draftTime}}" onChange="{{onTime}}" disabled="{{timeDisabled}}">
+              <button type="button" class="{{allDayCls}}" onClick="{{toggleAllDay}}" disabled="{{timeLockedFlag}}">시간 없음</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <span class="label">5 · DM 리마인드</span>
+                <button type="button" class="{{draftSwCls}}" role="switch" aria-checked="{{draftDmChecked}}" aria-label="DM 리마인드 받기" onClick="{{toggleDraftDm}}" disabled="{{dmUnavailable}}" style="margin-left: auto"></button>
+              </div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                <sc-for list="{{remOpts}}" as="r" hint-placeholder-count="4">
+                  <button type="button" class="{{r.cls}}" aria-pressed="{{r.pressed}}" onClick="{{r.toggle}}" disabled="{{r.disabled}}">{{r.label}}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{showPreview}}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 8px; align-items: flex-end; padding-top: 4px">
+                  <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 50%; background: #FFF4E6; border: 1px solid #F5E3CC; display: grid; place-content: center; overflow: hidden; flex: none"><img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width: 24px; margin-top: 3px"></span>
+                  <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+                    <span class="muted" style="font-size: 11px">{{previewAt}} · @inthon2team DM 미리보기</span>
+                    <div class="bubble">{{previewText}}</div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--surface-2)">
+          <span class="muted" style="font-size: 12px">{{footHint}}</span>
+          <button type="button" class="btn" onClick="{{closeModal}}" style="margin-left: auto">취소</button>
+          <button type="button" class="btn btn-primary" onClick="{{save}}" disabled="{{saveDisabled}}">{{saveLabel}}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      view: 'month', cursor: '2026-11-01', sel: '2026-11-07',
+      filter: { recipe: true, exhibit: true, contest: true },
+      events: [
+        { id: 1, item: 'r1', kind: 'cook', date: '2026-11-01', time: '18:30', rem: ['h1'], dm: true },
+        { id: 2, item: 'e1', kind: 'visit', date: '2026-11-07', time: '14:00', rem: ['eve', 'day9'], dm: true },
+        { id: 3, item: 'c1', kind: 'prep', date: '2026-11-09', time: null, rem: ['day9'], dm: true },
+        { id: 4, item: 'r2', kind: 'cook', date: '2026-11-12', time: '19:00', rem: ['h1'], dm: true },
+        { id: 5, item: 'c1', kind: 'deadline', date: '2026-11-14', time: '18:00', rem: ['d3', 'day9'], dm: true },
+        { id: 6, item: 'r4', kind: 'cook', date: '2026-11-21', time: '12:30', rem: ['day9'], dm: false },
+        { id: 7, item: 'c1', kind: 'result', date: '2026-11-28', time: null, rem: ['day9'], dm: true }
+      ],
+      seq: 8, viewItem: null, viewEv: null, modal: null, toast: null, dark: props && props.theme === 'dark'
+    };
+  }
+  componentDidUpdate(prev) { if (prev.theme !== this.props.theme) this.setState({ dark: this.props.theme === 'dark' }); }
+  componentWillUnmount() { clearTimeout(this._tt); }
+  consts() {
+    if (this._c) return this._c;
+    const CONTENT = {
+      r1: { type: 'recipe', title: '15분 매콤 두부면', sub: '레시피 · 조리 15분', summary: '두부면에 파기름과 고춧가루 양념을 버무리는 한 그릇 요리예요.', facts: [['인분', '1인분'], ['준비', '5분'], ['조리', '10분']], listTitle: '재료', list: [['두부면', '1팩 (100g)'], ['대파', '1/2대'], ['고춧가루', '1큰술 또는 2큰술'], ['간장', '1큰술'], ['참기름', '분량 미기재', 1]] },
+      r2: { type: 'recipe', title: '바삭한 감자 팬 요리', sub: '레시피 · 조리 시간 미기재', summary: '채 썬 감자에 전분을 버무려 팬에 납작하게 굽는 요리예요. 원본에 인분과 시간 정보가 없어요.', facts: [['인분', '미기재'], ['준비', '미기재'], ['조리', '미기재']], listTitle: '재료', list: [['감자', '2개'], ['전분', '2큰술'], ['소금', '분량 미기재', 1], ['식용유', '분량 미기재', 1]] },
+      r4: { type: 'recipe', title: '들기름 막국수', sub: '레시피 · 조리 10분', summary: '삶은 메밀면에 들기름과 간장 양념을 버무리는 비빔면이에요.', facts: [['인분', '1인분'], ['준비', '3분'], ['조리', '7분']], listTitle: '재료', list: [['메밀면', '1인분 (100g)'], ['들기름', '2큰술'], ['간장', '1큰술'], ['설탕', '1/2작은술'], ['김가루', '분량 미기재', 1]] },
+      e1: { type: 'exhibit', title: '빛의 방 — 가상 전시', sub: '전시 · 10.10 – 12.20 · 월 휴무', summary: '빛과 그림자를 주제로 한 몰입형 설치 전시예요.', facts: [['기간', '2026.10.10 – 12.20'], ['운영', '화–일 10:00 – 19:00'], ['휴무', '매주 월요일'], ['장소', '가상 미술관 2층'], ['관람료', '성인 15,000원'], ['예약', '사전 예약 권장']], from: '2026-10-10', to: '2026-12-20', closed: [1] },
+      e2: { type: 'exhibit', title: '작은 서재 팝업', sub: '전시 · 종료됨', disabled: true },
+      c1: { type: 'contest', title: '대학생 생활 아이디어 공모전', sub: '공모전 · 마감 11.14 (토) 18:00', summary: '국내 대학생 2–4인 팀이 생활 속 문제를 푸는 아이디어를 제안하는 공모전이에요.', facts: [['주최', '가상 재단'], ['마감', '11.14 (토) 18:00'], ['참가 대상', '대학 재학·휴학생 2–4인 팀']], listTitle: '공고 일정', list: [['접수 시작', '10.20 (화) 10:00'], ['접수 마감', '11.14 (토) 18:00'], ['서류 결과 발표', '11.28 (토)'], ['본선 발표', '12.12 (토)']], fixed: { deadline: ['2026-11-14', '18:00'], result: ['2026-11-28', null] } },
+      c2: { type: 'contest', title: '로컬 기록단 모집', sub: '공모전 · 마감됨', disabled: true }
+    };
+    const KINDS = { recipe: [['cook', '요리할 날']], exhibit: [['visit', '방문할 날']], contest: [['deadline', '마감일'], ['prep', '준비 시작'], ['result', '결과 발표']] };
+    const KLABEL = { cook: '요리할 날', visit: '방문할 날', deadline: '마감일', prep: '준비 시작', result: '결과 발표' };
+    const KSHORT = { cook: '요리', visit: '방문', deadline: '마감', prep: '준비', result: '발표' };
+    const REM = [['day9', '당일 오전 9시'], ['h1', '1시간 전'], ['eve', '전날 오후 8시'], ['d3', '3일 전 오전 9시']];
+    this._c = { CONTENT, KINDS, KLABEL, KSHORT, REM, NOW: new Date(2026, 10, 1, 10, 0), WD: ['일', '월', '화', '수', '목', '금', '토'] };
+    return this._c;
+  }
+  p2(n) { return String(n).padStart(2, '0'); }
+  key(d) { return d.getFullYear() + '-' + this.p2(d.getMonth() + 1) + '-' + this.p2(d.getDate()); }
+  parse(k) { const a = k.split('-').map(Number); return new Date(a[0], a[1] - 1, a[2]); }
+  add(k, n) { const d = this.parse(k); d.setDate(d.getDate() + n); return this.key(d); }
+  dlabel(k) { const d = this.parse(k); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + this.consts().WD[d.getDay()] + ')'; }
+  remAt(ev, r) {
+    const d = this.parse(ev.date);
+    if (r === 'day9') { d.setHours(9, 0); return d; }
+    if (r === 'h1') { if (!ev.time) return null; const t = ev.time.split(':').map(Number); d.setHours(t[0] - 1, t[1]); return d; }
+    if (r === 'eve') { d.setDate(d.getDate() - 1); d.setHours(20, 0); return d; }
+    if (r === 'd3') { d.setDate(d.getDate() - 3); d.setHours(9, 0); return d; }
+    return null;
+  }
+  atLabel(dt) {
+    const C = this.consts(); const now = C.NOW;
+    const same = dt.toDateString() === now.toDateString();
+    const tm = this.p2(dt.getHours()) + ':' + this.p2(dt.getMinutes());
+    return (same ? '오늘' : (dt.getMonth() + 1) + '/' + dt.getDate() + ' (' + C.WD[dt.getDay()] + ')') + ' ' + tm;
+  }
+  toast(msg) { clearTimeout(this._tt); this.setState({ toast: msg }); this._tt = setTimeout(() => this.setState({ toast: null }), 3200); }
+  openModal(base) {
+    const C = this.consts(); const s = this.state;
+    if (base && base.id) { const ev = s.events.find(e => e.id === base.id); this.setState({ modal: Object.assign({ mode: 'edit', mini: ev.date.slice(0, 7) + '-01', allDay: !ev.time }, JSON.parse(JSON.stringify(ev))) }); return; }
+    const date = base && base.date ? base.date : s.sel;
+    this.setState({ modal: { mode: 'add', id: null, item: null, kind: null, date, time: '19:00', allDay: false, rem: ['day9'], dm: true, mini: date.slice(0, 7) + '-01' } });
+  }
+  cvVals() {
+    const C = this.consts(); const s = this.state; const c = s.viewItem ? C.CONTENT[s.viewItem] : null;
+    if (!c) return { cvOpen: false, cvFacts: [], cvList: [], cvEvents: [] };
+    const TL = { recipe: '레시피', exhibit: '전시·팝업', contest: '공모전·대외활동' };
+    const evs = s.events.filter(e => e.item === s.viewItem).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+    return {
+      cvOpen: true, cvTitle: c.title, cvType: TL[c.type], cvDot: 'dot t-' + c.type, cvOrb: 'orb o-' + c.type, cvSummary: c.summary || '',
+      cvFacts: (c.facts || []).map(([k, v]) => ({ k, v })), cvHasList: !!(c.list && c.list.length), cvListTitle: c.listTitle || '', cvList: (c.list || []).map(([a, b, miss]) => ({ a, b, bCls: 'b' + (miss ? ' miss' : '') })),
+      cvEvents: evs.map(e => ({ label: this.dlabel(e.date) + (e.time ? ' ' + e.time : ''), kind: C.KLABEL[e.kind], cls: 'cv-ev' + (e.id === s.viewEv ? ' cur' : ''), pick: () => this.setState({ sel: e.date, cursor: e.date.slice(0, 7) + '-01', viewItem: null, viewEv: null }) })),
+      cvHasEvents: evs.length > 0, cvEvCount: evs.length,
+      closeCv: () => this.setState({ viewItem: null, viewEv: null }),
+      cvAdd: () => { const id = s.viewItem; this.setState({ viewItem: null, viewEv: null }); this.openModal(); this.pickItem(id); }
+    };
+  }
+  setDraft(patch) { this.setState({ modal: Object.assign({}, this.state.modal, patch) }); }
+  pickItem(id) {
+    const C = this.consts(); const c = C.CONTENT[id]; const kinds = C.KINDS[c.type]; const m = this.state.modal;
+    const kind = kinds[0][0]; const patch = { item: id, kind };
+    if (c.fixed && c.fixed[kind]) { patch.date = c.fixed[kind][0]; patch.time = c.fixed[kind][1] || ''; patch.allDay = !c.fixed[kind][1]; patch.mini = patch.date.slice(0, 7) + '-01'; patch.rem = ['d3', 'day9']; }
+    else if (c.type === 'exhibit') { patch.time = '14:00'; patch.allDay = false; patch.rem = ['eve', 'day9']; if (!this.dayOk(id, m.date)) { patch.date = this.nextOk(id, m.date); patch.mini = patch.date.slice(0, 7) + '-01'; } }
+    else { patch.rem = m.rem && m.rem.length ? m.rem : ['day9']; }
+    this.setDraft(patch);
+  }
+  pickKind(kind) {
+    const C = this.consts(); const m = this.state.modal; const c = C.CONTENT[m.item]; const patch = { kind };
+    if (c && c.fixed && c.fixed[kind]) { patch.date = c.fixed[kind][0]; patch.time = c.fixed[kind][1] || ''; patch.allDay = !c.fixed[kind][1]; patch.mini = patch.date.slice(0, 7) + '-01'; }
+    this.setDraft(patch);
+  }
+  dayOk(item, k) {
+    const C = this.consts(); const c = item ? C.CONTENT[item] : null; const d = this.parse(k);
+    if (d < this.parse(this.key(C.NOW))) return false;
+    if (c && c.type === 'exhibit' && c.from) { if (k < c.from || k > c.to) return false; if (c.closed.indexOf(d.getDay()) >= 0) return false; }
+    return true;
+  }
+  nextOk(item, k) { let x = k; for (let i = 0; i < 60; i++) { if (this.dayOk(item, x)) return x; x = this.add(x, 1); } return k; }
+  save() {
+    const s = this.state; const m = s.modal; if (!m || !m.item || !m.kind) return;
+    const ev = { id: m.id || s.seq, item: m.item, kind: m.kind, date: m.date, time: m.allDay ? null : (m.time || null), rem: (m.rem || []).filter(r => !(r === 'h1' && (m.allDay || !m.time))), dm: m.dm };
+    const events = m.id ? s.events.map(e => e.id === m.id ? ev : e) : s.events.concat([ev]);
+    const n = ev.dm ? ev.rem.length : 0;
+    if (this.setState({ events, seq: m.id ? s.seq : s.seq + 1, modal: null, sel: ev.date, cursor: ev.date.slice(0, 7) + '-01' }) === false) return;
+    this.toast(this.dlabel(ev.date) + ' 일정을 ' + (m.id ? '수정' : '등록') + '했어요' + (n ? ' · 리마인드 DM ' + n + '개 예약 (데모)' : ''));
+  }
+  renderVals() {
+    const C = this.consts(); const s = this.state; const today = this.key(C.NOW);
+    const events = s.events.filter(e => C.CONTENT[e.item]);
+    const visible = events.filter(e => s.filter[C.CONTENT[e.item].type]).sort((a, b) => (a.date + (a.time || '00:00')).localeCompare(b.date + (b.time || '00:00')));
+    const decoEv = (e) => {
+      const c = C.CONTENT[e.item]; const past = e.date < today;
+      const rems = (e.rem || []).map(r => { const at = this.remAt(e, r); if (!at) return null; const lbl = C.REM.find(x => x[0] === r)[1]; const sent = at < C.NOW; return { at: this.atLabel(at), label: lbl, st: !e.dm ? '꺼짐' : (sent ? '보냄' : '예약됨'), stCls: 'st ' + (!e.dm ? 'st-off' : (sent ? 'st-sent' : 'st-sched')) }; }).filter(Boolean);
+      return Object.assign({}, e, {
+        title: c.title, type: c.type, dot: 'dot t-' + c.type, kindLabel: C.KLABEL[e.kind], kindShort: C.KSHORT[e.kind],
+        timeLabel: e.time || '종일', hasBell: e.dm && rems.length > 0, remCount: rems.length,
+        cls: 'ev' + (past ? ' past' : ''), wcls: 'wev' + (e.kind === 'deadline' ? ' deadline' : ''),
+        rems, noRems: rems.length === 0, swCls: 'switch' + (e.dm ? ' on' : ''), dmChecked: e.dm ? 'true' : 'false',
+        toggleDm: () => { this.setState({ events: this.state.events.map(x => x.id === e.id ? Object.assign({}, x, { dm: !x.dm }) : x) }); this.toast(e.dm ? 'DM 리마인드를 껐어요' : 'DM 리마인드를 켰어요'); },
+        view: () => this.setState({ viewItem: e.item, viewEv: e.id }), viewAria: c.title + ' 콘텐츠 보기',
+        edit: () => this.openModal({ id: e.id }),
+        remove: () => { this.setState({ events: this.state.events.filter(x => x.id !== e.id) }); this.toast('일정을 삭제했어요.'); }
+      });
+    };
+    const byDate = {}; visible.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(decoEv(e)); });
+    const cur = this.parse(s.cursor); const vy = cur.getFullYear(), vm = cur.getMonth();
+    const first = new Date(vy, vm, 1); const dim = new Date(vy, vm + 1, 0).getDate(); const rows = Math.ceil((first.getDay() + dim) / 7);
+    const start = new Date(vy, vm, 1 - first.getDay());
+    const cells = [];
+    for (let i = 0; i < rows * 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i); const k = this.key(d); const evs = byDate[k] || [];
+      cells.push({ d: d.getDate(), aria: this.dlabel(k) + ' · 일정 ' + evs.length + '개', pressed: s.sel === k ? 'true' : 'false',
+        cls: 'mc' + (d.getMonth() !== vm ? ' out' : '') + (k === today ? ' today' : '') + (s.sel === k ? ' sel' : ''),
+        numCls: 'num' + (d.getDay() === 0 ? ' sun' : ''), evs: evs.slice(0, 3), hasMore: evs.length > 3, more: evs.length - 3,
+        pick: () => this.setState({ sel: k }) });
+    }
+    const selD = this.parse(s.sel); const wStart = this.add(s.sel, -selD.getDay());
+    const weekCols = [0, 1, 2, 3, 4, 5, 6].map(i => { const k = this.add(wStart, i); const d = this.parse(k); const evs = byDate[k] || [];
+      return { d: d.getDate(), dow: C.WD[d.getDay()], aria: this.dlabel(k), cls: 'wc' + (k === today ? ' today' : '') + (s.sel === k ? ' sel' : ''), evs, empty: evs.length === 0,
+        pick: () => this.setState({ sel: k }), add: () => { this.setState({ sel: k }); this.openModal({ date: k }); }, addAria: this.dlabel(k) + '에 일정 추가' }; });
+    const ws = this.parse(wStart), we = this.parse(this.add(wStart, 6));
+    const title = s.view === 'month' ? vy + '년 ' + (vm + 1) + '월' : (ws.getMonth() + 1) + '월 ' + ws.getDate() + '일 – ' + (we.getMonth() + 1) + '월 ' + we.getDate() + '일';
+    const ups = [];
+    events.forEach(e => { if (!e.dm) return; (e.rem || []).forEach(r => { const at = this.remAt(e, r); if (at && at >= C.NOW) ups.push({ at, e }); }); });
+    ups.sort((a, b) => a.at - b.at);
+    const counts = { recipe: 0, exhibit: 0, contest: 0 }; events.forEach(e => counts[C.CONTENT[e.item].type]++);
+    const allOn = s.filter.recipe && s.filter.exhibit && s.filter.contest;
+
+    // modal
+    const m = s.modal; let mv = { modalOpen: false, contentOpts: [], kindOpts: [], miniDays: [], remOpts: [] };
+    if (m) {
+      const c = m.item ? C.CONTENT[m.item] : null;
+      const locked = !!(c && c.fixed && c.fixed[m.kind]);
+      const mc = this.parse(m.mini); const my = mc.getFullYear(), mm = mc.getMonth(); const mf = new Date(my, mm, 1); const mdim = new Date(my, mm + 1, 0).getDate(); const mrows = Math.ceil((mf.getDay() + mdim) / 7);
+      const ms = new Date(my, mm, 1 - mf.getDay()); const miniDays = [];
+      for (let i = 0; i < mrows * 7; i++) { const d = new Date(ms); d.setDate(ms.getDate() + i); const k = this.key(d); const ok = locked ? k === m.date : this.dayOk(m.item, k);
+        let why = ''; if (!ok && c && c.type === 'exhibit') why = (k < c.from || k > c.to) ? '전시 기간이 아니에요' : '휴무일이에요';
+        miniDays.push({ d: d.getDate(), aria: this.dlabel(k), why, disabled: !ok, cls: 'md' + (d.getMonth() !== mm ? ' out' : '') + (k === today ? ' today' : '') + (k === m.date ? ' on' : ''), pick: () => this.setDraft({ date: k }) }); }
+      const draftEv = { date: m.date, time: m.allDay ? null : m.time };
+      const firstRem = (m.rem || []).filter(r => !(r === 'h1' && (m.allDay || !m.time)))[0];
+      const at = firstRem ? this.remAt(draftEv, firstRem) : null;
+      const wmap = { day9: '오늘은', eve: '내일은', d3: '3일 뒤는', h1: '한 시간 뒤는' };
+      const w = wmap[firstRem] || '';
+      const t = c ? c.title : '';
+      const ptxt = { cook: w + ' ‘' + t + '’ 해먹기로 한 날이에요! 재료를 미리 확인해 보세요. 레시피 보기 ↓', visit: w + ' ‘' + t + '’ 가는 날이에요. 운영 시간과 예약은 공식 페이지에서 확인하세요 ↓', deadline: w + ' ‘' + t + '’ 마감일이에요 (' + m.date.slice(5).replace('-', '.') + ' ' + (m.time || '') + ' KST). 제출물을 확인해 보세요 ↓', prep: w + ' ‘' + t + '’ 준비를 시작하기로 한 날이에요. 지원 조건부터 확인해 볼까요? ↓', result: w + ' ‘' + t + '’ 결과 발표일이에요. 공식 공고에서 확인해 보세요 ↓' }[m.kind] || '';
+      mv = {
+        modalOpen: true, modalTitle: m.mode === 'edit' ? '일정 수정' : '일정 추가', closeModal: () => this.setState({ modal: null }),
+        contentOpts: Object.keys(C.CONTENT).map(id => { const x = C.CONTENT[id]; return { title: x.title, sub: x.sub, orb: 'orb o-' + x.type, disabled: !!x.disabled, pressed: m.item === id ? 'true' : 'false', cls: 'opt' + (m.item === id ? ' on' : ''), pick: () => this.pickItem(id) }; }),
+        kindOpts: c ? C.KINDS[c.type].map(([k, l]) => ({ label: l, cls: 'chip' + (m.kind === k ? ' on' : ''), pressed: m.kind === k ? 'true' : 'false', pick: () => this.pickKind(k) })) : [{ label: '콘텐츠를 먼저 골라 주세요', cls: 'chip', pressed: 'false', pick: () => {} }],
+        draftDateLabel: this.dlabel(m.date), dateLocked: locked, dateFree: !locked,
+        miniTitle: my + '년 ' + (mm + 1) + '월', miniDays,
+        miniPrev: () => { const d = this.parse(m.mini); d.setMonth(d.getMonth() - 1); this.setDraft({ mini: this.key(d) }); },
+        miniNext: () => { const d = this.parse(m.mini); d.setMonth(d.getMonth() + 1); this.setDraft({ mini: this.key(d) }); },
+        hasDateHint: !!(c && c.from && c.to), dateHint: c && c.from ? '확인된 기간 ' + c.from + ' ~ ' + c.to + ' 안에서 골라 주세요.' : '',
+        draftTime: m.time || '', onTime: e => this.setDraft({ time: e.target.value }), timeDisabled: m.allDay || locked, timeLockedFlag: locked,
+        allDayCls: 'chip' + (m.allDay ? ' on' : ''), toggleAllDay: () => this.setDraft({ allDay: !m.allDay }),
+        draftSwCls: 'switch' + (m.dm ? ' on' : ''), draftDmChecked: m.dm ? 'true' : 'false', toggleDraftDm: () => this.setDraft({ dm: !m.dm }),
+        remOpts: C.REM.map(([k, l]) => { const on = (m.rem || []).indexOf(k) >= 0; const dis = !m.dm || (k === 'h1' && (m.allDay || !m.time)); return { label: l, disabled: dis, cls: 'chip' + (on && !dis ? ' on' : ''), pressed: on ? 'true' : 'false', toggle: () => this.setDraft({ rem: on ? m.rem.filter(x => x !== k) : (m.rem || []).concat([k]) }) }; }),
+        showPreview: !!(c && m.dm && at), previewAt: at ? this.atLabel(at) : '', previewText: ptxt,
+        footHint: !c ? '콘텐츠를 고르면 일정 종류와 날짜를 정할 수 있어요.' : (m.dm ? '리마인드는 예약 시각에 DM으로 보내요 (데모).' : 'DM 리마인드 없이 캘린더에만 표시돼요.'),
+        save: () => this.save(), saveDisabled: !c || !m.kind, saveLabel: m.mode === 'edit' ? '수정 완료' : '일정 등록'
+      };
+    }
+
+    return Object.assign({
+      rootCls: 'app' + (s.dark ? ' dark' : ''), toggleDark: () => this.setState({ dark: !s.dark }), darkLabel: s.dark ? '라이트 모드' : '다크 모드',
+      title, isMonth: s.view === 'month', isWeek: s.view === 'week',
+      segMonth: s.view === 'month' ? 'on' : '', segWeek: s.view === 'week' ? 'on' : '',
+      viewMonth: () => this.setState({ view: 'month', cursor: s.sel.slice(0, 7) + '-01' }), viewWeek: () => this.setState({ view: 'week' }),
+      prev: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() - 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, -7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
+      next: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() + 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, 7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
+      goToday: () => this.setState({ sel: today, cursor: today.slice(0,7) + '-01' }),
+      openAddSel: () => this.openModal({ date: s.sel < today ? today : s.sel }),
+      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => {
+        const on = k === 'all' ? allOn : (!allOn && s.filter[k]);
+        return { label, dot, hasDot: !!dot, count, cls: on ? 'on' : '', pressed: on ? 'true' : 'false',
+          toggle: () => this.setState({ filter: k === 'all' ? { recipe: true, exhibit: true, contest: true } : { recipe: k === 'recipe', exhibit: k === 'exhibit', contest: k === 'contest' } }) };
+      }),
+      cells, weekCols,
+      ...this.cvVals(),
+      selLabel: this.dlabel(s.sel), selIsToday: s.sel === today, selEvents: byDate[s.sel] || [], selEmpty: !(byDate[s.sel] || []).length,
+      upcoming: ups.slice(0, 5).map(u => { const c = C.CONTENT[u.e.item]; return { aria: this.atLabel(u.at) + ' ' + c.title + ' 일정으로 이동', at: this.atLabel(u.at), title: c.title, kind: C.KSHORT[u.e.kind], dot: 'dot t-' + c.type, pick: () => this.setState({ sel: u.e.date, cursor: u.e.date.slice(0, 7) + '-01' }) }; }), upCount: ups.length,
+      hasToast: !!s.toast, toastMsg: s.toast || ''
+    }, mv);
+  }
+}
+</script>
+</body>
+</html>

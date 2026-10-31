@@ -1,0 +1,102 @@
+  <!-- ============ TASTE ============ -->
+  <sc-if value="{{isTaste}}" hint-placeholder-val="{{ false }}">
+    <div class="enter pad taste-page" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 class="h1">내 취향</h1>
+          <p class="muted" style="font-size: 14px">직접 모은 레시피와 전시를 나만의 궤도에서 살펴보세요.</p>
+        </div>
+        <div class="seg" role="group" aria-label="취향 분야" style="margin-left: auto">
+          <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="2">
+            <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}"><span class="{{t.dot}}"></span>{{t.label}}<span class="n">{{t.count}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{tasteHasAny}}" hint-placeholder-val="{{ true }}">
+        <section class="taste-wrap enter">
+          <div class="taste-legend">
+            <sc-for list="{{tasteGroups}}" as="g" hint-placeholder-count="2">
+              <div class="{{g.cls}}">
+                <div class="tl-head"><span class="{{g.dot}}"></span><span>{{g.label}}</span><span class="mono muted" style="margin-left: auto; font-size: 11.5px">{{g.count}}</span></div>
+                <sc-for list="{{g.items}}" as="ti" hint-placeholder-count="2">
+                  <div class="{{ti.rowCls}}">
+                    <button type="button" class="tl-main" aria-pressed="{{ti.selPressed}}" onClick="{{ti.select}}">
+                      <span class="{{ti.orbCls}}" style="width: 30px; height: 30px"></span>
+                      <span class="tl-text"><span class="tl-title">{{ti.title}}</span><span class="tl-sub">{{ti.key}}</span></span>
+                    </button>
+                    <sc-if value="{{ti.isSel}}" hint-placeholder-val="{{ false }}">
+                      <div class="tl-more">
+                        <sc-if value="{{ti.hasSummary}}" hint-placeholder-val="{{ true }}"><p class="tl-sum">{{ti.summary}}</p></sc-if>
+                        <div class="tl-meta"><span class="{{ti.dot}}"></span><span>{{ti.typeLabel}}</span><span class="sep">·</span><span>받은 날 {{ti.received}}</span></div>
+                      </div>
+                      <div class="tl-actions">
+                        <button type="button" class="btn btn-sm" onClick="{{ti.open}}">콘텐츠 보기
+                          <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                        </button>
+                        <button type="button" class="btn btn-ghost btn-sm" onClick="{{ti.remove}}" style="color: var(--muted)">취향에서 빼기</button>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+                <sc-if value="{{g.empty}}" hint-placeholder-val="{{ false }}">
+                  <p class="tl-empty">아직 이 궤도에 모은 콘텐츠가 없어요.</p>
+                </sc-if>
+              </div>
+            </sc-for>
+            <p class="tl-note">직접 모은 레시피·전시만 궤도에 올라가요. 빼도 원래 정리 결과는 그대로예요.</p>
+          </div>
+
+          <div class="orbit-stage" role="group" aria-label="내 취향 궤도">
+            <span class="os-glow" aria-hidden="true"></span>
+            <span class="os-line l-c" aria-hidden="true"></span>
+            <span class="os-line l-b" aria-hidden="true"></span>
+            <span class="os-line l-a" aria-hidden="true"></span>
+            <span class="{{labelBCls}}" aria-hidden="true"><span class="dot t-exhibit"></span>전시·공간</span>
+            <span class="{{labelACls}}" aria-hidden="true"><span class="dot t-recipe"></span>레시피</span>
+
+            <div class="orbit orbit-c" aria-hidden="true">
+              <span class="dust a30 rC"></span><span class="dust a135 rC"></span><span class="dust a210 rC"></span><span class="dust a300 rC"></span>
+            </div>
+            <div class="{{orbitBCls}}">
+              <span class="comet a195 rB" aria-hidden="true"></span>
+              <sc-for list="{{orbitB}}" as="p" hint-placeholder-count="2">
+                <span class="{{p.cls}}"><span class="pl-up"><span class="pl-spin">
+                  <button type="button" class="{{p.btnCls}}" aria-label="{{p.aria}}" aria-pressed="{{p.selPressed}}" onClick="{{p.select}}">
+                    <span class="pl-orb"><span class="{{p.orbCls}}" style="width: 100%; height: 100%"></span></span>
+                    <span class="pl-label">{{p.title}}</span>
+                  </button>
+                </span></span></span>
+              </sc-for>
+            </div>
+            <div class="{{orbitACls}}">
+              <span class="comet a285 rA" aria-hidden="true"></span>
+              <sc-for list="{{orbitA}}" as="p" hint-placeholder-count="3">
+                <span class="{{p.cls}}"><span class="pl-up"><span class="pl-spin">
+                  <button type="button" class="{{p.btnCls}}" aria-label="{{p.aria}}" aria-pressed="{{p.selPressed}}" onClick="{{p.select}}">
+                    <span class="pl-orb"><span class="{{p.orbCls}}" style="width: 100%; height: 100%"></span></span>
+                    <span class="pl-label">{{p.title}}</span>
+                  </button>
+                </span></span></span>
+              </sc-for>
+            </div>
+
+            <div class="os-core">
+              <span class="os-wave" aria-hidden="true"></span>
+              <span class="os-wave w2" aria-hidden="true"></span>
+              <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width: 92px; position: relative; top: 6px">
+            </div>
+            <div class="os-caption"><span style="font-weight: 600; color: var(--text)">나</span><span class="mono">모은 콘텐츠 {{tasteCount}}</span></div>
+          </div>
+        </section>
+      </sc-if>
+      <sc-if value="{{tasteNone}}" hint-placeholder-val="{{ false }}">
+        <div class="card" style="padding: 44px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+          <span class="orb o-unknown" style="width: 44px; height: 44px"></span>
+          <h2 class="h2">아직 모아둔 취향이 없어요.</h2>
+          <p class="muted" style="font-size: 13.5px">레시피나 전시 상세에서 ‘취향으로 모으기’를 눌러보세요.</p>
+        </div>
+      </sc-if>
+
+    </div>
+  </sc-if>

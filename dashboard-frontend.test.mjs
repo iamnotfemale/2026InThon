@@ -33,11 +33,13 @@ test('the template adapter preserves handler functions, CSS strings, control val
   const tree = [{ tag: 'sc-for', attrs: { list: '{{items}}', as: 'item' }, id: 1, children: [
     { tag: 'input', id: 2, attrs: { type: 'text', value: '{{item.label}}', onchange: '{{item.change}}', style: 'padding: 14px; border-radius: 8px', disabled: '{{item.disabled}}' }, children: [] },
     { tag: 'sc-if', id: 3, attrs: { value: '{{item.visible}}' }, children: ['{{item.label}}'] },
+    { tag: 'sc-scope', id: 4, attrs: { value: '{{calendar}}' }, children: ['{{title}} {{item.label}}'] },
   ] }];
-  const rendered = renderNodes(tree, { items: [{ id: 'a', label: '<literal text>', change: handler, disabled: false, visible: true }] }, {});
+  const rendered = renderNodes(tree, { calendar: { title: '일정' }, items: [{ id: 'a', label: '<literal text>', change: handler, disabled: false, visible: true }] }, {});
   const input = rendered[0][0][0];
   assert.equal(input.props.onInput, handler); assert.equal(input.props.disabled, false);
   assert.equal(input.props.value, '<literal text>');
   assert.equal(input.props.style, 'padding: 14px; border-radius: 8px');
   assert.deepEqual(rendered[0][0][1], ['<literal text>']);
+  assert.deepEqual(rendered[0][0][2], ['일정 <literal text>']);
 });

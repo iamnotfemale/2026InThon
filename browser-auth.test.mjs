@@ -19,6 +19,7 @@ test('return destinations cannot redirect outside Dimi or carry OAuth tokens in 
     assert.equal(safeLoginNext(value, origin), '/dashboard');
   }
   assert.equal(safeLoginNext('/items/fc3?access_token=private#secret', origin), '/items/fc3');
+  assert.equal(safeLoginNext('/calendar', origin), '/calendar');
   const url = browserLoginUrl('/register', origin); const intent = chromeIntent(url, origin);
   assert.match(intent, /^intent:\/\/inthon\.yeoziphab\.com\/login\?next=/);
   assert.match(intent, /package=com\.android\.chrome/); assert.ok(intent.includes(encodeURIComponent(url)));
