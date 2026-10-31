@@ -3,7 +3,7 @@ import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
-import { BOT_DM_URL, factcheckToItem, exhibitRowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { BOT_DM_URL, factcheckToItem, exhibitRowItems, restaurantRowItems, RESTAURANT_SELECT, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
   const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/settings': 'settings' }[path];
@@ -191,7 +191,7 @@ class DashboardApp extends DashboardModel {
     let results;
     try { results = await Promise.all([
       supabase.from('account_links').select('linked_at, ig_accounts(username)').maybeSingle(),
-      supabase.from('factchecks').select('id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at')
+      supabase.from('factchecks').select('id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at, ' + RESTAURANT_SELECT)
         .eq('status', 'done').order('created_at', { ascending: false }).limit(200),
       this.resultSettings(),
     ]); } catch {
@@ -210,7 +210,7 @@ class DashboardApp extends DashboardModel {
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
     this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done')
-      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
+      .flatMap(row => (row.topic === 'exhibit' ? exhibitRowItems(row, now) : row.topic === 'restaurant' ? restaurantRowItems(row, now) : [factcheckToItem(row, now)])).filter(Boolean), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);

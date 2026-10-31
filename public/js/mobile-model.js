@@ -55,6 +55,10 @@ export default class MobileModel extends DCLogic {
       { id: 'c2', type: 'contest', title: '로컬 기록단 모집', status: 'done', dm: 'sent', received: '10월 15일', ts: 915, key: '마감 10.25 · 시간 미기재', author: '@sample_culture', checkedAt: '2026.10.15 20:11 KST', phase: '마감', phaseCls: 'badge s-neutral',
         host: '가상 문화재단', dday: null, deadline: '2026.10.25 (일) · 마감 시간 미기재', elig: ['가상시 거주 또는 재학 중인 만 19–29세'], schedule: [{ label: '접수 마감', date: '2026.10.25 (일) · 시간 미기재', st: 'ok' }, { label: '활동 기간', date: '2026.11 – 2027.02', st: 'wait' }],
         submit: ['지원서', '기록물 포트폴리오 (선택)'], noticeUrl: 'https://example.com/local-archive/notice', applyUrl: null },
+      { id: 'm1', type: 'restaurant', title: '가상 들기름 국수집', status: 'done', dm: 'sent', received: '오늘 12:38', ts: 1238, key: '한식 · 성수동 · 1인 1만원대', author: '@sample_foodie', checkedAt: '2026.10.31 12:40 KST',
+        intro: '들기름 막국수와 수육을 파는 국수집이에요. (가상 데이터)', category: '한식', priceRange: '1인 1만원대', hours: '매일 11:00 – 21:00 (브레이크타임 15:00 – 17:00)', closed: '휴무일 미기재',
+        address: '가상시 성수로 12', mapNaver: 'https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012', mapKakao: 'https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012', reservation: '예약 받지 않음', waiting: '점심 시간 웨이팅 있음',
+        menus: [{ name: '들기름 막국수', price: '11,000원', note: '면 추가 무료', signature: true }, { name: '수육 (소)', price: '18,000원', note: null, signature: false }, { name: '감자전', price: '가격 미기재', note: null, signature: false }] },
       { id: 'p1', type: 'unknown', title: '새로 보낸 릴스', status: 'needtype', dm: 'guide', received: '오늘 15:02', ts: 1502, key: '어떤 내용으로 정리할지 선택해 주세요', author: null },
       { id: 'f1', type: 'unknown', title: '접근할 수 없는 게시물', status: 'insufficient', dm: 'guide', received: '10월 30일', ts: 1009, key: '원본을 확인하지 못했어요', author: null }
     ];
@@ -85,7 +89,7 @@ export default class MobileModel extends DCLogic {
   }
   renderVals() {
     const s = this.state; this.data(); const ITEMS = this._data.ITEMS;
-    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', unknown: '유형 미정' };
+    const TL = { recipe: '레시피', news: '뉴스·정보', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', unknown: '유형 미정' };
     const ST = { done: ['정리 완료', 'badge s-done', 'done'], processing: ['처리 중', 'badge s-proc', 'processing'], needtype: ['유형 선택 필요', 'badge s-warn', 'check'], insufficient: ['자료 부족', 'badge s-err', 'failed'] };
     const DM = { sent: ['DM 발송 확인', 'badge s-neutral'], failed: ['DM 전달 실패', 'badge s-err'], unknown: ['DM 전달 미확인', 'badge s-warn'], guide: ['안내 DM 발송', 'badge s-neutral'], waiting: ['DM 대기', 'badge s-neutral'] };
     const deco = (raw) => {
@@ -100,7 +104,7 @@ export default class MobileModel extends DCLogic {
       });
     };
     const items = ITEMS.map(deco);
-    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
+    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
     let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF) && (!s.favOnly || s.fav[i.id]));
     lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.id) - s.semanticSearch.ids.indexOf(b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
@@ -110,13 +114,13 @@ export default class MobileModel extends DCLogic {
     const tasteItems = tasteAll.filter(i => i.type === tasteType).map(i => Object.assign({}, i, { remove: () => { this.setState({ taste: Object.assign({}, this.state.taste, { [i.id]: false }) }); this.toast('취향에서 뺐어요. 정리 결과는 그대로예요.'); } }));
 
     // detail
-    let d = { checks: [], ingredients: [], steps: [], cmp: [], sources: [], elig: [], schedule: [], submit: [] };
+    let d = { checks: [], ingredients: [], steps: [], cmp: [], sources: [], elig: [], schedule: [], submit: [], menus: [] };
     const raw = s.detailId ? items.find(i => i.id === s.detailId) : null;
     let cookV = { cookOpen: false, cookSteps: [], cookSegs: [] };
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
-      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isContest = done && raw.type === 'contest';
+      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase; d.shareDisabled = !done;
       const dm = DM[raw.dm] || DM.waiting; d.dmLabel = dm[0]; d.dmCls = dm[1];
@@ -162,6 +166,12 @@ export default class MobileModel extends DCLogic {
         const mv = v => /미기재/.test(v) ? 'v miss' : 'v'; d.closedCls = mv(raw.closed); d.bookingCls = mv(raw.booking);
         d.hasReserve = !!raw.reserveUrl;
       }
+      if (raw.type === 'restaurant' && done) {
+        const mv = v => /미기재|없어요/.test(v || '') ? 'v miss' : 'v';
+        d.priceRangeCls = mv(raw.priceRange); d.hoursCls = mv(raw.hours); d.closedCls = mv(raw.closed); d.reservationCls = mv(raw.reservation); d.waitingCls = mv(raw.waiting);
+        d.menus = raw.menus.map((m, i) => Object.assign({}, m, { k: i, hasNote: !!m.note, signature: !!m.signature, priceCls: 'price' + (/미기재/.test(m.price) ? ' miss' : '') }));
+        d.noMenus = raw.menus.length === 0;
+      }
       if (raw.type === 'contest' && done) {
         d.ddayLabel = raw.dday || '마감'; d.hasApply = !!raw.applyUrl;
         d.schedule = raw.schedule.map(x => Object.assign({}, x, { cls: 'pstep ' + x.st }));
@@ -186,7 +196,7 @@ export default class MobileModel extends DCLogic {
       sort: s.sortNew ? 'new' : 'old', onSort: e => this.setState({ sortNew: e.target.value === 'new' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value }),
-      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
+      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
       statusChips: [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k }) })),
       libItems: lib, libCount: lib.length, libHasItems: lib.length > 0, libEmpty: lib.length === 0, isFiltered,
       emptyTitle: q ? '검색 결과가 없어요.' : '선택한 조건에 맞는 콘텐츠가 없어요.', emptyDesc: q ? '검색어를 바꾸거나 지워 보세요.' : '필터를 바꾸거나 초기화해 보세요.',
@@ -200,9 +210,9 @@ export default class MobileModel extends DCLogic {
       removeTasteCard: () => { this.setState({ tasteRemoved: true }); this.toast('취향 표현을 삭제했어요. 모은 콘텐츠는 그대로예요.'); },
       hasDetail: !!raw, d, closeDetail: () => { clearInterval(this._ct); this.setState({ detailId: null, cook: null, share: null }); },
       srcOpen: s.srcOpen, srcExpanded: s.srcOpen ? 'true' : 'false', srcChevStyle: s.srcOpen ? 'transform: rotate(180deg); transition: transform .25s ease' : 'transition: transform .25s ease', toggleSrc: () => this.setState({ srcOpen: !s.srcOpen }),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
-      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
+      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       startCook: () => this.cookGo('prep', 0, 'fwd'), closeCook: () => { clearInterval(this._ct); this.setState({ cook: null, timer: null }); },
       cookNext: () => this.cookNext(), cookPrev: () => this.cookPrev(), timerToggle: () => this.timerToggle(),
       timerReset: () => { clearInterval(this._ct); const t = this.state.timer; if (t) this.setState({ timer: Object.assign({}, t, { left: t.total, running: false }) }); },

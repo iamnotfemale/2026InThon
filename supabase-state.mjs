@@ -2,6 +2,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { validateRecipe } from './public/js/recipe-data.js';
 import { validateContest } from './public/js/contest-data.js';
 import { validateExhibit } from './public/js/exhibit-data.js';
+import { validateRestaurant } from './public/js/restaurant-data.js';
 
 export const LINK_TOKEN_TTL_MS = 10 * 60 * 1000;
 const IGSID = /^\d{1,32}$/;
@@ -109,6 +110,18 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
         catch { /* Search can use the textual index if embedding is temporarily unavailable. */ }
       }
       const indexed = contentIndex ? { contentIndex, ...(contentIndexes ? { contentIndexes } : {}) } : {};
+      if (result.action === 'restaurant') {
+        // 맛집 has typed tables: one RPC saves the result row, its places and their menus in a single transaction.
+        const restaurant = validateRestaurant(result.restaurant);
+        const id = await request('POST', '/rpc/save_restaurant_result', {
+          p_igsid: igsid, p_claim: clip(result.extracted?.claim, 1000) ?? restaurant.places[0].name,
+          p_reason: JSON.stringify({ sourceUrl: result.media?.sourceUrl ?? null, ...indexed }),
+          p_places: restaurant.places.map(({ name, category, intro, area, address, phone, hours, closed, priceRange, reservation, waiting,
+            parking, menus, links, evidence, checks }) => ({ name, category, intro, area, address, phone, hours, closed, priceRange,
+            reservation, waiting, parking, menus, links, evidence, checks })),
+        }, undefined, true);
+        return { id: Number.isSafeInteger(id) ? id : null };
+      }
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));

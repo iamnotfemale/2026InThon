@@ -4,6 +4,7 @@ import { validateRecipe } from './recipe-data.js';
 import { indexFromRow, storedContent, indexedItems } from './content-index.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
+import { placesFromRows, mapLinks, priceLabel, placeKeyLine } from './restaurant-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -115,6 +116,7 @@ export function factcheckToItem(row, now = new Date()) {
     } catch { return null; } // A malformed contest must not appear as a news verdict or crash the library.
   }
   if (done && row.topic === 'exhibit') return exhibitRowItems(row, now)[0] ?? null;
+  if (done && row.topic === 'restaurant') return restaurantRowItems(row, now)[0] ?? null;
   return item;
 }
 
@@ -144,6 +146,36 @@ export function exhibitRowItems(row, now = new Date()) {
       officialUrl: shownValue(event, 'official_url').value,
       visitDates: view.visits.map(visit => visit.label), checks: [...event.conflicts, ...event.notices, ...event.checks, ...sources],
       origin, exhibitEvent: event, exhibitVisits: view.visits, exhibitEnd: view.ended ? null : event.end, exhibitDaysLeft: view.daysLeft };
+  });
+}
+
+// Columns the dashboard reads from the typed 맛집 tables (embedded under each factchecks row; RLS limits them to the member).
+export const RESTAURANT_SELECT = 'restaurants(position, name, category, intro, area, address, phone, hours, closed, price_range, reservation, '
+  + 'waiting, parking, links, evidence, checks, restaurant_menus(position, name, price_text, price_won, note, signature))';
+
+/**
+ * One 맛집 result row (with its restaurants and menus) → one dashboard item per place, mapped onto the design's
+ * restaurant fields. Empty values use the design's "미기재" wording; nothing comes from outside the post.
+ */
+export function restaurantRowItems(row, now = new Date()) {
+  if (row.status !== 'done' || row.topic !== 'restaurant') return [];
+  const places = placesFromRows(row.restaurants);
+  if (!places.length) return [];
+  let stored = {};
+  try { stored = JSON.parse(row.reason) ?? {}; } catch {}
+  const base = { ...factcheckToItem({ ...row, topic: null }, now), contentIndex: indexFromRow(row) };
+  const origin = instagramOrigin(stored.sourceUrl);
+  return places.map((place, i) => {
+    const maps = mapLinks(place);
+    return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, type: 'restaurant', title: place.name,
+      key: placeKeyLine(place), intro: place.intro ?? '원본에 소개 문구가 없어요.', category: place.category,
+      priceRange: place.priceRange ?? '가격대 미기재', hours: place.hours ?? '영업 시간 미기재', closed: place.closed ?? '휴무일 미기재',
+      address: place.address ?? (place.area ? place.area + ' · 상세 주소 미기재' : '주소 미기재'),
+      mapNaver: maps.naver, mapKakao: maps.kakao, mapGoogle: maps.google,
+      menus: place.menus.map(menu => ({ name: menu.name, price: priceLabel(menu) ?? '가격 미기재', note: menu.note, signature: menu.signature })),
+      reservation: place.reservation ?? '예약 정보 미기재', waiting: place.waiting ?? '웨이팅 정보 미기재',
+      parking: place.parking ?? '주차 정보 미기재', phone: place.phone ?? '전화번호 미기재',
+      placeLinks: place.links.map(link => ({ label: link.label, url: link.url })), checks: place.checks, origin };
   });
 }
 

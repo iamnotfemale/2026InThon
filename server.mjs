@@ -8,6 +8,7 @@ import { createLoginTicket } from './oauth-state.mjs';
 import { isContentMessage } from './instagram-source.mjs';
 import { resultLinkMessage } from './result-preferences.mjs';
 import { CONTEST_ACK } from './contest.mjs';
+import { RESTAURANT_ACK } from './restaurant.mjs';
 import { createSenderActivities } from './sender-activity.mjs';
 
 export const SCOPES = ['instagram_basic', 'instagram_manage_messages'];
@@ -186,7 +187,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           try { result = await (respondToMessage ?? factCheck)(m.message, {
             senderId: sender, acknowledge: async action => { await send(action === 'recipe'
               ? '디미가 금방 정리해드릴게요! 재료와 조리 순서까지 함께 살펴볼게요.'
-              : action === 'schedule' ? CONTEST_ACK : FACTCHECK_ACK); activity.typing(); },
+              : action === 'schedule' ? CONTEST_ACK : action === 'restaurant' ? RESTAURANT_ACK : FACTCHECK_ACK); activity.typing(); },
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;

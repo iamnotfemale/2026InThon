@@ -43,6 +43,7 @@ export default class DashboardModel extends DCLogic {
       news: { label: '뉴스·정보', dot: 'dot t-news', orb: 'o-news' },
       exhibit: { label: '전시·팝업', dot: 'dot t-exhibit', orb: 'o-exhibit' },
       contest: { label: '공모전·대외활동', dot: 'dot t-contest', orb: 'o-contest' },
+      restaurant: { label: '맛집', dot: 'dot t-restaurant', orb: 'o-restaurant' },
       unknown: { label: '유형 미정', dot: 'dot t-unknown', orb: 'o-unknown' }
     };
     const STATUS = {
@@ -170,6 +171,17 @@ export default class DashboardModel extends DCLogic {
         process: ['공식 공고의 지원서 양식 작성', '이메일로 제출'],
         benefit: ['활동비 지급 여부는 공고에서 확인되지 않았어요.'],
         noticeUrl: 'https://example.com/local-archive/notice', applyUrl: null },
+      { id: 'm1', type: 'restaurant', title: '가상 들기름 국수집', status: 'done', dm: 'sent', dmAt: '오늘 12:40', received: '오늘 12:38', ts: 10311238, key: '한식 · 성수동 · 1인 1만원대', author: '@sample_foodie', origin: 'https://example.com/instagram/reel/m1', organized: '오늘 12:40', checkedAt: '2026.10.31 12:40 KST', thumb: true,
+        intro: '들기름 막국수와 수육을 파는 국수집이에요. (가상 데이터)', category: '한식', priceRange: '1인 1만원대',
+        hours: '매일 11:00 – 21:00 (브레이크타임 15:00 – 17:00)', closed: '휴무일 미기재', address: '가상시 성수로 12',
+        mapNaver: 'https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012', mapKakao: 'https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012', mapGoogle: 'https://www.google.com/maps/search/?api=1&query=%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012',
+        menus: [
+          { name: '들기름 막국수', price: '11,000원', note: '면 추가 무료', signature: true },
+          { name: '수육 (소)', price: '18,000원', note: null, signature: false },
+          { name: '감자전', price: '가격 미기재', note: null, signature: false }
+        ],
+        reservation: '예약 받지 않음', waiting: '점심 시간 웨이팅 있음', parking: '주차 정보 미기재', phone: '전화번호 미기재',
+        placeLinks: [], checks: ['감자전 가격이 원본에 없어요.'] },
       { id: 'r4', type: 'recipe', title: '들기름 막국수', status: 'done', dm: 'sent', dmAt: '10월 26일 19:12', received: '10월 26일', ts: 10261910, key: '조리 10분 · 재료 5개', author: '@sample_noodle', origin: 'https://example.com/instagram/reel/r4', organized: '10월 26일 19:12', checkedAt: '2026.10.26 19:12 KST', thumb: true,
         summary: '삶은 메밀면에 들기름과 간장 양념을 버무리는 비빔면이에요. (가상 데이터)',
         serving: '1인분', prep: '3분', cook: '7분',
@@ -357,7 +369,7 @@ export default class DashboardModel extends DCLogic {
       });
     };
     const items = all.map(deco);
-    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0 };
+    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0 };
     items.forEach(it => { if (counts[it.type] !== undefined) counts[it.type]++; });
     const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && (it.type === 'recipe' || it.type === 'exhibit'));
 
@@ -371,9 +383,9 @@ export default class DashboardModel extends DCLogic {
     const libFirst = items.length === 0;
     const libSearchEmpty = !libFirst && lib.length === 0 && !!q;
     const libFilterEmpty = !libFirst && lib.length === 0 && !q;
-    const typeTabs = [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
+    const typeTabs = [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
     const statusChips = [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k, menuId: null }) }));
-    const sideTypes = [['recipe', '레시피'], ['news', '뉴스·정보'], ['exhibit', '전시·팝업'], ['contest', '공모전·대외활동']].map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) }));
+    const sideTypes = [['recipe', '레시피'], ['news', '뉴스·정보'], ['exhibit', '전시·팝업'], ['contest', '공모전·대외활동'], ['restaurant', '맛집']].map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) }));
 
     // home
     const active = items.filter(it => it.status === 'processing' || it.status === 'needtype').sort((a, b) => b.ts - a.ts);
@@ -384,12 +396,12 @@ export default class DashboardModel extends DCLogic {
     if (e1) schedule.push({ mon: '12월', day: '20', title: e1.title, what: '전시 종료일 · 진행 중', badge: 'D-50', badgeCls: 'badge nodot s-neutral', open: () => this.openDetail('e1') });
 
     // detail
-    let d = { tasteable: false, pipeline: [], legend: [], sources: [], ingredients: [], steps: [], tips: [], checks: [], same: [], diff: [], context: [], limits: [], needed: [], elig: [], schedule: [], submit: [], process: [], benefit: [], visitDates: [], shareIncludes: [] };
+    let d = { tasteable: false, pipeline: [], legend: [], sources: [], ingredients: [], steps: [], tips: [], checks: [], same: [], diff: [], context: [], limits: [], needed: [], elig: [], schedule: [], submit: [], process: [], benefit: [], visitDates: [], menus: [], placeLinks: [], shareIncludes: [] };
     const raw = items.find(it => it.id === s.detailId);
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
-      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isContest = done && raw.type === 'contest';
+      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isContest = done && raw.type === 'contest'; d.isRestaurant = done && raw.type === 'restaurant';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
@@ -469,6 +481,16 @@ export default class DashboardModel extends DCLogic {
         d.submit = raw.submit.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.process = raw.process.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.shareIncludes = ['공고명·주최·모집 상태', '지원 조건·마감·제출물·절차', '공식 공고 링크와 원본 링크'];
+      }
+      if (raw.type === 'restaurant' && done) {
+        const miss = v => /미기재|없어요/.test(v || '') ? 'v miss' : 'v';
+        d.priceRangeCls = miss(raw.priceRange); d.hoursCls = miss(raw.hours); d.closedCls = miss(raw.closed);
+        d.reservationCls = miss(raw.reservation); d.waitingCls = miss(raw.waiting); d.parkingCls = miss(raw.parking); d.phoneCls = miss(raw.phone);
+        d.addressCls = /미기재/.test(raw.address || '') ? 'miss' : 'muted';
+        d.menus = raw.menus.map((m, i) => Object.assign({}, m, { k: i, hasNote: !!m.note, signature: !!m.signature, priceCls: 'price' + (/미기재/.test(m.price) ? ' miss' : '') }));
+        d.menuCount = raw.menus.length; d.noMenus = raw.menus.length === 0;
+        d.placeLinks = raw.placeLinks || []; d.hasPlaceLinks = d.placeLinks.length > 0;
+        d.shareIncludes = ['가게 이름·분류·소개', '위치와 지도 검색 링크', '메뉴·가격과 이용 정보'];
       }
     }
 
@@ -591,9 +613,9 @@ export default class DashboardModel extends DCLogic {
       copyIngredients: () => { if (!raw || !raw.ingredients) return; this.copy(raw.title + ' 재료\n' + raw.ingredients.map(g => '- ' + g.name + ' ' + g.qty).join('\n'), '재료 목록을 복사했어요'); },
       visitOpen: s.visitOpen, visitExpanded: s.visitOpen ? 'true' : 'false', toggleVisit: () => this.setState({ visitOpen: !s.visitOpen }),
       addDeadline: () => this.toast('마감 일정(11.14 18:00 KST)을 캘린더에 추가하도록 열었어요 (데모)'),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
-      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
+      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       fbUpCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'up' ? ' btn-primary' : ''), fbDownCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'down' ? ' btn-primary' : ''),
       fbUpPressed: raw && s.feedback[raw.id] === 'up' ? 'true' : 'false', fbDownPressed: raw && s.feedback[raw.id] === 'down' ? 'true' : 'false',
       fbUp: () => { this.setState({ feedback: Object.assign({}, s.feedback, { [raw.id]: 'up' }) }); this.toast('의견을 보냈어요. 고마워요!'); },

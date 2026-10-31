@@ -22,6 +22,11 @@
       "dot": "dot t-contest",
       "orb": "o-contest"
     },
+    "restaurant": {
+      "label": "맛집",
+      "dot": "dot t-restaurant",
+      "orb": "o-restaurant"
+    },
     "unknown": {
       "label": "유형 미정",
       "dot": "dot t-unknown",
@@ -616,6 +621,59 @@
       ],
       "noticeUrl": "https://example.com/local-archive/notice",
       "applyUrl": null
+    },
+    {
+      "id": "m1",
+      "type": "restaurant",
+      "title": "가상 들기름 국수집",
+      "status": "done",
+      "dm": "sent",
+      "dmAt": "오늘 12:40",
+      "received": "오늘 12:38",
+      "ts": 10311238,
+      "key": "한식 · 성수동 · 1인 1만원대",
+      "author": "@sample_foodie",
+      "origin": "https://example.com/instagram/reel/m1",
+      "organized": "오늘 12:40",
+      "checkedAt": "2026.10.31 12:40 KST",
+      "thumb": true,
+      "intro": "들기름 막국수와 수육을 파는 국수집이에요. (가상 데이터)",
+      "category": "한식",
+      "priceRange": "1인 1만원대",
+      "hours": "매일 11:00 – 21:00 (브레이크타임 15:00 – 17:00)",
+      "closed": "휴무일 미기재",
+      "address": "가상시 성수로 12",
+      "mapNaver": "https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012",
+      "mapKakao": "https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012",
+      "mapGoogle": "https://www.google.com/maps/search/?api=1&query=%EA%B0%80%EC%83%81%20%EB%93%A4%EA%B8%B0%EB%A6%84%20%EA%B5%AD%EC%88%98%EC%A7%91%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%84%B1%EC%88%98%EB%A1%9C%2012",
+      "menus": [
+        {
+          "name": "들기름 막국수",
+          "price": "11,000원",
+          "note": "면 추가 무료",
+          "signature": true
+        },
+        {
+          "name": "수육 (소)",
+          "price": "18,000원",
+          "note": null,
+          "signature": false
+        },
+        {
+          "name": "감자전",
+          "price": "가격 미기재",
+          "note": null,
+          "signature": false
+        }
+      ],
+      "reservation": "예약 받지 않음",
+      "waiting": "점심 시간 웨이팅 있음",
+      "parking": "주차 정보 미기재",
+      "phone": "전화번호 미기재",
+      "placeLinks": [],
+      "checks": [
+        "감자전 가격이 원본에 없어요."
+      ]
     },
     {
       "id": "r4",

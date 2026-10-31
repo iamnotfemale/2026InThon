@@ -13,10 +13,10 @@ function fixture() {
 }
 const clicked = (offer, index) => ({ text: offer.messages[0].quick_replies[index].title,
   quick_reply: { payload: offer.messages[0].quick_replies[index].payload } });
-test('offers exactly three native quick replies without processing media; tickets hide original content', async () => {
+test('offers exactly four native quick replies without processing media; tickets hide original content', async () => {
   const { choices, data } = fixture();
   const offer = await choices.offer({ mid: 'private-mid', text: 'private-caption' }, '123');
-  assert.deepEqual(offer.messages[0].quick_replies.map(b => b.title), ['레시피 정리', '팩트체크', '일정 조회']);
+  assert.deepEqual(offer.messages[0].quick_replies.map(b => b.title), ['레시피 정리', '팩트체크', '일정 조회', '맛집 정리']);
   assert.ok(offer.messages[0].quick_replies.every(b => b.content_type === 'text' && b.payload.length < 1000));
   assert.doesNotMatch([...data.values()].join(''), /private-mid|private-caption/);
   assert.doesNotMatch([...data.keys()].join(''), /\/123\//);
