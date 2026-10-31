@@ -60,9 +60,7 @@ export function mountLandingMotion(root) {
       const direction = index < 2 ? 1 : -1;
       orb.classList.add('scroll-morph');
       orb.style.transform = `translate(${direction * progress * 32}px,${-progress * (24 + index * 8)}px) rotate(${direction * progress * 24}deg) scale(${1 - progress * .12})`;
-      // An eight-point circle becomes a soft diamond as the content gathers into the dashboard.
-      const inset = 15 + progress * 13;
-      orb.style.clipPath = `polygon(50% 0%,${100-inset}% ${inset}%,100% 50%,${100-inset}% ${100-inset}%,50% 100%,${inset}% ${100-inset}%,0% 50%,${inset}% ${inset}%)`;
+      orb.style.clipPath = `inset(0 round ${50-progress*15}% ${50+progress*9}% ${50-progress*5}% ${50+progress*14}% / ${50+progress*10}% ${50-progress*12}% ${50+progress*8}% ${50-progress*6}%)`;
     });
   };
   const onScroll = () => { if (!raf && !reduce.matches) raf = view.requestAnimationFrame(morph); };
