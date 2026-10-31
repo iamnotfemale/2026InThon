@@ -10,7 +10,7 @@ export function createMobileDashboard(app) {
   const defaults = mobile.state;
   const sync = () => {
     const s = app.state;
-    mobile.state = { ...defaults, ...s, tab: ['home', 'library', 'taste', 'calendar'].includes(s.view) ? s.view : (s.from || 'home'),
+    mobile.state = { ...defaults, ...s, tab: ['home', 'library', 'taste', 'calendar', 'map'].includes(s.view) ? s.view : (s.from || 'home'),
       detailId: s.view === 'detail' ? s.detailId : null, settingsOpen: s.view === 'settings', sortNew: s.sort !== 'old' };
     mobile._data = { ITEMS: app.allItems() };
   };

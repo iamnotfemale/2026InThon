@@ -6,13 +6,14 @@ import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { applyTasteOrbitValues } from './dashboard-taste.js';
 import { createCalendarDashboard } from './dashboard-calendar.js';
+import { placeMapValues, syncDashboardPlaceMap } from './dashboard-map.js';
 import { applyDmPreview } from './dm-preview.js';
 import { BOT_DM_URL, ROW_SELECT, rowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 import { createMemberApi, createTasteSync } from './member-sync.js';
 import { parseContentId } from './calendar-rules.js';
 
 function routeState(path) {
-  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/settings': 'settings' }[path];
+  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/map': 'map', '/settings': 'settings' }[path];
   if (view) return { view, cook: null, timer: null, modal: null };
   const item = /^\/items\/([\w-]+)\/?$/.exec(path);
   return item ? { view: 'detail', detailId: item[1], from: 'library', cook: null, timer: null, modal: null } : { view: 'home' };
@@ -111,10 +112,13 @@ class DashboardApp extends DashboardModel {
     document.addEventListener('scroll', this.positionMenu, true);
     addEventListener('resize', this.positionMenu);
     this.restoreSession();
+    this.syncPlaceMap();
   }
+  syncPlaceMap() { if (this.mapValues) syncDashboardPlaceMap(this, this.mapValues); }
   componentDidUpdate(previousProps, previousState) {
     super.componentDidUpdate(previousProps);
     if (previousState.view === 'calendar' && this.state.view !== 'calendar') this.calendar.close();
+    this.syncPlaceMap();
     this.positionMenu();
     if (this.state.mode === 'live' && previousState.view !== 'taste' && this.state.view === 'taste') this.loadInterests();
     if ((previousState.menuId || previousState.detailMenu) && !this.state.menuId && !this.state.detailMenu) this.menuOpener?.focus();
@@ -442,10 +446,18 @@ class DashboardApp extends DashboardModel {
   pageValues() {
     const isCalendar = this.state.view === 'calendar';
     const active = isCalendar || (this.state.view === 'detail' && this.state.from === 'calendar');
-    return { isCalendar, notCalendar: !isCalendar, navCalendar: (this.state.mobile ? 'tab' : 'nav-item') + (active ? ' on' : ''),
+    const fromMap = this.state.view === 'detail' && this.state.from === 'map';
+    // On phones the detail is a layer over the tab, so the map stays underneath and keeps its position.
+    const isMap = this.state.view === 'map' || (this.state.mobile && fromMap);
+    this.mapValues = isMap ? placeMapValues(this, this.state) : null;
+    const tab = this.state.mobile ? 'tab' : 'nav-item';
+    return { isCalendar, notCalendar: !isCalendar, navCalendar: tab + (active ? ' on' : ''),
       goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
-      ...(active ? { navLib: 'nav-item' } : {}),
-      ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}) };
+      isMap, navMap: tab + (isMap || fromMap ? ' on' : ''), goMap: () => this.go('map'), placeMap: this.mapValues ?? {},
+      ...(active || fromMap ? { navLib: 'nav-item' } : {}),
+      ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}),
+      ...(isMap ? { crumbRoot: '지도', hasCrumbLeaf: false, tabTitle: '지도' } : {}),
+      ...(fromMap ? { crumbRoot: '지도', backLabel: '지도' } : {}) };
   }
 }
 
