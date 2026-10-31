@@ -262,6 +262,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .mobile-calendar .fab{bottom:18px}
 .mobile-calendar .scrim{position:fixed}.mobile-calendar .sheet{position:fixed;max-height:88dvh}.mobile-calendar .sheet.tall{height:92dvh;max-height:92dvh}
 .mobile-calendar .sheet>div:not(.scroll),.mobile-calendar .sheet-foot{flex-shrink:0}.mobile-calendar .sheet-foot{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.mobile-calendar .opt .orb,.mobile-calendar .opt .orb::before,.mobile-calendar .opt .orb::after{animation:none;will-change:auto}
 .mobile-calendar .tinput{font-size:16px}.mobile-calendar .opt>span{min-width:0}.mobile-calendar .opt .t1,.mobile-calendar .info-grid .v{overflow-wrap:anywhere}
 .mobile-calendar .ec-meta{flex-wrap:wrap}.mobile-calendar .switch:disabled{opacity:.4;cursor:not-allowed}
 .mobile-calendar .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mobile-calendar .info-grid>div{min-width:0}
