@@ -116,6 +116,7 @@ def compile_page(source_path, name, model_name, output):
     referrer = "strict-origin-when-cross-origin" if name == "dashboard" else "no-referrer"
     shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts).replace("__REFERRER__", referrer)
     if name == 'dashboard':
+        shell = shell.replace('name="referrer" content="no-referrer"', 'name="referrer" content="strict-origin-when-cross-origin"')
         shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n  <link rel="stylesheet" href="/css/taste.css">\n  <link rel="stylesheet" href="/css/calendar.css">\n</head>')
     if output:
         (public / output).write_text(shell, encoding="utf-8")
