@@ -62,7 +62,7 @@ def compile_page(source_path, name, model_name, output):
     source = (ROOT / source_path).read_text(encoding="utf-8")
     style = re.search(r"<style>(.*?)</style>", source, re.S).group(1)
     markup = re.search(r"</helmet>(.*?)</x-dc>", source, re.S).group(1)
-    for include, path in [('taste', 'frontend/taste-redesign/Taste.fragment.html'), ('calendar', 'frontend/calendar/Calendar.dc.html'), ('mobile-calendar', 'frontend/mobile/MobileCalendar.fragment.html'), ('beauty', 'frontend/design/Beauty.fragment.html'), ('dm-preview', 'frontend/design/DmPreview.fragment.html')]:
+    for include, path in [('taste', 'frontend/taste-redesign/Taste.fragment.html'), ('calendar', 'frontend/calendar/Calendar.dc.html'), ('mobile-calendar', 'frontend/mobile/MobileCalendar.fragment.html'), ('beauty', 'frontend/design/Beauty.fragment.html'), ('dm-preview', 'frontend/design/DmPreview.fragment.html'), ('place-map', 'frontend/design/PlaceMap.fragment.html')]:
         if f'<design-include name="{include}"></design-include>' not in markup:
             continue
         fragment = (ROOT / path).read_text(encoding='utf-8')

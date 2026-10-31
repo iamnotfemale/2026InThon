@@ -95,13 +95,19 @@ export function kakaoServices(kakao) {
 const MIN_LEVEL = 1, MAX_LEVEL = 14;
 const PIN_KINDS = new Set(['exhibit', 'restaurant', 'space']);
 
-/** A native link stays keyboard accessible; address-only pins are labelled, non-interactive images. */
-export function createCategoryPin(doc, { kind, name, placeUrl, label }) {
+/**
+ * A native link stays keyboard accessible; address-only pins are labelled, non-interactive images.
+ * With `onSelect` (the 지도 tab) the same pin is a button that selects the place inside the dashboard.
+ */
+export function createCategoryPin(doc, { kind, name, placeUrl, label, onSelect }) {
   const category = PIN_KINDS.has(kind) ? kind : 'unknown';
-  const pin = doc.createElement(placeUrl ? 'a' : 'span');
+  const pin = doc.createElement(onSelect ? 'button' : placeUrl ? 'a' : 'span');
   pin.className = `kmap-pin kmap-pin-${category}`;
-  pin.setAttribute('aria-label', `${name || label || '장소'}${placeUrl ? ' · 카카오맵에서 보기 (새 창)' : ' 위치'}`);
-  if (placeUrl) {
+  pin.setAttribute('aria-label', `${name || label || '장소'}${onSelect ? ' · 정보 보기' : placeUrl ? ' · 카카오맵에서 보기 (새 창)' : ' 위치'}`);
+  if (onSelect) {
+    pin.type = 'button';
+    pin.addEventListener('click', event => { event.stopPropagation(); onSelect(); });
+  } else if (placeUrl) {
     pin.href = placeUrl;
     pin.target = '_blank';
     pin.rel = 'noopener noreferrer';
@@ -116,14 +122,14 @@ export function createCategoryPin(doc, { kind, name, placeUrl, label }) {
   return pin;
 }
 
-function mount(container, kakao, place) {
+/** An empty Kakao map (canvas + the compact +/− buttons) filling `container`. */
+function createMap(container, kakao, center, level) {
   const doc = container.ownerDocument ?? globalThis.document;
-  const position = new kakao.maps.LatLng(place.lat, place.lng);
   container.innerHTML = '';
   const canvas = doc.createElement('div');
   canvas.className = 'kmap-canvas';
   container.appendChild(canvas);
-  const map = new kakao.maps.Map(canvas, { center: position, level: 3 });
+  const map = new kakao.maps.Map(canvas, { center, level });
   map.setZoomable(false); // the page keeps scrolling with the wheel; zoom with the buttons
   const zoom = doc.createElement('div');
   zoom.className = 'kmap-zoom';
@@ -136,6 +142,13 @@ function mount(container, kakao, place) {
     zoom.appendChild(button);
   }
   container.appendChild(zoom);
+  return map;
+}
+
+function mount(container, kakao, place) {
+  const doc = container.ownerDocument ?? globalThis.document;
+  const position = new kakao.maps.LatLng(place.lat, place.lng);
+  const map = createMap(container, kakao, position, 3);
   const pin = createCategoryPin(doc, { ...place, kind: container.dataset.kind, name: container.dataset.name });
   // The outer box and pointer never animate: its bottom centre is the exact geographic coordinate.
   new kakao.maps.CustomOverlay({ position, map, content: pin, xAnchor: 0.5, yAnchor: 1, clickable: Boolean(place.placeUrl), zIndex: 1 });
@@ -145,7 +158,14 @@ function mount(container, kakao, place) {
 }
 
 const cache = new Map();
-const signature = el => [el.dataset.name, el.dataset.address, el.dataset.area, el.dataset.kind].join('|');
+/** One key per place search; the detail maps and the 지도 tab share results through it. */
+export const placeKey = ({ name, address, area, kind }) => [name, address, area, kind].map(v => v ?? '').join('|');
+const signature = el => placeKey(el.dataset);
+const cachedLocate = (place, svc) => {
+  const key = placeKey(place);
+  if (!cache.has(key)) cache.set(key, locate(place, svc).catch(() => ({ by: 'missing' })));
+  return cache.get(key);
+};
 
 /** Mounts every not-yet-handled map placeholder under `root`. Safe to call repeatedly. */
 export async function attachMaps(root = globalThis.document, { load = loadKakaoMaps, services = kakaoServices } = {}) {
@@ -159,9 +179,7 @@ export async function attachMaps(root = globalThis.document, { load = loadKakaoM
   const svc = services(kakao);
   await Promise.all(targets.map(async el => {
     const key = signature(el);
-    if (!cache.has(key)) cache.set(key, locate({ name: el.dataset.name, address: el.dataset.address, area: el.dataset.area, kind: el.dataset.kind }, svc)
-      .catch(() => ({ by: 'missing' })));
-    const place = await cache.get(key);
+    const place = await cachedLocate({ name: el.dataset.name, address: el.dataset.address, area: el.dataset.area, kind: el.dataset.kind }, svc);
     if (!el.isConnected || el.dataset.kmapFor !== key) return; // the detail changed while we were searching
     if (place.lat && place.lng) {
       try { mount(el, kakao, place); el.classList.add('ready'); } catch { note(el, 'failed'); return; }
@@ -195,4 +213,75 @@ export function watchMaps(root = globalThis.document?.body) {
   observer.observe(root, { childList: true, subtree: true });
   run();
   return () => observer.disconnect();
+}
+
+// --- 지도 tab: every place on one map ---------------------------------------------------------------------------
+
+const SEOUL = [37.5665, 126.978];
+const placeMaps = new WeakMap();
+
+/**
+ * Shows `places` ([{ key, name, address, area, kind, title }], one per distinct place) as category pins on one map
+ * inside `container` (an element Preact never renders children into). Safe to call on every render: the map is
+ * created once per container, pins are only rebuilt when the list changes, and a changed selection just raises
+ * and centres that pin. `onLocated({ [key]: 'address' | 'name' | 'ambiguous' | 'missing' })` reports what was
+ * found (or `{ failed: true }`), `onSelect(key)` fires when a pin is pressed.
+ */
+export async function syncPlaceMap(container, places, { selected = null, onSelect, onLocated, load = loadKakaoMaps, services = kakaoServices } = {}) {
+  let st = placeMaps.get(container);
+  if (!st) { st = { run: 0, list: null, overlays: new Map(), selected: null }; placeMaps.set(container, st); }
+  st.onSelect = onSelect;
+  const list = places.map(placeKey).join('\n');
+  if (st.list === list) { if (st.map) highlight(st, selected); else st.selected = selected; return; }
+  st.list = list; st.selected = selected;
+  const run = ++st.run;
+  if (!places.length) { clearPins(st); return; }
+  let kakao;
+  try { kakao = await load(); } catch { if (run === st.run) onLocated?.({ failed: true }); return; }
+  if (run !== st.run) return;
+  const svc = services(kakao);
+  const found = await Promise.all(places.map(place => cachedLocate(place, svc)));
+  if (run !== st.run || container.isConnected === false) return;
+  try {
+    st.kakao = kakao;
+    st.map ??= createMap(container, kakao, new kakao.maps.LatLng(...SEOUL), 8);
+    clearPins(st);
+    const doc = container.ownerDocument ?? globalThis.document;
+    const bounds = new kakao.maps.LatLngBounds();
+    const status = {};
+    places.forEach((place, i) => {
+      const spot = found[i]; const key = placeKey(place);
+      status[key] = spot.by;
+      if (!(spot.lat && spot.lng)) return;
+      const position = new kakao.maps.LatLng(spot.lat, spot.lng);
+      const pin = createCategoryPin(doc, { kind: place.kind, name: place.title || place.name, label: spot.label,
+        onSelect: () => st.onSelect?.(key) });
+      const overlay = new kakao.maps.CustomOverlay({ position, map: st.map, content: pin, xAnchor: 0.5, yAnchor: 1, clickable: true, zIndex: 1 });
+      st.overlays.set(key, { overlay, pin, position });
+      bounds.extend(position);
+    });
+    st.map.relayout();
+    if (st.overlays.size === 1) { st.map.setLevel(4); st.map.setCenter([...st.overlays.values()][0].position); }
+    else if (st.overlays.size > 1) st.map.setBounds(bounds, 48, 48, 48, 48);
+    const wanted = st.selected; st.selected = null;
+    highlight(st, wanted, false);
+    container.classList?.add('ready');
+    onLocated?.(status);
+  } catch { onLocated?.({ failed: true }); }
+}
+
+function clearPins(st) {
+  for (const { overlay } of st.overlays.values()) overlay.setMap(null);
+  st.overlays.clear();
+}
+
+function highlight(st, key, pan = true) {
+  if (st.selected === key) return;
+  const previous = st.overlays.get(st.selected);
+  if (previous) { previous.pin.classList.remove('on'); previous.pin.removeAttribute('aria-pressed'); previous.overlay.setZIndex(1); }
+  st.selected = key;
+  const next = st.overlays.get(key);
+  if (!next) return;
+  next.pin.classList.add('on'); next.pin.setAttribute('aria-pressed', 'true'); next.overlay.setZIndex(5);
+  if (pan) st.map.panTo(next.position);
 }

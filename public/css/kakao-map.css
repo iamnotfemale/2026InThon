@@ -20,3 +20,56 @@ a.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offset:3p
 .kmap-note-close::before{content:'\00D7';font-size:18px}
 .kmap-note-close:hover{background:rgba(0,0,0,.06)}
 .kmap-note-close:focus-visible{outline:2px solid var(--text,#171717);outline-offset:1px}
+
+/* Pins on the 지도 tab are buttons that select a place; the chosen one is raised and slightly larger. */
+button.kmap-pin{padding:0;border:0;background:transparent;font:inherit;cursor:pointer;transform-origin:50% 100%;transition:transform .15s ease}
+button.kmap-pin:hover .kmap-pin-head{box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}
+button.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offset:3px;border-radius:22px}
+.kmap-pin.on{transform:scale(1.18);--pin-rim:#171717}
+
+/* 지도 tab (PlaceMap.fragment.html), desktop first; the phone layout follows under .m. */
+.pmap-page{width:100%;max-width:1200px;margin:0 auto;padding:36px 40px 72px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;animation:pmapIn .35s cubic-bezier(.16,1,.3,1) both}
+@keyframes pmapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pmap-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.pmap-intro{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 320px}
+.pmap-h1{font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-0.03em}
+.pmap-intro p{font-size:14px}
+.pmap-taste{margin-left:auto;gap:6px}
+.pmap-kinds{align-self:flex-start;max-width:100%}
+.pmap-kinds button{padding:0 12px}
+.pmap-body{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+.pmap-box{position:relative;height:clamp(420px,calc(100vh - 260px),760px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface-2)}
+.pmap{position:absolute;inset:0}
+.pmap .kmap-canvas{position:absolute;inset:0;width:100%;height:100%}
+.pmap-card{position:absolute;left:12px;bottom:12px;z-index:4;width:min(340px,calc(100% - 24px));box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:0 8px 24px -8px rgba(0,0,0,.25)}
+.pmap-card-head{display:flex;align-items:center;gap:6px;font-size:12px}
+.pmap-card-close{margin-left:auto;width:26px;height:26px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text-2);cursor:pointer}
+.pmap-card-close::before{content:'\00D7';font-size:18px;line-height:1}
+.pmap-card-close:hover{background:var(--surface-2)}
+.pmap-card-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 0;border:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.pmap-card-title{flex:1;min-width:0;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmap-card-go{flex:none;font-size:12.5px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
+.pmap-card-sub{font-size:12px;line-height:1.45}
+.pmap-side{display:flex;flex-direction:column;gap:8px;min-width:0;max-height:clamp(420px,calc(100vh - 260px),760px)}
+.pmap-summary{font-size:12.5px}
+.pmap-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0}
+.pmap-row{display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px;border:0;border-radius:10px;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.pmap-row .dot{margin-top:7px}
+.pmap-row:hover{background:var(--surface-2)}
+.pmap-row.on{background:var(--surface-3)}
+.pmap-row:focus-visible,.pmap-card-item:focus-visible,.pmap-card-close:focus-visible{outline:2px solid var(--text,#171717);outline-offset:-2px}
+.pmap-row-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pmap-row-title{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmap-row-sub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmap-row-note{font-size:11.5px;color:var(--muted)}.pmap-row-note.warn{color:#B45309}
+.pmap-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 16px;text-align:center;border:1px dashed var(--border-strong,#D4D4D4);border-radius:14px}
+@media(max-width:1023px){.pmap-body{grid-template-columns:minmax(0,1fr)}.pmap-side{max-height:none}.pmap-list{overflow:visible}}
+.m .pmap-page{padding:4px 20px 28px;gap:14px;max-width:none}
+.m .pmap-h1{display:none}
+.m .pmap-intro{flex-basis:100%}
+.m .pmap-intro p{font-size:13.5px}
+.m .pmap-taste{margin-left:0;width:100%;justify-content:center;height:40px}
+.m .pmap-kinds{align-self:stretch;flex-wrap:nowrap;overflow-x:auto}
+.m .pmap-kinds button{flex:1 0 auto;padding:0 8px;font-size:13px;gap:4px}
+.m .pmap-box{height:min(58vh,520px);min-height:320px}
+@media(prefers-reduced-motion:reduce){.pmap-page{animation:none}button.kmap-pin{transition:none}}

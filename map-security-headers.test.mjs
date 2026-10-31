@@ -9,7 +9,7 @@ const directives = csp => Object.fromEntries(csp.split(';').map(part => part.tri
   .map(([name, ...values]) => [name, values]));
 
 test('map resource access and origin referrers apply only to dashboard documents', () => {
-  for (const path of ['/dashboard', '/home', '/library', '/taste', '/calendar', '/settings', '/items/fc42-2', '/dashboard/', '/items/fc42/']) {
+  for (const path of ['/dashboard', '/home', '/library', '/taste', '/calendar', '/map', '/settings', '/items/fc42-2', '/dashboard/', '/items/fc42/']) {
     assert.equal(policiesFor(path).length, 1, path); // Two enforcing CSP headers would intersect and block the SDK.
     const headers = headersFor(path); const csp = directives(headers['Content-Security-Policy']);
     assert.equal(headers['Referrer-Policy'], 'strict-origin-when-cross-origin', path);
