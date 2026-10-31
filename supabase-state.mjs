@@ -94,8 +94,15 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));
-      await request('POST', '/factchecks', { igsid, status, verdict, sources,
-        claim: clip(result.extracted?.claim, 1000), topic: clip(result.extracted?.topic, 50), reason: clip(result.reason, 2000) });
+      const rows = await request('POST', '/factchecks?select=id', { igsid, status, verdict, sources,
+        claim: clip(result.extracted?.claim, 1000), topic: clip(result.extracted?.topic, 50), reason: clip(result.reason, 2000) },
+      undefined, true);
+      return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };
+    },
+    // Called only after every result message was confirmed by Meta.
+    async markFactCheckSent(id) {
+      if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Invalid fact-check id');
+      await request('PATCH', `/factchecks?id=eq.${id}`, { dm_status: 'sent', dm_sent_at: new Date(now()).toISOString() });
     },
   };
 }

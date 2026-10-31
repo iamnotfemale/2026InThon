@@ -496,3 +496,23 @@ test('profile lookup failures are logged and stored as Meta codes only and never
   assert.ok(!warnings.join().includes('123456789'), 'sender IDs must not be logged');
   assert.ok(!JSON.stringify(recorded.map(([, outcome]) => outcome)).includes('does not exist'), 'Meta error text must not be stored');
 });
+
+test('fact-check records are marked as DM-sent only after every result message is confirmed', async t => {
+  const marked = [];
+  const make = failOn => fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => ({ status: 'done', messages: ['결과 1', '결과 2'] }),
+    saveFactCheck: async () => ({ id: 5 }), markFactCheckSent: async id => { marked.push(id); },
+    apiFetch: async (url, options) => {
+      const text = JSON.parse(options.body).message.text;
+      if (text === failOn) return new Response(JSON.stringify({ error: { code: 10 } }), { status: 400 });
+      return json({ message_id: 'm' });
+    } });
+  const ok = await make(null);
+  await deliver(ok, [incoming({ message: { mid: 'dm-ok', text: '주장' } })]);
+  await eventually(() => ok.stats.replies === 1);
+  assert.deepEqual(marked, [5]);
+  const failing = await make('결과 2');
+  await deliver(failing, [incoming({ message: { mid: 'dm-fail', text: '주장' } })]);
+  await eventually(() => failing.stats.replyFailures === 1);
+  assert.deepEqual(marked, [5], 'a failed send must leave the record pending');
+});

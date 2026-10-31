@@ -126,3 +126,21 @@ test('trackSender reports the stored handle; lookup outcomes store the handle or
   await assert.rejects(state.recordUsernameLookup('1&x=1', { username: 'ok' }), /Invalid sender id/);
   assert.equal(calls.length, 5);
 });
+
+test('saveFactCheck returns the new row id and markFactCheckSent flags only valid ids', async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, method: init.method, prefer: init.headers.Prefer, body: JSON.parse(init.body) });
+    return init.method === 'POST' ? new Response('[{"id":42}]', { status: 201 }) : new Response(null, { status: 204 });
+  };
+  const at = '2026-10-31T00:00:00.000Z';
+  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl, now: () => Date.parse(at) });
+  assert.deepEqual(await state.saveFactCheck('123', { status: 'done', verdict: 'supported' }), { id: 42 });
+  assert.equal(calls[0].url, 'https://x.supabase.co/rest/v1/factchecks?select=id');
+  assert.equal(calls[0].prefer, 'return=representation');
+  await state.markFactCheckSent(42);
+  assert.equal(calls[1].url, 'https://x.supabase.co/rest/v1/factchecks?id=eq.42');
+  assert.deepEqual(calls[1].body, { dm_status: 'sent', dm_sent_at: at });
+  for (const bad of [0, -1, 1.5, '42', null]) await assert.rejects(state.markFactCheckSent(bad), /Invalid fact-check id/);
+  assert.equal(calls.length, 2);
+});

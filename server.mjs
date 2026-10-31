@@ -60,7 +60,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, recordUsernameLookup, respondToMessage }) {
+  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -159,11 +159,14 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, { senderId: sender }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
+          let savedId = null;
           if (content && saveFactCheck) {
             await tracking; // The sender row must exist before writing a content result with its foreign key.
-            await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
+            await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
           }
           for (const text of result.messages) await send(text);
+          // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
+          if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
           await backfill;
         } else await send('안녕?');
         await tracking;
