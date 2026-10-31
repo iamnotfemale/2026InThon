@@ -7,6 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED, CHAT_FAILED, LINK_FAILED, linkMessage } from './server.mjs';
 import { readSecrets, writeSecrets } from './secrets.mjs';
+import { createDmAssistant } from './dm-assistant.mjs';
+import { createContentChoices } from './content-choices.mjs';
 
 const FETCH_BAD_PORTS = new Set([1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, 77, 79, 87, 95, 101, 102,
   103, 104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 137, 139, 143, 161, 179, 389, 427, 465, 512, 513, 514, 515, 526, 530,
@@ -405,7 +407,10 @@ test('fact-check results are saved per sender, including outages, and save failu
 test('assistant routes chat without fact-check ACK or history rows, while content keeps its ACK and sender context', async t => {
   const sent = []; const saved = []; const contexts = [];
   const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
-    respondToMessage: async (message, context) => { contexts.push(context); return { status: 'done', messages: [message.attachments ? '콘텐츠 처리' : '일반 대화'] }; },
+    respondToMessage: async (message, context) => {
+      contexts.push(context); if (message.attachments) await context.acknowledge();
+      return { kind: message.attachments ? 'content' : 'chat', status: 'done', messages: [message.attachments ? '콘텐츠 처리' : '일반 대화'] };
+    },
     saveFactCheck: async (sender, result) => saved.push([sender, result.status]),
     apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); } });
   await deliver(f, [incoming({ message: { mid: 'chat-a', text: '안녕' } })]);
@@ -415,7 +420,37 @@ test('assistant routes chat without fact-check ACK or history rows, while conten
   await eventually(() => f.stats.replies === 2);
   assert.deepEqual(sent, ['일반 대화', FACTCHECK_ACK, '콘텐츠 처리']);
   assert.deepEqual(saved, [['123456789', 'done']]);
-  assert.deepEqual(contexts, [{ senderId: '123456789' }, { senderId: '123456789' }]);
+  assert.deepEqual(contexts.map(c => c.senderId), ['123456789', '123456789']);
+  assert.ok(contexts.every(c => typeof c.acknowledge === 'function'));
+});
+
+test('signed content shares send three quick replies; clicks route the original post and save only actual analysis', async t => {
+  const blobs = new Map(); const claims = new Set(); const sent = []; const saved = []; const processed = []; const marked = [];
+  const choices = createContentChoices({ secret: 'test-secret',
+    getBlob: async key => blobs.has(key) ? { stream: new Response(blobs.get(key)).body } : null,
+    putBlob: async (key, value) => { blobs.set(key, value); }, deleteBlob: async key => { blobs.delete(key); },
+    claim: async key => { if (claims.has(key)) return false; claims.add(key); return true; } });
+  const respondToMessage = createDmAssistant({ choices,
+    history: { read: async () => [], write: async () => {} }, model: () => assert.fail('No general chat for a click'),
+    processContent: async message => { processed.push(message.mid); return { status: 'done', messages: ['실제 결과'] }; } });
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID }, respondToMessage,
+    saveFactCheck: async (_sender, result) => { saved.push(result); return { id: 'saved-result' }; },
+    markFactCheckSent: async id => marked.push(id),
+    apiFetch: async (url, options) => { assert.ok(url.endsWith('/messages')); sent.push(JSON.parse(options.body).message); return json({ message_id: 'out' }); } });
+  for (const [index, action] of ['recipe', 'factcheck', 'schedule'].entries()) {
+    const mid = 'shared-' + action;
+    await deliver(f, [incoming({ message: { mid, attachments: [{ type: 'ig_post', payload: { url: 'https://example.com/private.jpg' } }] } })]);
+    await eventually(() => f.stats.replies === index * 2 + 1);
+    const offer = sent.at(-1); assert.equal(offer.quick_replies.length, 3);
+    assert.match(offer.quick_replies[index].payload, new RegExp(`^content:v1:${action}:`));
+    await deliver(f, [incoming({ message: { mid: 'click-' + action, text: offer.quick_replies[index].title,
+      quick_reply: { payload: offer.quick_replies[index].payload } } })]);
+    await eventually(() => f.stats.replies === index * 2 + 2);
+    assert.equal(saved.length, index === 0 ? 0 : 1);
+  }
+  assert.deepEqual(processed, ['shared-factcheck']);
+  assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
+  assert.equal(saved[0].kind, 'content'); assert.deepEqual(marked, ['saved-result']); assert.equal(blobs.size, 0);
 });
 
 test('chat outages get a chat error and the existing linking command still takes priority', async t => {
@@ -439,7 +474,10 @@ test('slow sender tracking does not block a chat reply; content persistence stil
     const gate = new Promise(resolve => { release = resolve; });
     const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
       trackSender: () => gate,
-      respondToMessage: async () => { started = true; return { status: 'done', messages: ['답장'] }; },
+      respondToMessage: async (_message, context) => {
+        if (content) await context.acknowledge(); started = true;
+        return { kind: content ? 'content' : 'chat', status: 'done', messages: ['답장'] };
+      },
       saveFactCheck: async () => { saved = true; },
       apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); } });
     try {

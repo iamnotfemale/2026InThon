@@ -114,10 +114,10 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         if (reserveReply) {
           if (!await reserveReply(key)) continue;
         } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
-        const send = async text => {
+        const send = async message => {
           const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text } }) });
+            body: JSON.stringify({ recipient: { id: m.sender.id }, message: typeof message === 'string' ? { text: message } : message }) });
           if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
         };
         const sender = m.sender.id;
@@ -154,13 +154,15 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           const content = !respondToMessage || isContentMessage(m.message);
           // Backfill a missing handle alongside the AI response, without delaying the reply.
           const backfill = tracking.then(() => trackSender && recordUsernameLookup && !knownUsername ? lookupUsername() : null);
-          if (content) await send(FACTCHECK_ACK);
+          if (!respondToMessage) await send(FACTCHECK_ACK);
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
-          try { result = await (respondToMessage ?? factCheck)(m.message, { senderId: sender }); }
+          try { result = await (respondToMessage ?? factCheck)(m.message, {
+            senderId: sender, acknowledge: () => send(FACTCHECK_ACK),
+          }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;
-          if (content && saveFactCheck) {
+          if ((result.kind === 'content' || !respondToMessage) && saveFactCheck) {
             await tracking; // The sender row must exist before writing a content result with its foreign key.
             await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
           }

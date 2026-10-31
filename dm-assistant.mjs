@@ -4,6 +4,7 @@ import { sealToken, openToken } from './cloud-auth.mjs';
 import { createGeminiModel, factCheckerFromEnv, splitBytes } from './factcheck.mjs';
 import { mediaFactCheckerFromEnv } from './media-pipeline.mjs';
 import { isContentMessage } from './instagram-source.mjs';
+import { createContentChoices } from './content-choices.mjs';
 
 const TTL = 30 * 60000;
 const MAX_MESSAGES = 12;
@@ -42,19 +43,23 @@ export function createChatHistory({ secret, getBlob = get, putBlob = put, delete
   };
 }
 
-export function createDmAssistant({ model, processContent, history, warn = () => console.warn('Chat history unavailable') }) {
-  return async (message, { senderId } = {}) => {
+export function createDmAssistant({ model, processContent, history, choices, warn = () => console.warn('Chat history unavailable') }) {
+  return async (message, { senderId, acknowledge = async () => {} } = {}) => {
+    // Quick replies carry the original content ticket, not a request for ordinary chat.
+    let result;
+    if (message.quick_reply) {
+      result = await choices.select(message, senderId, processContent, acknowledge);
+      if (result.kind !== 'content') return result;
+    } else if (isContentMessage(message)) return choices.offer(message, senderId);
     let previous = [];
     try { previous = await history.read(senderId); } catch { warn(); }
     const text = typeof message.text === 'string' ? message.text.trim().slice(0, 4000) : '';
-    if (!isContentMessage(message) && RESET.has(text)) {
+    if (!result && RESET.has(text)) {
       try { await history.clear(senderId); }
       catch { return { kind: 'chat', status: 'failed', messages: ['대화 기록을 지우지 못했어요. 잠시 후 다시 “대화 초기화”라고 보내주세요.'] }; }
       return { kind: 'chat', status: 'done', messages: ['대화 맥락을 초기화했어요. 새로 이야기해 주세요.'] };
     }
-    let result;
-    if (isContentMessage(message)) result = { ...await processContent(message), kind: 'content' };
-    else {
+    if (!result) {
       if (!text) return { kind: 'chat', status: 'no_input', messages: ['질문을 적거나 릴스·게시물을 공유해 주세요.'] };
       const reply = await model({ system: SYSTEM, content: [{ type: 'text', text }], history: previous,
         json: false, maxTokens: 1200, signal: AbortSignal.timeout(60000) });
@@ -76,5 +81,6 @@ export function dmAssistantFromEnv({ loadAccessToken, env = process.env } = {}) 
   return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: chatModel,
     thinkingLevel: chatModel === 'gemini-3.5-flash-lite' ? 'minimal' : undefined }),
     processContent: mediaFactCheckerFromEnv(factCheckerFromEnv(env), { loadAccessToken, env }),
-    history: createChatHistory({ secret: env.META_APP_SECRET }) });
+    history: createChatHistory({ secret: env.META_APP_SECRET }),
+    choices: createContentChoices({ secret: env.META_APP_SECRET }) });
 }

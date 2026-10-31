@@ -3,24 +3,31 @@ import assert from 'node:assert/strict';
 import { createChatHistory, createDmAssistant, dmAssistantFromEnv } from './dm-assistant.mjs';
 import { createGeminiModel, splitBytes } from './factcheck.mjs';
 import { isContentMessage } from './instagram-source.mjs';
+import { createContentChoices } from './content-choices.mjs';
 
 function storage() {
   const data = new Map(); let clock = 1000;
-  const history = createChatHistory({ secret: 'test-secret', now: () => clock,
+  const options = { secret: 'test-secret', now: () => clock,
     getBlob: async key => data.has(key) ? { stream: new Response(data.get(key)).body } : null,
     putBlob: async (key, value, options) => { assert.equal(options.access, 'private'); data.set(key, value); },
-    deleteBlob: async key => { data.delete(key); } });
-  return { history, data, advance: ms => { clock += ms; } };
+    deleteBlob: async key => { data.delete(key); },
+    claim: async key => { if (data.has(key)) return false; data.set(key, 'used'); return true; } };
+  const history = createChatHistory(options);
+  return { history, choices: createContentChoices(options), data, advance: ms => { clock += ms; } };
 }
 test('ordinary text chats while media/Instagram links go to the content processor', async () => {
   const store = storage(); const calls = [];
-  const reply = createDmAssistant({ history: store.history,
+  const reply = createDmAssistant({ history: store.history, choices: store.choices,
     model: async args => { calls.push(args); return '안녕! 무엇을 도와줄까?'; },
     processContent: async () => ({ status: 'done', messages: ['콘텐츠 분석 결과'] }) });
   assert.equal((await reply({ text: '안녕' }, { senderId: '123' })).kind, 'chat');
   await reply({ text: '방금 한 말 영어로' }, { senderId: '123' });
   assert.equal(calls[1].history.length, 2); assert.equal(calls[1].json, false);
-  assert.equal((await reply({ attachments: [{ type: 'ig_post', payload: {} }] }, { senderId: '123' })).kind, 'content');
+  const offered = await reply({ attachments: [{ type: 'ig_post', payload: {} }] }, { senderId: '123' });
+  assert.equal(offered.kind, 'choice');
+  assert.equal(calls.length, 2);
+  const payload = offered.messages[0].quick_replies[1].payload;
+  assert.equal((await reply({ text: '팩트체크', quick_reply: { payload } }, { senderId: '123' })).kind, 'content');
   await reply({ text: '그 결과를 짧게 요약해줘' }, { senderId: '123' });
   assert.equal(calls.at(-1).history.at(-1).parts[0].text, '콘텐츠 분석 결과');
   for (const message of [{ text: 'https://www.instagram.com/reel/Example/' }, { text: 'https://www.instagram.com/share/x' },
