@@ -85,19 +85,24 @@ test('the SDK loads once with services and an origin-only referrer, and a failur
 });
 
 // Minimal DOM: one placeholder element and its note sibling.
+function fakeNode() {
+  return { children: [], attrs: {}, listeners: {}, appendChild(c) { this.children.push(c); return c; },
+    setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; }, addEventListener(t, fn) { this.listeners[t] = fn; } };
+}
 function placeholder(dataset) {
   const noteEl = { textContent: '', hidden: true };
-  const el = { dataset: { kmap: '1', ...dataset }, isConnected: true, innerHTML: 'x', classList: { added: [], add(c) { this.added.push(c); } },
-    parentElement: { querySelector: () => noteEl } };
-  return { el, noteEl, root: { querySelectorAll: () => [el] } };
+  const box = { attrs: { 'aria-hidden': 'true' }, querySelector: () => noteEl, removeAttribute(k) { delete this.attrs[k]; } };
+  const el = { ...fakeNode(), dataset: { kmap: '1', ...dataset }, isConnected: true, innerHTML: 'x', classList: { added: [], add(c) { this.added.push(c); } },
+    parentElement: box, ownerDocument: { createElement: () => fakeNode() } };
+  return { el, noteEl, box, root: { querySelectorAll: () => [el] } };
 }
 function fakeKakao() {
   const made = [];
   class LatLng { constructor(lat, lng) { this.lat = lat; this.lng = lng; } }
   class Map { constructor(container, options) { made.push(['map', options.center.lat, options.center.lng]); } setZoomable(z) { made.push(['zoomable', z]); }
-    addControl() {} relayout() {} setCenter() {} }
+    getLevel() { return this.level ?? 3; } setLevel(l) { this.level = l; made.push(['level', l]); } relayout() {} setCenter() {} }
   class Marker { constructor({ position }) { made.push(['marker', position.lat, position.lng]); } }
-  return { made, kakao: { maps: { LatLng, Map, Marker, ZoomControl: class {}, ControlPosition: { RIGHT: 'R' }, event: { addListener: () => {} } } } };
+  return { made, kakao: { maps: { LatLng, Map, Marker, event: { addListener: () => {} } } } };
 }
 
 test('placeholders mount a pinned map, explain name-based or missing locations, and never load Kakao for nothing', async () => {
@@ -108,6 +113,13 @@ test('placeholders mount a pinned map, explain name-based or missing locations, 
   assert.deepEqual(made.filter(m => m[0] !== 'zoomable'), [['map', 37.54, 127.05], ['marker', 37.54, 127.05]]);
   assert.ok(made.some(m => m[0] === 'zoomable' && m[1] === false), 'wheel zoom off so the page keeps scrolling');
   assert.deepEqual(byAddress.el.classList.added, ['ready']); assert.equal(byAddress.noteEl.hidden, true);
+  // Compact +/− buttons instead of Kakao's slider (which overflows the small map boxes); the live map is no longer aria-hidden.
+  const [canvas, zoom] = byAddress.el.children;
+  assert.equal(canvas.className, 'kmap-canvas'); assert.equal(zoom.className, 'kmap-zoom');
+  assert.deepEqual(zoom.children.map(b => [b.textContent, b.attrs['aria-label'], b.type]), [['+', '지도 확대', 'button'], ['−', '지도 축소', 'button']]);
+  zoom.children[0].listeners.click(); zoom.children[0].listeners.click(); zoom.children[0].listeners.click();
+  assert.deepEqual(made.filter(m => m[0] === 'level'), [['level', 2], ['level', 1], ['level', 1]], 'zoom in stops at level 1');
+  assert.equal(byAddress.box.attrs['aria-hidden'], undefined);
 
   const byName = placeholder({ name: '가상 커피', area: '명동', kind: 'restaurant' });
   await attachMaps(byName.root, { load: async () => kakao, services: () => services({ keyword: [place('가상 커피', '서울 중구 명동 1')] }) });
