@@ -72,6 +72,32 @@ a{color:#0A0A0A}a:hover{color:#404040}
 .big-orb::before{content:'';position:absolute;inset:-30%;filter:blur(18px);animation:swirl 16s ease-in-out infinite}
 .enter{animation:enter .7s cubic-bezier(.16,1,.3,1) both}
 .d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.34s}
+.lp .hero-name{display:inline-grid;place-items:center;min-width:8.5ch;line-height:1.28;vertical-align:top}
+.lp .hero-name>span{grid-area:1/1}
+.lp .hero-handle{display:none;font-family:'Geist','Noto Sans KR',sans-serif;letter-spacing:-.055em}
+.lp .hero-name.is-typing .hero-handle{display:inline-block}
+.lp .hero-name.is-typing .hero-dimi{opacity:0}
+.lp .hero-name.is-typing .hero-handle::after{content:'';display:inline-block;width:3px;height:.78em;margin-left:.09em;background:currentColor;vertical-align:-.02em;animation:caret .6s steps(1) 3}
+.lp .hero-dimi>span{display:inline-block;transform-origin:50% 85%}
+.lp .hero-name.is-arriving .hero-dimi>span{animation:name-pop .72s cubic-bezier(.23,1,.32,1) both}
+.lp .hero-name.is-arriving .hero-dimi>span:nth-child(2){animation-delay:.08s}
+.lp .motion-reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.23,1,.32,1),transform .6s cubic-bezier(.23,1,.32,1)}
+.lp .motion-reveal.is-visible{opacity:1;transform:none}
+.lp .scroll-morph{animation:none;border-radius:0}
+.lp .hero-product .frame{transform-origin:50% 55%}
+.lp .gauge-needle{transform-box:view-box;transform-origin:100px 100px}
+.lp .dm-chat{min-height:316px}
+.lp .dm-chat [hidden]{display:none!important}
+.lp .dm-typing{display:flex;align-items:center;gap:4px;min-height:38px;min-width:56px}
+.lp .dm-typing i{width:5px;height:5px;background:#8A8A8A;border-radius:50%;animation:typing-dot .8s ease-in-out 4}
+.lp .dm-typing i:nth-child(2){animation-delay:.12s}.lp .dm-typing i:nth-child(3){animation-delay:.24s}
+.lp .dm-replay{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--border);border-radius:50%;background:#fff;color:var(--muted);cursor:pointer}
+.lp .dm-composer{display:flex;align-items:center;justify-content:space-between;margin:0 20px 18px;padding:10px 14px;border:1px solid var(--border);border-radius:999px;color:#929292;font-size:12px}
+@keyframes caret{50%{opacity:0}}
+@keyframes name-pop{0%{opacity:0;transform:translateY(38%) scale(.94,.88)}38%{opacity:1;transform:translateY(-9%) scale(1.04,1.08)}62%{transform:translateY(4%) scale(.98,.97)}82%{transform:translateY(-2%) scale(1.01,1.02)}100%{opacity:1;transform:none}}
+@keyframes typing-dot{0%,70%,100%{transform:none;opacity:.45}35%{transform:translateY(-3px);opacity:1}}
+@media(max-width:600px){.lp .hero-product .frame{margin:0!important}.lp .dm-chat{min-height:352px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.lp .motion-reveal{opacity:1;transform:none}.lp .hero-product .frame,.lp .scroll-morph{transform:none!important;clip-path:none!important}}
 :focus-visible{outline:2px solid #5E6AD2;outline-offset:3px;border-radius:10px}
 @keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes blob{0%,100%{border-radius:50% 50% 50% 50% / 50% 50% 50% 50%;transform:rotate(0deg) scale(1)}25%{border-radius:58% 42% 47% 53% / 45% 57% 43% 55%;transform:rotate(8deg) scale(1.04,.97)}50%{border-radius:43% 57% 61% 39% / 58% 42% 58% 42%;transform:rotate(-6deg) scale(.97,1.04)}75%{border-radius:55% 45% 40% 60% / 41% 59% 49% 51%;transform:rotate(4deg) scale(1.03,1)}}

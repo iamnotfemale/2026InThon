@@ -85,6 +85,32 @@ a{color:#0A0A0A}a:hover{color:#404040}
 .big-orb::before{content:'';position:absolute;inset:-30%;filter:blur(18px);animation:swirl 16s ease-in-out infinite}
 .enter{animation:enter .7s cubic-bezier(.16,1,.3,1) both}
 .d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.34s}
+.lp .hero-name{display:inline-grid;place-items:center;min-width:8.5ch;line-height:1.28;vertical-align:top}
+.lp .hero-name>span{grid-area:1/1}
+.lp .hero-handle{display:none;font-family:'Geist','Noto Sans KR',sans-serif;letter-spacing:-.055em}
+.lp .hero-name.is-typing .hero-handle{display:inline-block}
+.lp .hero-name.is-typing .hero-dimi{opacity:0}
+.lp .hero-name.is-typing .hero-handle::after{content:'';display:inline-block;width:3px;height:.78em;margin-left:.09em;background:currentColor;vertical-align:-.02em;animation:caret .6s steps(1) 3}
+.lp .hero-dimi>span{display:inline-block;transform-origin:50% 85%}
+.lp .hero-name.is-arriving .hero-dimi>span{animation:name-pop .72s cubic-bezier(.23,1,.32,1) both}
+.lp .hero-name.is-arriving .hero-dimi>span:nth-child(2){animation-delay:.08s}
+.lp .motion-reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.23,1,.32,1),transform .6s cubic-bezier(.23,1,.32,1)}
+.lp .motion-reveal.is-visible{opacity:1;transform:none}
+.lp .scroll-morph{animation:none;border-radius:0}
+.lp .hero-product .frame{transform-origin:50% 55%}
+.lp .gauge-needle{transform-box:view-box;transform-origin:100px 100px}
+.lp .dm-chat{min-height:316px}
+.lp .dm-chat [hidden]{display:none!important}
+.lp .dm-typing{display:flex;align-items:center;gap:4px;min-height:38px;min-width:56px}
+.lp .dm-typing i{width:5px;height:5px;background:#8A8A8A;border-radius:50%;animation:typing-dot .8s ease-in-out 4}
+.lp .dm-typing i:nth-child(2){animation-delay:.12s}.lp .dm-typing i:nth-child(3){animation-delay:.24s}
+.lp .dm-replay{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--border);border-radius:50%;background:#fff;color:var(--muted);cursor:pointer}
+.lp .dm-composer{display:flex;align-items:center;justify-content:space-between;margin:0 20px 18px;padding:10px 14px;border:1px solid var(--border);border-radius:999px;color:#929292;font-size:12px}
+@keyframes caret{50%{opacity:0}}
+@keyframes name-pop{0%{opacity:0;transform:translateY(38%) scale(.94,.88)}38%{opacity:1;transform:translateY(-9%) scale(1.04,1.08)}62%{transform:translateY(4%) scale(.98,.97)}82%{transform:translateY(-2%) scale(1.01,1.02)}100%{opacity:1;transform:none}}
+@keyframes typing-dot{0%,70%,100%{transform:none;opacity:.45}35%{transform:translateY(-3px);opacity:1}}
+@media(max-width:600px){.lp .hero-product .frame{margin:0!important}.lp .dm-chat{min-height:352px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.lp .motion-reveal{opacity:1;transform:none}.lp .hero-product .frame,.lp .scroll-morph{transform:none!important;clip-path:none!important}}
 :focus-visible{outline:2px solid #5E6AD2;outline-offset:3px;border-radius:10px}
 @keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes blob{0%,100%{border-radius:50% 50% 50% 50% / 50% 50% 50% 50%;transform:rotate(0deg) scale(1)}25%{border-radius:58% 42% 47% 53% / 45% 57% 43% 55%;transform:rotate(8deg) scale(1.04,.97)}50%{border-radius:43% 57% 61% 39% / 58% 42% 58% 42%;transform:rotate(-6deg) scale(.97,1.04)}75%{border-radius:55% 45% 40% 60% / 41% 59% 49% 51%;transform:rotate(4deg) scale(1.03,1)}}
@@ -132,7 +158,7 @@ a{color:#0A0A0A}a:hover{color:#404040}
 
     <div class="wrap" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px">
       <span class="kicker enter"><i></i>인스타그램 DM으로 쓰는 콘텐츠 도우미</span>
-      <h1 class="h-xl enter d1"><span class="tagline-lead">당신의 가장 가까운 비서</span><br>디미</h1>
+      <h1 class="h-xl enter d1" aria-label="당신의 가장 가까운 비서 디미"><span class="tagline-lead">당신의 가장 가까운 비서</span><br><span class="hero-name" aria-hidden="true"><span class="hero-handle">@dimi_in</span><span class="hero-dimi"><span>디</span><span>미</span></span></span></h1>
       <p class="lead enter d2" style="max-width: 640px">릴스와 게시물을 DM으로 보내세요.<br>레시피는 정리하고, 뉴스는 확인하고, 전시와 공모전은 필요한 정보를 모아드려요.</p>
       <div class="enter d3" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding-top: 6px">
         <a class="btn btn-primary btn-lg" href="Signup.dc.html">시작하기
@@ -145,7 +171,7 @@ a{color:#0A0A0A}a:hover{color:#404040}
     </div>
 
     <!-- product shot + characters -->
-    <div class="wrap enter d4" style="position: relative; margin-top: 72px; max-width: 1180px">
+    <div class="wrap enter d4 hero-product" style="position: relative; margin-top: 72px; max-width: 1180px">
       <div class="hero-chars" aria-hidden="true">
         <span class="orb o-news soft" style="width: 150px; height: 150px; left: -30px; top: 120px; z-index: 0"></span>
         <span class="orb o-contest" style="width: 84px; height: 84px; left: 90px; top: 330px; z-index: 3"></span>
@@ -209,7 +235,6 @@ a{color:#0A0A0A}a:hover{color:#404040}
           </div>
         </div>
       </div>
-      <p style="position: relative; z-index: 2; text-align: center; font-size: 12.5px; color: #8A8A8A; margin-top: 16px">화면 속 콘텐츠는 예시예요</p>
     </div>
   </section>
 
@@ -251,9 +276,9 @@ a{color:#0A0A0A}a:hover{color:#404040}
               <defs><linearGradient id="lp-gauge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#EF4444"></stop><stop offset=".3" stop-color="#F97316"></stop><stop offset=".5" stop-color="#FACC15"></stop><stop offset=".72" stop-color="#84CC16"></stop><stop offset="1" stop-color="#22C55E"></stop></linearGradient></defs>
               <path d="M 44.85 155.15 A 78 78 0 1 1 155.15 155.15" fill="none" stroke="url(#lp-gauge)" stroke-width="16"></path>
               <path d="M37.18 73.98 L18.70 66.32 M100 32 L100 12 M162.82 73.98 L181.30 66.32" stroke="#FAFAFA" stroke-width="3"></path>
-              <g transform="rotate(-33.75 100 100)"><path d="M100 8 L93 33 L107 33 Z" fill="#0A0A0A" stroke="#FAFAFA" stroke-width="2" stroke-linejoin="round"></path></g>
+              <g class="gauge-needle" transform="rotate(-33.75 100 100)"><path d="M100 8 L93 33 L107 33 Z" fill="#0A0A0A" stroke="#FAFAFA" stroke-width="2" stroke-linejoin="round"></path></g>
             </svg>
-            <span style="position: absolute; left: 0; right: 0; top: 62px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: -0.03em">오해의 소지</span>
+            <span class="gauge-label" style="position: absolute; left: 0; right: 0; top: 62px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: -0.03em">오해의 소지</span>
           </div>
           <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px">
             <span style="display: flex; align-items: center; gap: 10px"><svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="#30A46C"></circle><path d="m6.3 10.2 2.5 2.5 4.9-5.1" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="color: #8A8A8A; width: 64px">지원 금액</span><b style="font-weight: 600">공고와 같아요</b></span>
@@ -315,12 +340,13 @@ a{color:#0A0A0A}a:hover{color:#404040}
       <div style="flex: 1 1 420px; position: relative">
         <span class="orb o-recipe soft" aria-hidden="true" style="width: 120px; height: 120px; right: -20px; top: -40px"></span>
         <span class="orb o-news soft" aria-hidden="true" style="width: 90px; height: 90px; left: -24px; bottom: 30px"></span>
-        <div style="position: relative; border-radius: 28px; border: 1px solid var(--border); background: #FFFFFF; box-shadow: 0 30px 60px -36px rgba(0,0,0,.3); overflow: hidden">
+        <div class="dm-demo" role="group" aria-label="DM 대화 예시" style="position: relative; border-radius: 28px; border: 1px solid var(--border); background: #FFFFFF; box-shadow: 0 30px 60px -36px rgba(0,0,0,.3); overflow: hidden">
           <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border)">
             <span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 50%; background: #0A0A0A; display: grid; place-content: center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"></path></svg></span>
             <span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-size: 14px; font-weight: 600">inthon2team</span><span style="font-size: 12px; color: #8A8A8A">Instagram DM · 예시</span></span>
+            <button class="dm-replay" type="button" aria-label="DM 대화 다시 보기"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"></path></svg></button>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px; padding: 20px">
+          <div class="dm-chat" style="display: flex; flex-direction: column; gap: 8px; padding: 20px">
             <div class="bub me" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px"><span class="orb inline o-recipe" style="width: 34px; height: 34px"></span>공유한 릴스</div>
             <div class="bub bot">콘텐츠를 받았어요. 내용을 확인해 정리해드릴게요.</div>
             <div class="bub bot">15분 매콤 두부면 레시피를 정리했어요.<br>재료: 두부면, 대파, 고춧가루, 간장, 참기름<br>조리: 약 15분 (준비 5분 · 조리 10분)</div>
@@ -328,7 +354,9 @@ a{color:#0A0A0A}a:hover{color:#404040}
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0A0A0A" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
               <span style="display: flex; flex-direction: column; line-height: 1.35"><span style="font-weight: 600">재료 분량과 조리 순서 보기</span><span style="font-size: 11.5px; color: #8A8A8A">서비스명 · 내 결과 페이지</span></span>
             </div>
+            <div class="bub bot dm-typing" aria-hidden="true" hidden="hidden"><i></i><i></i><i></i></div>
           </div>
+          <div class="dm-composer" aria-hidden="true"><span>메시지 보내기...</span><span>♡</span></div>
         </div>
       </div>
     </div>
