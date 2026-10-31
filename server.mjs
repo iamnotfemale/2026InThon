@@ -47,8 +47,11 @@ export function readReplyKeys(file) {
   } catch (error) { if (error.code === 'ENOENT') return new Set(); throw error; }
 }
 
+export const FACTCHECK_ACK = '받았어요. 핵심 주장과 근거를 확인한 뒤 답장할게요.';
+export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어요. 잠시 후 다시 보내주세요.';
+
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken }) {
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -98,10 +101,20 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         if (reserveReply) {
           if (!await reserveReply(key)) continue;
         } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
-        const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text: '안녕?' } }) });
-        if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
+        const send = async text => {
+          const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text } }) });
+          if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
+        };
+        if (factCheck) {
+          await send(FACTCHECK_ACK);
+          let texts;
+          // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
+          try { texts = (await factCheck(m.message)).messages; }
+          catch { stats.lastError = '팩트체크 처리 실패'; texts = [FACTCHECK_FAILED]; }
+          for (const text of texts) await send(text);
+        } else await send('안녕?');
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
       } catch (error) {

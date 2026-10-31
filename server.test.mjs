@@ -5,7 +5,7 @@ import { createHmac } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, appendFileSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createServers, readReplyKeys, SCOPES } from './server.mjs';
+import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED } from './server.mjs';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 
 async function fixture(t, options = {}) {
@@ -308,4 +308,20 @@ test('DPAPI round-trip is encrypted on disk', { skip: process.platform !== 'win3
     assert.doesNotMatch(readFileSync(file, 'utf8'), /dummy-local-self-test/);
     assert.equal(readSecrets(join(dir, 'missing')), null);
   } finally { rmSync(dir, { recursive: true }); }
+});
+test('fact check mode acknowledges first, sends each result message once and reports outages without a verdict', async t => {
+  const sent = [];
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async message => ({ messages: [`결과: ${message.text}`, '근거 링크'] }),
+    apiFetch: async (url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: `m${sent.length}` }); } });
+  await deliver(f, [incoming()]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(sent, [FACTCHECK_ACK, '결과: private-message-body', '근거 링크']);
+  const failing = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => { throw new Error('model down'); },
+    apiFetch: async (url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'x' }); } });
+  sent.length = 0;
+  await deliver(failing, [incoming()]);
+  await eventually(() => failing.stats.replies === 1);
+  assert.deepEqual(sent, [FACTCHECK_ACK, FACTCHECK_FAILED]);
 });
