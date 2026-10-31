@@ -19,6 +19,15 @@ node --test
 
 [로컬 설정 화면](http://127.0.0.1:8788/)에서 상태를 확인합니다. 서버와 ngrok은 숨김 프로세스로 실행됩니다. PC를 끄거나 프로세스를 종료하면 중단됩니다. 재시작 시 ngrok 주소가 바뀌면 Meta의 리디렉션 URL과 웹훅 URL을 모두 갱신하세요.
 
+## 팩트체크 답장 (개발 중)
+
+`factcheck.mjs`는 DM 콘텐츠에서 핵심 주장 하나를 뽑고, Bing 뉴스·웹, 위키백과, PubMed에서 근거를 찾아 **실제로 열리는 자료만** 인용해 `핵심 주장 → 판단 → 이유 → 근거 링크` 형식으로 답장합니다. 근거가 없으면 `확인 어려움`으로 답하며, 모델이 고른 근거 ID는 서버가 수집 결과와 대조해 지어낸 링크를 버립니다.
+
+- 운영: Vercel에 `CONTINUUM_API_KEY`(선택 `CONTINUUM_BASE_URL`, `CONTINUUM_MODEL`, `GEMINI_API_KEY`)를 넣으면 `안녕?` 대신 접수 안내 + 팩트체크 결과를 보냅니다. 키가 없으면 기존 고정 답장 그대로입니다. 함수 제한 시간은 300초로 늘렸습니다.
+- 로컬 실DM 테스트: `node scripts/factcheck-local.mjs .env` (포트 3000, ngrok 연결). 실행 기록은 `factcheck-runs.jsonl`에 남습니다.
+- 사례 묶음 평가: `node scripts/factcheck-eval.mjs cases.json .env`
+- 공유 게시물·릴스는 웹훅에 캡션과 **대표 이미지 1장만** 옵니다(릴스도 영상이 아니라 커버 JPEG). 남의 게시물이라 미디어 ID 조회는 권한 오류(100/33)입니다. 그래서 릴스의 영상·음성은 현재 분석하지 못하며, 답장의 확인 범위에 그렇게 표시합니다. `GEMINI_API_KEY`가 있으면 직접 보낸 영상 파일만 Gemini로 전사합니다.
+
 ## 연결
 
 이 앱은 **통합 로그인(Unified Login)** 을 사용합니다. 기존 Instagram Login 예제의 앱 ID, 권한 이름, 토큰 API를 혼용하면 안 됩니다.

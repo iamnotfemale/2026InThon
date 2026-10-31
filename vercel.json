@@ -3,7 +3,7 @@
   "framework": null,
   "outputDirectory": "public",
   "regions": ["icn1"],
-  "functions": { "api/instagram.mjs": { "maxDuration": 60 } },
+  "functions": { "api/instagram.mjs": { "maxDuration": 300 } },
   "rewrites": [
     { "source": "/health", "destination": "/api/instagram" },
     { "source": "/webhooks/instagram", "destination": "/api/instagram" },
