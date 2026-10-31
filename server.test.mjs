@@ -474,7 +474,7 @@ test('assistant routes chat without fact-check ACK or history rows, while conten
   assert.ok(contexts.every(c => typeof c.acknowledge === 'function'));
 });
 
-test('signed content shares send five quick replies; clicks route the original post and save only actual analysis', async t => {
+test('signed content shares send six quick replies; clicks route the original post and save only actual analysis', async t => {
   const blobs = new Map(); const claims = new Set(); const sent = []; const saved = []; const processed = []; const marked = [];
   const choices = createContentChoices({ secret: 'test-secret',
     getBlob: async key => blobs.has(key) ? { stream: new Response(blobs.get(key)).body } : null,
@@ -487,25 +487,27 @@ test('signed content shares send five quick replies; clicks route the original p
     saveFactCheck: async (_sender, result) => { saved.push(result); return { id: 'saved-result' }; },
     markFactCheckSent: async id => marked.push(id),
     apiFetch: async (url, options) => { assert.ok(url.endsWith('/messages')); sent.push(JSON.parse(options.body).message); return json({ message_id: 'out' }); } });
-  for (const [index, action] of ['recipe', 'factcheck', 'schedule', 'restaurant', 'space'].entries()) {
+  for (const [index, action] of ['recipe', 'factcheck', 'schedule', 'restaurant', 'space', 'beauty'].entries()) {
     const mid = 'shared-' + action;
     await deliver(f, [incoming({ message: { mid, attachments: [{ type: 'ig_post', payload: { url: 'https://example.com/private.jpg' } }] } })]);
     await eventually(() => f.stats.replies === index * 2 + 1);
-    const offer = sent.at(-1); assert.equal(offer.quick_replies.length, 5);
+    const offer = sent.at(-1); assert.equal(offer.quick_replies.length, 6);
     assert.match(offer.quick_replies[index].payload, new RegExp(`^content:v1:${action}:`));
     await deliver(f, [incoming({ message: { mid: 'click-' + action, text: offer.quick_replies[index].title,
       quick_reply: { payload: offer.quick_replies[index].payload } } })]);
     await eventually(() => f.stats.replies === index * 2 + 2);
     assert.equal(saved.length, index + 1);
   }
-  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule', 'shared-restaurant', 'shared-space']);
+  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck', 'shared-schedule', 'shared-restaurant', 'shared-space', 'shared-beauty']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
   assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
   assert.equal(sent.filter(m => m.text?.includes('일정과 장소, 필요한 조건')).length, 1, 'schedule has its own acknowledgement');
   assert.equal(sent.filter(m => m.text?.includes('가게 위치와 메뉴, 가격')).length, 1, 'restaurant has its own acknowledgement');
   assert.equal(sent.filter(m => m.text?.includes('공간 위치와 운영 정보')).length, 1, '취향공간 has its own acknowledgement');
+  assert.equal(sent.filter(m => m.text?.includes('시술·제품 정보와 가격')).length, 1, 'beauty has its own acknowledgement');
   assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe'); assert.equal(saved[2].action, 'schedule'); assert.equal(saved[3].action, 'restaurant'); assert.equal(saved[4].action, 'space');
-  assert.deepEqual(marked, Array(5).fill('saved-result')); assert.equal(blobs.size, 0);
+  assert.equal(saved[5].action, 'beauty');
+  assert.deepEqual(marked, Array(6).fill('saved-result')); assert.equal(blobs.size, 0);
 });
 
 test('chat outages get a chat error and the existing linking command still takes priority', async t => {

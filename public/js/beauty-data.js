@@ -1,4 +1,17 @@
-// Display contract for the backend's future beauty result; no media analysis runs in the browser.
+// Shared beauty contract. Display fallbacks stay out of the stored result; no media analysis runs in the browser.
+export function normalizeBeauty(value, { sourceText } = {}) {
+  validateBeauty(value);
+  const optional = key => typeof value[key] === 'string' && value[key].trim() ? value[key].trim() : null;
+  return { version: 1, sub: value.sub, title: value.title.trim(), intro: value.intro.trim(),
+    bFacts: value.bFacts.map(([label, fact]) => [label.trim(), fact.trim()]),
+    points: value.points.map(point => point.trim()).filter(Boolean),
+    place: optional('place'), address: optional('address'), hours: optional('hours'),
+    // As with other processors, a model-generated URL must occur in the received text, not just look plausible.
+    links: value.links.filter(([, url]) => sourceText === undefined || sourceText.includes(url))
+      .map(([label, url, primary]) => [label.trim(), url, Boolean(primary)]),
+    sponsored: value.sponsored === true, caution: optional('caution'), linkNote: optional('linkNote') };
+}
+
 export function validateBeauty(value) {
   const text = (s, max = 1000) => typeof s === 'string' && s.length <= max;
   if (!value || value.version !== 1 || !['salon', 'product'].includes(value.sub)

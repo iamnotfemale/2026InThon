@@ -3,12 +3,12 @@ import { get, put, del } from '@vercel/blob';
 import { sealToken, openToken } from './cloud-auth.mjs';
 import { createCloudState } from './cloud-state.mjs';
 
-export const CONTENT_ACTIONS = { recipe: '레시피 정리', factcheck: '팩트체크', schedule: '일정 조회', restaurant: '맛집 정리', space: '취향공간 정리' };
+export const CONTENT_ACTIONS = { recipe: '레시피 정리', factcheck: '팩트체크', schedule: '일정 조회', restaurant: '맛집 정리', space: '취향공간 정리', beauty: '미용 정리' };
 const TTL = 20 * 60000;
 const EXPIRED = '선택이 만료됐거나 이미 처리한 콘텐츠예요. 게시물·릴스를 다시 공유해 주세요.';
 export function readContentAction(message) {
   const payload = message.quick_reply?.payload;
-  return typeof payload === 'string' ? /^content:v1:(recipe|factcheck|schedule|restaurant|space):([a-f0-9]{32})$/.exec(payload) : null;
+  return typeof payload === 'string' ? /^content:v1:(recipe|factcheck|schedule|restaurant|space|beauty):([a-f0-9]{32})$/.exec(payload) : null;
 }
 
 export function createContentChoices({ secret, getBlob = get, putBlob = put, deleteBlob = del,
@@ -42,7 +42,7 @@ export function createContentChoices({ secret, getBlob = get, putBlob = put, del
       }
       if (!await claim(key + '/used.json')) return invalid();
       try {
-        // 'schedule' now runs the 공모전·대외활동 processor; it answers exhibitions as not ready itself.
+        // 'schedule' handles 공모전·대외활동 and delegates exhibition posts to their own extractor.
         await acknowledge(action);
         try { return { ...await processContent(stored.message, action), kind: 'content', action }; }
         catch { return { kind: 'content', status: 'failed', action,
