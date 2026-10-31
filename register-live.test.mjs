@@ -36,6 +36,7 @@ test('signed-out visitors start the supplied chat and the Google button starts a
   const { RegisterModel, flush } = designModel();
   const { auth, calls } = fakeAuth();
   const c = new (withGoogleSignup(RegisterModel, async () => auth))({});
+  c.props = {}; // Preact restores the original VNode props after constructing a class component.
   c.componentDidMount(); await tick(); flush();
   assert.ok(c.renderVals().showGoogle);
   await c.renderVals().googleLogin(); await tick();
