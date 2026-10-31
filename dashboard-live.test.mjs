@@ -114,7 +114,7 @@ test('every template binding has a value in both demo and real-data mode, on eve
   }
   for (const root of MODE_BINDINGS) assert.ok(roots.has(root), `template uses ${root}`);
 });
-const MODE_BINDINGS = ['email', 'isDemo', 'isLive', 'modeBadge', 'modeNote', 'connectDesc', 'dmModeDesc', 'linkGuideOn',
+const MODE_BINDINGS = ['email', 'isDemo', 'isLive', 'connectDesc', 'dmModeDesc', 'linkGuideOn',
   'copyLinkWord', 'checkLink'];
 
 test('demo mode keeps the original design values', () => {

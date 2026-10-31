@@ -51,7 +51,7 @@ Python 표준 라이브러리로 원본의 `sc-if`·`sc-for`·바인딩을 컴�
 
 ### 데모와 실제 데이터 모드
 
-상단 드롭다운에서 데모 시나리오(연결 전·첫 콘텐츠 전·콘텐츠 쌓임)와 **내 실제 데이터**를 고른다. 배지는 데모일 때 `DEMO`, 실제 모드일 때 `내 데이터`로 바뀐다. 로그인한 사용자는 마지막에 데모 시나리오를 고르지 않았다면 처음부터 실제 데이터로 열린다.
+대시보드 상단의 데모 전환 메뉴와 Instagram 전송 버튼은 제거했다. 로그인한 사용자는 이전 데모 선택과 관계없이 처음부터 본인 실제 데이터로 열린다. 미연결 계정에는 Instagram 연결 버튼이 표시되며, 본문의 첫 콘텐츠 전송 안내는 유지한다.
 
 - 디자인 원본에서 모드마다 달라지는 값은 바인딩으로 바꿨다: `email`, `modeBadge`, `modeNote`, `connectDesc`, `dmModeDesc`, `isDemo`/`isLive`, `linkGuideOn`, `copyLinkWord`, `checkLink`. 원본 로직은 데모 값을 그대로 돌려주므로 데모 화면은 이전과 같다. 실제 모드 값은 `public/js/dashboard-app.js`가 모델을 상속해 덮어쓴다. 원본을 고친 뒤에는 `npm run build`로 다시 만든다.
 - `public/js/dashboard-live.js`는 Supabase 행을 디자인의 항목 형식으로 바꾸는 순수 함수다. `factchecks`는 `news` 유형 항목이 되고, 판정은 사실·거짓·오해의 소지·판단 유보로 매핑한다. `account_links`는 연결 계정이 된다.

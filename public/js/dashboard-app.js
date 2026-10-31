@@ -149,12 +149,12 @@ class DashboardApp extends DashboardModel {
 
   // --- real data mode -------------------------------------------------------------------------
 
-  /** Signed-in visitors land on their own data unless they last chose a demo scenario. */
+  /** Signed-in visitors always land on their own data. */
   async restoreSession() {
     try {
       const user = await (await loadSupabase()).currentUser();
       this.setState({ user });
-      if (user && (store.get(MODE_KEY) !== 'demo' || this.state.privateAuthRequired)) {
+      if (user) {
         await this.enterLive();
         this.setState({ privateAuthRequired: false });
       }

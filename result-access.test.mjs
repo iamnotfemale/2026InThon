@@ -56,3 +56,13 @@ test('session checks release the loading state; only a signed-in user bypasses t
     if (mode.endsWith('error')) assert.ok(app.state.privateLoginHint);
   }
 });
+
+test('a signed-in dashboard ignores a previously selected demo mode after removing the mode menu', async () => {
+  const app = fixture({ currentUser: async () => ({ id: 'member' }) });
+  app.state.privateAuthRequired = false;
+  let loads = 0;
+  app.enterLive = async () => { loads++; app.state.mode = 'live'; };
+  await app.restoreSession();
+  assert.equal(loads, 1);
+  assert.equal(app.state.mode, 'live');
+});
