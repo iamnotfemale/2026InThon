@@ -86,6 +86,55 @@ test('schedules are saved on the server only after it confirms, shared across de
   assert.equal(server.rows.size, 0);
 });
 
+test('home loads the member calendar without opening it and mirrors confirmed create/edit/delete', async () => {
+  const { app, calendar, server } = fixture();
+  app.go = view => { app.state.view = view; };
+  assert.match(calendar.homeValues().scheduleNote, /불러오고/);
+  await settle();
+  assert.equal(calendar.homeValues().hasSchedule, false, 'content with known dates is not a registered event');
+  draft(calendar, '2026-11-07'); calendar.values().save();
+  assert.deepEqual(calendar.homeValues().schedule, [], 'unconfirmed saves stay out of home');
+  await settle();
+  let v = calendar.homeValues();
+  assert.deepEqual(v.schedule.map(e => [e.title, e.day, e.what, e.badge]), [['오늘의 요리', '07', '요리할 날 · 18:30 KST', 'D-6']]);
+  const id = v.schedule[0].id;
+  calendar.model.openModal({ id }); calendar.model.setDraft({ date: '2026-11-08', time: '19:20' }); calendar.values().save(); await settle();
+  v = calendar.homeValues(); assert.equal(v.schedule[0].day, '08'); assert.match(v.schedule[0].what, /19:20 KST/);
+  v.schedule[0].open();
+  assert.equal(app.state.view, 'calendar'); assert.equal(calendar.model.state.sel, '2026-11-08');
+  assert.equal(calendar.model.state.cursor, '2026-11-01');
+  calendar.values().selEvents[0].remove(); await settle();
+  assert.equal(calendar.homeValues().hasSchedule, false);
+  assert.equal(server.calls.filter(c => c[0] === 'list').length, 1, 'rendering home reuses the same loaded calendar');
+});
+
+test('home uses chronological KST events, excludes elapsed or missing content and keeps account/load states separate', async () => {
+  const server = fakeServer(); let n = 0;
+  const add = (date, time, content_id = 'fc1') => {
+    const id = `00000000-0000-4000-9000-${String(++n).padStart(12, '0')}`;
+    server.rows.set(id, { id, content_id, kind: 'cook', date, time, revision: 1, owner: 'member-a' });
+  };
+  add('2026-11-01', '09:59'); add('2026-10-31', null); add('2026-11-01', '11:00'); add('2026-11-01', null);
+  add('2026-11-01', '10:00', 'fc404');
+  for (const day of ['08', '03', '05', '02', '06', '04', '07']) add('2026-11-' + day, '18:00');
+  const { app, calendar } = fixture(server);
+  calendar.homeValues(); await settle();
+  const v = calendar.homeValues();
+  assert.deepEqual(v.schedule.map(e => [e.day, e.what, e.badge]), [
+    ['01', '요리할 날 · 종일', 'D-DAY'], ['01', '요리할 날 · 11:00 KST', 'D-DAY'],
+    ['02', '요리할 날 · 18:00 KST', 'D-1'], ['03', '요리할 날 · 18:00 KST', 'D-2'],
+    ['04', '요리할 날 · 18:00 KST', 'D-3'], ['05', '요리할 날 · 18:00 KST', 'D-4']]);
+  assert.equal(calendar.values().upCount, 9, 'calendar and home use the same upcoming event selection');
+  app.state.user = { id: 'member-b' };
+  assert.deepEqual(calendar.homeValues().schedule, []); await settle();
+  assert.equal(calendar.homeValues().hasSchedule, false);
+  const broken = fakeServer(); broken.fail.list = new MemberApiError(503);
+  const other = fixture(broken).calendar;
+  other.homeValues(); await settle();
+  assert.equal(other.homeValues().hasSchedule, true); assert.match(other.homeValues().scheduleNote, /불러오지 못/);
+  assert.deepEqual(other.homeValues().schedule, []);
+});
+
 test('a failed save keeps the draft, retries with the same key and never reports success', async () => {
   const { server, messages, calendar } = fixture();
   calendar.values(); await settle();

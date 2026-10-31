@@ -53,7 +53,7 @@ export function createMobileDashboard(app) {
       showLinkGuide: live && (!s.connected || !!s.liveGuide),
       linkGuide: '@dimi_in에 ‘연결’을 보내고 답장 링크에서 이 Google 계정으로 로그인해 주세요.',
       refreshLink: () => app.checkLink(), sendFromIg: () => app.openBotDm(),
-      hasSchedule: !live && v.schedule.length > 0, homeEmpty: v.recentItems.length === 0,
+      homeEmpty: v.recentItems.length === 0,
       homeEmptyTitle: s.libError ? '내 기록을 불러오지 못했어요' : s.libLoading ? '내 기록을 불러오고 있어요' : '아직 정리한 콘텐츠가 없어요',
       homeEmptyDesc: s.libError ? '잠시 후 다시 불러와 주세요.' : 'Instagram에서 @dimi_in에 콘텐츠를 보내고 정리 방식을 골라 주세요.',
       homeEmptyCta: s.libError ? '다시 불러오기' : 'Instagram에서 보내기',
@@ -70,7 +70,7 @@ export function createMobileDashboard(app) {
       v.emptyDesc = s.libError ? '잠시 후 다시 불러와 주세요.' : 'Instagram에서 @dimi_in에 콘텐츠를 보내고 정리 방식을 골라 주세요.';
     }
     Object.assign(v, {
-      schedule: [], tasteShowCard: false,
+      tasteShowCard: false,
       dmModes: [['summary', '핵심 안내와 고유 링크', 'DM으로 안내를 받고, 자세한 정리는 개인 결과 페이지에서 봐요.'],
         ['full', 'DM에서 전체 보기', '기본 · 정리한 내용을 DM으로 받아요. 긴 내용은 나눠서 보내요.']].map(([key, label, desc]) => ({
           label, desc, checked: s.dmMode === key ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === key ? ' on' : ''), pick: () => app.changeDelivery(key),

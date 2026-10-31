@@ -453,6 +453,7 @@ class DashboardApp extends DashboardModel {
     const tab = this.state.mobile ? 'tab' : 'nav-item';
     return { isCalendar, notCalendar: !isCalendar, navCalendar: tab + (active ? ' on' : ''),
       goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
+      ...(this.state.view === 'home' ? this.calendar.homeValues() : {}),
       isMap, navMap: tab + (isMap || fromMap ? ' on' : ''), goMap: () => this.go('map'), placeMap: this.mapValues ?? {},
       ...(active || fromMap ? { navLib: 'nav-item' } : {}),
       ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}),

@@ -150,10 +150,33 @@ export function createCalendarDashboard(app, { api, storage, now = koreaNow } = 
     if (live()) { m.dm = false; m.rem = []; }
     save();
   };
+  const futureEvents = () => {
+    const today = calendar.key(constants.NOW);
+    const time = calendar.p2(constants.NOW.getHours()) + ':' + calendar.p2(constants.NOW.getMinutes());
+    return calendar.state.events.filter(e => constants.CONTENT[e.item]
+      && (e.date > today || (e.date === today && (!e.time || e.time >= time))))
+      .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+  };
   return {
     model: calendar,
     referencedIds: () => (live() ? calendar.state.events.map(e => e.item) : []),
     close: () => calendar.setState({ modal: null, viewItem: null, viewEv: null }),
+    homeValues() {
+      sync();
+      const today = calendar.key(constants.NOW);
+      const schedule = futureEvents().slice(0, 6).map(e => {
+        const days = Math.round((Date.parse(e.date + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000);
+        return { id: e.id, mon: Number(e.date.slice(5, 7)) + '월', day: e.date.slice(8, 10), title: constants.CONTENT[e.item].title,
+          what: constants.KLABEL[e.kind] + (e.time ? ' · ' + e.time + ' KST' : ' · 종일'),
+          badge: days === 0 ? 'D-DAY' : 'D-' + days,
+          badgeCls: 'badge nodot ' + (e.kind === 'deadline' && days <= 7 ? 's-warn' : 's-neutral'),
+          open: () => { calendar.setState({ sel: e.date, cursor: e.date.slice(0, 7) + '-01', viewItem: null, viewEv: null }); app.go('calendar'); } };
+      });
+      return { schedule, hasSchedule: schedule.length > 0 || (live() && ['loading', 'error'].includes(loadState)),
+        scheduleNote: loadState === 'loading' ? '캘린더에 등록한 일정을 불러오고 있어요…'
+          : loadState === 'error' ? '일정을 불러오지 못했어요. 새로고침 후 다시 확인해 주세요.'
+            : '캘린더에 등록한 일정이에요. 시간은 한국 시간(KST) 기준이에요.' };
+    },
     values(mobile = false) {
       sync();
       const v = calendar.renderVals();
@@ -171,8 +194,7 @@ export function createCalendarDashboard(app, { api, storage, now = koreaNow } = 
         if (busy) v.saveLabel = '저장 중…';
         v.remOpts = v.remOpts.map(option => ({ ...option, disabled: true, pressed: 'false', cls: 'chip' }));
         v.showPreview = false; v.footHint = '내 계정에 일정을 저장해요. DM 리마인드는 준비 중이에요.';
-        const events = calendar.state.events.filter(e => constants.CONTENT[e.item] && e.date >= calendar.key(constants.NOW))
-          .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+        const events = futureEvents();
         v.upCount = events.length;
         v.upcoming = events.slice(0, 5).map(e => ({ title: constants.CONTENT[e.item].title, at: e.date.slice(5).replace('-', '/') + ' ' + (e.time || '종일'),
           kind: constants.KSHORT[e.kind], dot: 'dot t-' + constants.CONTENT[e.item].type, aria: e.date + ' 일정으로 이동',

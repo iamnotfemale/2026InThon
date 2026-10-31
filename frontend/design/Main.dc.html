@@ -603,7 +603,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                     <span class="{{sc.badgeCls}}">{{sc.badge}}</span>
                   </button>
                 </sc-for>
-                <p class="muted" style="font-size: 11.5px; padding: 6px 12px 8px; line-height: 1.5">내 기록에서 확인된 일정만 모았어요. 예약·지원 완료를 뜻하지 않아요.</p>
+                <p class="muted" style="font-size: 11.5px; padding: 6px 12px 8px; line-height: 1.5">{{scheduleNote}}</p>
               </section>
             </sc-if>
             <sc-if value="{{hasTaste}}" hint-placeholder-val="{{ true }}">

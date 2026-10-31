@@ -152,8 +152,7 @@ test('a stored exhibition post becomes one item per event and renders through th
   const app = { allItems: () => items, openDetail: id => opened.push(['detail', id]), openExternal: url => opened.push(['url', url]),
     setState: () => {}, toast: () => {} };
   const live = contestLiveValues(v, { detailId: 'fc42' }, app);
-  assert.deepEqual(live.schedule.map(e => [e.mon, e.day, e.what, e.badge]), [['11월', '14', '전시 종료일 · 진행 중', 'D-14']],
-    'only closings in the next 60 days; the January closing is later');
+  assert.equal(live.schedule, undefined, 'extracted closing dates are not registered calendar events');
   live.d.visitDates[1].pick();
   assert.match(opened[0][1], /^https:\/\/calendar\.google\.com\/calendar\/render\?.*dates=20261101%2F20261102/);
 });
