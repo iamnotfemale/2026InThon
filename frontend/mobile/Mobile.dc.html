@@ -574,11 +574,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <!-- recipe -->
           <sc-if value="{{d.isRecipe}}" hint-placeholder-val="{{ false }}">
             <p style="font-size: 15.5px; line-height: 1.65; color: var(--text-2)">{{d.summary}}</p>
-            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--surface)">
-              <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px"><span class="label" style="font-size: 12px">인분</span><span class="{{d.servingCls}}">{{d.serving}}</span></div>
-              <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border)"><span class="label" style="font-size: 12px">준비</span><span class="{{d.prepCls}}">{{d.prep}}</span></div>
-              <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border)"><span class="label" style="font-size: 12px">조리</span><span class="{{d.cookCls}}">{{d.cook}}</span></div>
-            </div>
             <section class="card" style="overflow: hidden">
               <div style="display: flex; align-items: center; gap: 8px; padding: 14px 16px">
                 <span class="sec-title" style="font-size: 15px">재료</span><span class="mono muted" style="font-size: 12px">{{d.ingReady}}/{{d.ingCount}}</span>

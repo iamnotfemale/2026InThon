@@ -900,11 +900,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <sc-if value="{{d.isRecipe}}" hint-placeholder-val="{{ false }}">
             <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
               <p style="font-size: 15px; line-height: 1.6">{{d.summary}}</p>
-              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
-                <div class="field"><span class="k">인분</span><span class="{{d.servingCls}}">{{d.serving}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">준비</span><span class="{{d.prepCls}}">{{d.prep}}</span></div>
-                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">조리</span><span class="{{d.cookCls}}">{{d.cook}}</span></div>
-              </div>
             </section>
             <section class="card" style="overflow: hidden">
               <div style="display: flex; align-items: center; gap: 10px; padding: 16px">
