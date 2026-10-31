@@ -57,7 +57,7 @@ export function closedWeekdays(closed) {
 
 /** External map search for a place; never coordinates we did not receive. */
 export function mapLink(event) {
-  const query = event.address || [event.place, event.area].filter(Boolean).join(' ');
+  const query = event.address || event.web?.address?.value || [event.place, event.area].filter(Boolean).join(' ');
   return query ? 'https://map.naver.com/p/search/' + encodeURIComponent(query) : null;
 }
 
@@ -102,7 +102,7 @@ function normalizeEvent(raw, { sourceText }) {
     fee: text(raw.fee, 200, true), isFree: typeof raw.is_free === 'boolean' ? raw.is_free : null,
     booking: text(raw.booking, 160, true), conditions: text(raw.conditions, 200, true),
     reserveUrl, officialUrl, evidence,
-    conflicts: strings(raw.conflicts, 5), notices: strings(raw.notices, 5), checks: [...new Set(checks)].slice(0, 8),
+    conflicts: strings(raw.conflicts, 5), notices: strings(raw.notices, 5), checks: [...new Set(checks)].slice(0, 8), web: {},
   };
 }
 
@@ -148,10 +148,86 @@ export function validateExhibit(value) {
         booking: text(event.booking, 160, true), conditions: text(event.conditions, 200, true),
         reserveUrl: httpUrl(event.reserveUrl), officialUrl: httpUrl(event.officialUrl),
         evidence: Object.fromEntries(Object.entries(event.evidence ?? {}).filter(([k, v]) => /^[a-z_]{1,30}$/.test(k) && typeof v === 'string').slice(0, 30)),
-        conflicts: strings(event.conflicts, 5), notices: strings(event.notices, 5), checks: strings(event.checks, 8),
+        conflicts: strings(event.conflicts, 8), notices: strings(event.notices, 5), checks: strings(event.checks, 8),
+        web: validateWeb(event.web),
       };
     }),
   };
+}
+
+// --- web fills (step 2) ---------------------------------------------------------------------------
+
+/** Fields the web step may fill, as the model names them, and the event key each one lands in. */
+export const FILL_FIELDS = { hours: 'hours', closed: 'closed', address: 'address', fee: 'fee', booking: 'booking',
+  conditions: 'conditions', official_url: 'officialUrl', reserve_url: 'reserveUrl' };
+const VENUE_FIELDS = new Set(['hours', 'closed', 'address']);
+const squash = value => String(value ?? '').replace(/\s+/g, '');
+
+/** Fields the post left empty and the web step has not filled yet. */
+export function missingFields(event) {
+  return Object.entries(FILL_FIELDS).filter(([field, key]) => !event[key] && !event.web?.[field]).map(([field]) => field);
+}
+
+function validateWeb(web) {
+  if (!web || typeof web !== 'object') return {};
+  return Object.fromEntries(Object.entries(web).filter(([field]) => Object.hasOwn(FILL_FIELDS, field)).map(([field, fill]) => {
+    const url = httpUrl(fill?.url);
+    if (!url) throw new Error('Invalid web fill');
+    return [field, { value: text(fill.value, 200), url, title: text(fill.title, 200, true), quote: text(fill.quote, 200),
+      basis: fill.basis === 'venue' ? 'venue' : 'event' }];
+  }));
+}
+
+/**
+ * Applies the model's fills for one event. Each fill must name a page we opened for this event, quote that page
+ * verbatim, and fill a field that is still empty; venue pages may only give hours, closing days and address.
+ * Returns how many fields were filled.
+ */
+export function applyWebFills(event, answer, pages) {
+  event.web ??= {};
+  let count = 0;
+  for (const fill of Array.isArray(answer?.fills) ? answer.fills : []) {
+    const key = FILL_FIELDS[fill?.field];
+    const page = pages.find(p => p.id === fill?.source);
+    if (!key || !page || event[key] || event.web[fill.field]) continue;
+    if (typeof fill.value !== 'string' || !fill.value.trim() || typeof fill.quote !== 'string' || squash(fill.quote).length < 4) continue;
+    if (!squash(page.text).includes(squash(fill.quote))) continue; // A quote the page does not contain was made up.
+    const basis = fill.basis === 'venue' ? 'venue' : 'event';
+    if (basis === 'venue' && !VENUE_FIELDS.has(fill.field)) continue;
+    let value = fill.value.trim().slice(0, 200);
+    if (key.endsWith('Url')) {
+      const url = httpUrl(value);
+      if (!url || (url !== page.url && !page.text.includes(url.replace(/^https?:\/\//, '').replace(/\/$/, '')))) continue;
+      if (fill.field === 'official_url' && basis !== 'event') continue;
+      value = url;
+    }
+    event.web[fill.field] = { value, url: page.url, title: page.title?.slice(0, 200) || null, quote: fill.quote.trim().slice(0, 200), basis };
+    count++;
+  }
+  for (const conflict of strings(answer?.conflicts, 3)) event.conflicts = [...new Set([...event.conflicts, '웹 안내와 다름: ' + conflict])].slice(0, 8);
+  return count;
+}
+
+/**
+ * The value to show for a field: the post's own, else the web fill marked as such. `web` is the source page or null.
+ */
+export function shownValue(event, field) {
+  const key = FILL_FIELDS[field] ?? field;
+  if (event[key]) return { value: event[key], web: null };
+  const fill = event.web?.[field];
+  return fill ? { value: fill.value, web: fill } : { value: null, web: null };
+}
+
+/** "운영 시간 · 휴무일 → 서울시립미술관 (sema.seoul.go.kr)" lines for every page a fill came from. */
+export function webSources(event) {
+  const label = { hours: '운영 시간', closed: '휴무일', address: '주소', fee: '입장료', booking: '예약', conditions: '관람 조건',
+    official_url: '공식 안내', reserve_url: '예약 링크' };
+  const byUrl = new Map();
+  for (const [field, fill] of Object.entries(event.web ?? {})) {
+    const entry = byUrl.get(fill.url) ?? { url: fill.url, title: fill.title, basis: fill.basis, fields: [] };
+    entry.fields.push(label[field]); byUrl.set(fill.url, entry);
+  }
+  return [...byUrl.values()];
 }
 
 // --- view-time values ----------------------------------------------------------------------------
@@ -173,7 +249,7 @@ export function exhibitView(event, now = new Date(), { visitCount = 5 } = {}) {
   const where = event.place ?? event.area;
   const keyLine = [ended ? '종료' : upcoming ? '예정' : null, shortPeriod, where].filter(Boolean).join(' · ');
   // Visit dates only when the open days are known: a dated end, and closing days that are absent or weekly.
-  const closedDays = closedWeekdays(event.closed);
+  const closedDays = closedWeekdays(event.closed ?? event.web?.closed?.value ?? null);
   const visits = [];
   if (!ended && event.end && closedDays) {
     for (let day = event.start && event.start > today ? event.start : today; day <= event.end && visits.length < visitCount; day = isoAdd(day, 1)) {
@@ -188,9 +264,10 @@ export function exhibitView(event, now = new Date(), { visitCount = 5 } = {}) {
 export function visitCalendarLink(event, date) {
   if (!validIso(date)) return null;
   const compact = iso => iso.replaceAll('-', '');
-  const details = [event.place, event.address, event.hours && '운영 ' + event.hours, '디미에서 정리한 일정이에요. 방문 전에 공식 안내를 확인해 주세요.']
+  const address = shownValue(event, 'address').value; const hours = shownValue(event, 'hours').value;
+  const details = [event.place, address, hours && '운영 ' + hours, '디미에서 정리한 일정이에요. 방문 전에 공식 안내를 확인해 주세요.']
     .filter(Boolean).join('\n');
   const params = new URLSearchParams({ action: 'TEMPLATE', text: `${event.title} 관람`, dates: `${compact(date)}/${compact(isoAdd(date, 1))}`,
-    ctz: 'Asia/Seoul', details, ...(event.address || event.place ? { location: event.address || event.place } : {}) });
+    ctz: 'Asia/Seoul', details, ...(address || event.place ? { location: address || event.place } : {}) });
   return 'https://calendar.google.com/calendar/render?' + params.toString();
 }
