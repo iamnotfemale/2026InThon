@@ -5,8 +5,8 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { loadEnv } from './env.mjs';
-import { createGeminiModel, createSearch, safeFetch } from '../factcheck.mjs';
-import { createExhibitExtractor, createExhibitFiller } from '../exhibit.mjs';
+import { createGeminiModel, safeFetch } from '../factcheck.mjs';
+import { createExhibitExtractor, createExhibitFiller, createGroundedSearch, fillQuestion } from '../exhibit.mjs';
 
 const dir = process.argv[2];
 if (!dir || !existsSync(join(dir, 'metadata.json'))) throw new Error('사용법: node scripts/exhibit-debug.mjs <download-instagram-media.py 결과 폴더> [.env]');
@@ -36,17 +36,18 @@ const model = async args => {
     return text;
   } catch (error) { log.steps.push({ step, ms: Date.now() - t, error: error.message }); throw error; }
 };
-const bing = createSearch();
-const search = { bing: async (query, kind) => {
+const grounded = createGroundedSearch({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined });
+const search = async event => {
+  const query = fillQuestion(event);
   try {
-    const results = await bing.bing(query, kind);
-    log.steps.push({ step: 'search', query, results: results.map(r => ({ title: r.title, url: r.url })) });
+    const results = await grounded(event);
+    log.steps.push({ step: 'search', query, results });
     return results;
   } catch (error) { log.steps.push({ step: 'search', query, error: error.message }); throw error; }
-} };
+};
 const fetchPage = async url => {
   try {
-    const page = await safeFetch(url);
+    const page = await safeFetch(url, { maxBytes: 3 * 1024 * 1024 });
     log.steps.push({ step: 'open', url, finalUrl: page.url, contentType: page.contentType, bytes: page.body.length });
     return page;
   } catch (error) { log.steps.push({ step: 'open', url, error: error.message }); throw error; }

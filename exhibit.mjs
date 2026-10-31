@@ -118,7 +118,43 @@ const FILL_TERMS = '운영 관람 시간 휴관 휴무 휴관일 입장 입장�
  * Searches the web for what the post left empty and fills it from pages we opened, never from the model's memory.
  * Each fill keeps its page URL and a verbatim quote that the code finds in that page; anything else is dropped.
  */
-export function createExhibitFiller({ model, search, fetchPage, maxEvents = 10, pagesPerEvent = 3 }) {
+const squashLower = value => String(value ?? '').replace(/\s+/g, '').toLowerCase();
+// Names that identify an event on a page: exhibition name, artist/host, venue without generic words ("서울", "갤러리").
+export function identityNames(event) {
+  const strip = value => String(value ?? '').replace(/[《》「」『』"'“”‘’]/g, '').trim();
+  const venue = strip(event.place).replace(/\s*(서울|seoul|본관|분관|\d+층|지하\s*\d+층)\s*/gi, ' ').trim();
+  return [...new Set([strip(event.name), strip(event.hostOrArtist), venue, strip(event.name ? null : event.title)]
+    .map(squashLower).filter(n => n.length >= 2 && !['갤러리', '미술관', '전시', '서울'].includes(n)))];
+}
+
+/** One search query per event: the exhibition and venue, plus the visiting details still missing. */
+export function fillQuestion(event) {
+  const label = { hours: '운영 시간', closed: '휴관일', address: '주소', fee: '입장료', booking: '예약 방법', conditions: '관람 조건',
+    official_url: '공식 안내 페이지', reserve_url: '예약 페이지' };
+  const period = event.start || event.end ? ` (${event.start ?? ''} ~ ${event.end ?? ''})` : '';
+  return `${event.title} ${event.place ?? event.area ?? ''}${period} 전시의 ${missingFields(event).map(f => label[f]).join(', ')}`;
+}
+
+/**
+ * Google results through Gemini's google_search grounding: the model only searches, and we keep the URLs it
+ * actually visited (groundingChunks). Its own written answer is ignored; the filler opens the pages itself.
+ */
+export function createGroundedSearch({ apiKey, model = 'gemini-3.8-flash', fetchImpl = fetch, timeout = 30000 }) {
+  return async event => {
+    const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST', signal: AbortSignal.timeout(timeout), headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: `다음 내용을 Google에서 검색해 확인해 줘: ${fillQuestion(event)}` }] }],
+        tools: [{ google_search: {} }] }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Gemini 검색 실패 (HTTP ${response.status})`);
+    const chunks = data.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+    const seen = new Set();
+    return chunks.map(chunk => ({ url: chunk.web?.uri, title: chunk.web?.title ?? '' }))
+      .filter(r => typeof r.url === 'string' && r.url.startsWith('https://') && !seen.has(r.url) && seen.add(r.url));
+  };
+}
+
+export function createExhibitFiller({ model, search, fetchPage, maxEvents = 10, pagesPerEvent = 4 }) {
   const open = async (result, event) => {
     const page = await fetchPage(result.url);
     if (!page.contentType?.includes('html')) throw new Error('HTML 아님');
@@ -129,15 +165,12 @@ export function createExhibitFiller({ model, search, fetchPage, maxEvents = 10, 
       quote: excerpt(parsed.text, `${name} ${event.place ?? ''} ${FILL_TERMS}`, 1500) };
   };
   const gather = async event => {
-    const name = event.name ?? event.title;
-    const query = [name, event.place ?? event.area, missingFields(event).some(f => f === 'hours' || f === 'closed') ? '운영시간 휴관일' : '관람 안내']
-      .filter(Boolean).join(' ');
-    const results = await search.bing(query, 'web');
-    // A page must name the event or its place in its title or snippet before we spend a fetch on it.
-    const words = `${name} ${event.place ?? ''}`.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w => w.length >= 2);
-    const relevant = results.filter(r => words.some(w => `${r.title ?? ''} ${r.snippet ?? ''}`.toLowerCase().includes(w)));
-    const opened = await Promise.allSettled(relevant.slice(0, pagesPerEvent).map(r => open(r, event)));
-    return opened.filter(o => o.status === 'fulfilled' && o.value.quote.length > 40).map(o => o.value);
+    const results = await search(event);
+    // Opened pages must name the exhibition, its artist/host or the venue; a page about something else is dropped.
+    const names = identityNames(event);
+    const opened = await Promise.allSettled(results.slice(0, pagesPerEvent).map(r => open(r, event)));
+    return opened.filter(o => o.status === 'fulfilled' && o.value.quote.length > 40
+      && names.some(n => squashLower(o.value.text).includes(n))).map(o => o.value);
   };
   return async (exhibit, { signal } = {}) => {
     const targets = exhibit.events.map((event, i) => ({ event, id: 'T' + (i + 1) }))

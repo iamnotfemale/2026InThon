@@ -1,9 +1,9 @@
 // 공모전·대외활동 정리: the "일정 조회" DM action. One Gemini call reads every image, video and caption together,
 // like recipe.mjs. Exhibitions/pop-ups share the button: when the post is one, exhibit.mjs organizes it from the same media.
 import { normalizeContest, contestTimeline, kstDate } from './public/js/contest-data.js';
-import { createGeminiModel, createSearch, gatherInput, parseJson, safeFetch, splitBytes } from './factcheck.mjs';
+import { createGeminiModel, gatherInput, parseJson, safeFetch, splitBytes } from './factcheck.mjs';
 import { INDEX_INSTRUCTION, resultIndex } from './content-index.mjs';
-import { createExhibitExtractor, createExhibitFiller } from './exhibit.mjs';
+import { createExhibitExtractor, createExhibitFiller, createGroundedSearch } from './exhibit.mjs';
 export { validateContest, contestTimeline } from './public/js/contest-data.js';
 
 export const CONTEST_ACK = '디미가 금방 정리해드릴게요! 일정과 장소, 필요한 조건까지 살펴볼게요.';
@@ -86,6 +86,7 @@ export function contestProcessorFromEnv(env = process.env) {
   if (!env.GEMINI_API_KEY) return undefined;
   const model = createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, timeout: 120000 });
   // Exhibitions also search the web for what the post left empty (hours, closing days…), from pages the code opens itself.
-  const fill = createExhibitFiller({ model, search: createSearch(), fetchPage: url => safeFetch(url) });
+  const search = createGroundedSearch({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined });
+  const fill = createExhibitFiller({ model, search, fetchPage: url => safeFetch(url, { maxBytes: 3 * 1024 * 1024 }) });
   return createContestProcessor({ model, exhibit: createExhibitExtractor({ model, fill }) });
 }
