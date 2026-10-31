@@ -458,7 +458,7 @@ export default class DashboardModel extends DCLogic {
         d.shareIncludes = ['확인한 주장과 판단', '판단 이유·한계·근거 자료 링크', '확인 시점과 원본 링크'];
       }
       if (raw.type === 'exhibit' && done) {
-        d.hasReserve = !!raw.reserveUrl; d.noReserve = !raw.reserveUrl;
+        d.hasReserve = !!raw.reserveUrl;
         d.closedCls = /미기재/.test(raw.closed) ? 'v miss' : 'v'; d.bookingCls = /미기재/.test(raw.booking) ? 'v miss' : 'v'; d.condCls = /미기재/.test(raw.conditions) ? 'v miss' : 'v';
         d.visitDates = raw.visitDates.map(label => ({ label, pick: () => { this.setState({ visitOpen: false }); this.toast(label + ' 관람 일정을 캘린더에 추가하도록 열었어요 (데모)'); } }));
         d.shareIncludes = ['행사명·기간·운영 시간', '장소·입장료·예약 안내', '공식 링크와 원본 링크'];

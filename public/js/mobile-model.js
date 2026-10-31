@@ -160,7 +160,7 @@ export default class MobileModel extends DCLogic {
       }
       if (raw.type === 'exhibit' && done) {
         const mv = v => /미기재/.test(v) ? 'v miss' : 'v'; d.closedCls = mv(raw.closed); d.bookingCls = mv(raw.booking);
-        d.noReserve = !raw.reserveUrl; d.primaryHref = raw.reserveUrl || raw.origin || '#'; d.primaryLabel = raw.reserveUrl ? '예약 페이지 열기' : 'Instagram 원본 보기';
+        d.hasReserve = !!raw.reserveUrl;
       }
       if (raw.type === 'contest' && done) {
         d.ddayLabel = raw.dday || '마감'; d.hasApply = !!raw.applyUrl;

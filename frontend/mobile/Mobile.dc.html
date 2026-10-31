@@ -561,9 +561,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <a class="btn btn-sm" href="{{d.mapUrl}}" target="_blank" rel="noopener">지도 ↗</a>
               </div>
             </section>
-            <sc-if value="{{d.noReserve}}" hint-placeholder-val="{{ false }}">
-              <div class="flagtile">예약 링크를 확인하지 못했어요. Instagram 원본에서 안내를 확인해 주세요.</div>
-            </sc-if>
           </sc-if>
 
           <!-- contest -->
@@ -657,7 +654,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <button type="button" class="{{d.tasteBtnCls}}" aria-pressed="{{d.tastePressed}}" onClick="{{d.toggleTaste}}" aria-label="{{d.tasteLabel}}" style="width: 52px; padding: 0">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg>
           </button>
-          <a class="btn btn-primary" href="{{d.primaryHref}}" target="_blank" rel="noopener" style="flex: 1; height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600">{{d.primaryLabel}} ↗</a>
+          <sc-if value="{{d.hasReserve}}"><a class="btn btn-primary" href="{{d.reserveUrl}}" target="_blank" rel="noopener" style="flex: 1; height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600">예약 페이지 열기 ↗</a></sc-if>
         </div>
       </sc-if>
       <sc-if value="{{d.isContest}}" hint-placeholder-val="{{ false }}">
@@ -1028,7 +1025,7 @@ class Component extends DCLogic {
       }
       if (raw.type === 'exhibit' && done) {
         const mv = v => /미기재/.test(v) ? 'v miss' : 'v'; d.closedCls = mv(raw.closed); d.bookingCls = mv(raw.booking);
-        d.noReserve = !raw.reserveUrl; d.primaryHref = raw.reserveUrl || raw.origin || '#'; d.primaryLabel = raw.reserveUrl ? '예약 페이지 열기' : 'Instagram 원본 보기';
+        d.hasReserve = !!raw.reserveUrl;
       }
       if (raw.type === 'contest' && done) {
         d.ddayLabel = raw.dday || '마감'; d.hasApply = !!raw.applyUrl;

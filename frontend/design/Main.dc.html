@@ -1085,8 +1085,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">예약</span><span class="{{d.bookingCls}}">{{d.booking}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">관람 조건</span><span class="{{d.condCls}}">{{d.conditions}}</span></div>
               </div>
+              <sc-if value="{{d.hasReserve}}" hint-placeholder-val="{{ true }}">
               <div style="padding: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px">
-                <sc-if value="{{d.hasReserve}}" hint-placeholder-val="{{ true }}">
                   <div style="display: flex; gap: 8px; flex-wrap: wrap">
                     <a class="btn btn-primary" href="{{d.reserveUrl}}" target="_blank" rel="noopener">예약 페이지 열기
                       <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
@@ -1100,18 +1100,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                     </button>
                   </div>
                   <p class="muted" style="font-size: 12px">예약은 공식 페이지에서 진행돼요. 이 서비스에서 예약이 완료되지 않아요.</p>
-                </sc-if>
-                <sc-if value="{{d.noReserve}}" hint-placeholder-val="{{ false }}">
-                  <div class="callout warn">
-                    <svg class="ico ci" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><circle cx="12" cy="12" r="9"/><path d="M12 7.6v5.2"/><path d="M12 16.3v.1"/></svg>
-                    <span>예약 링크를 확인하지 못했어요. Instagram 원본에서 안내를 확인해 주세요.</span>
-                  </div>
-                  <sc-if value="{{d.hasOrigin}}" hint-placeholder-val="{{ true }}">
-                    <a class="btn" href="{{d.origin}}" target="_blank" rel="noopener" style="align-self: flex-start">Instagram 원본 보기
-                      <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-                    </a>
-                  </sc-if>
-                </sc-if>
                 <sc-if value="{{visitOpen}}" hint-placeholder-val="{{ false }}">
                   <div class="enter" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: var(--surface-2)">
                     <span style="font-size: 13.5px; font-weight: 500">관람할 날짜를 골라 주세요</span>
@@ -1124,6 +1112,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                   </div>
                 </sc-if>
               </div>
+              </sc-if>
             </section>
           </sc-if>
 
@@ -2507,7 +2496,7 @@ class Component extends DCLogic {
         d.shareIncludes = ['확인한 주장과 판단', '판단 이유·한계·근거 자료 링크', '확인 시점과 원본 링크'];
       }
       if (raw.type === 'exhibit' && done) {
-        d.hasReserve = !!raw.reserveUrl; d.noReserve = !raw.reserveUrl;
+        d.hasReserve = !!raw.reserveUrl;
         d.closedCls = /미기재/.test(raw.closed) ? 'v miss' : 'v'; d.bookingCls = /미기재/.test(raw.booking) ? 'v miss' : 'v'; d.condCls = /미기재/.test(raw.conditions) ? 'v miss' : 'v';
         d.visitDates = raw.visitDates.map(label => ({ label, pick: () => { this.setState({ visitOpen: false }); this.toast(label + ' 관람 일정을 캘린더에 추가하도록 열었어요 (데모)'); } }));
         d.shareIncludes = ['행사명·기간·운영 시간', '장소·입장료·예약 안내', '공식 링크와 원본 링크'];
