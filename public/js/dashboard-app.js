@@ -30,6 +30,7 @@ class DashboardApp extends DashboardModel {
     this.state = { ...this.state, ...routeState(location.pathname), mode: 'demo', user: null, liveItems: [],
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'summary', hidden: [] };
+    this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*\/?$/.test(location.pathname);
     if (this.state.detailId === 'r3') this.state.extra = [this.data().R3];
     this.onPop = () => {
       this.popping = true;
@@ -123,7 +124,31 @@ class DashboardApp extends DashboardModel {
     let user = null;
     try { user = await (await loadSupabase()).currentUser(); } catch { return; }
     this.setState({ user });
-    if (user && store.get(MODE_KEY) !== 'demo') this.enterLive();
+    if (user && (store.get(MODE_KEY) !== 'demo' || this.state.privateAuthRequired)) {
+      await this.enterLive();
+      this.setState({ privateAuthRequired: false });
+    }
+  }
+
+  async loginForResult() {
+    try {
+      const auth = await loadSupabase();
+      if (auth.inAppBrowser()) {
+        this.setState({ privateLoginHint: 'Instagram의 ⋯ 메뉴에서 외부 브라우저로 연 뒤 로그인해 주세요.' }); return;
+      }
+      const { error } = await auth.signInWithGoogle(location.pathname);
+      if (error) throw error;
+    } catch { this.setState({ privateLoginHint: '로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.' }); }
+  }
+
+  render() {
+    if (!this.state.privateAuthRequired) return super.render();
+    return h('div', { class: 'app', style: 'min-height:100vh' }, h('div', { class: 'overlay' },
+      h('section', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': '내 정리 결과 보기', style: 'padding:24px;max-width:420px' },
+        h('h1', { class: 'h2' }, '내 정리 결과 보기'),
+        h('p', { class: 'muted', style: 'margin:12px 0 20px' }, this.state.privateLoginHint || '콘텐츠를 보낸 계정으로 Google 로그인해 주세요. 결과는 본인만 볼 수 있어요.'),
+        h('button', { class: 'btn btn-primary', onClick: () => this.loginForResult() }, 'Google로 로그인하고 보기'),
+        h('a', { class: 'btn btn-ghost', href: '/register', style: 'margin-left:8px' }, '처음 이용해요'))));
   }
 
   async enterLive() {
