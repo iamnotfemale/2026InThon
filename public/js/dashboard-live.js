@@ -1,7 +1,7 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 
-export const BOT_DM_URL = 'https://ig.me/m/inthon2team';
+export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
 const PENDING_GRACE_MS = 10 * 60 * 1000;
 

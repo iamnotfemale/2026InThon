@@ -1,0 +1,6 @@
+.dimi-mark{position:relative;display:inline-block;flex-shrink:0;vertical-align:middle;border-radius:50%;overflow:hidden;isolation:isolate;background:#93C5FD;animation:dimi-blob 9s ease-in-out infinite}
+.dimi-mark::before{content:'';position:absolute;inset:-40%;filter:blur(3px) saturate(1.1);background:radial-gradient(circle at 30% 30%,#BAE6FD 0,transparent 38%),radial-gradient(circle at 70% 62%,#6366F1 0,transparent 42%),radial-gradient(circle at 38% 76%,#3B82F6 0,transparent 40%),conic-gradient(from 90deg,#93C5FD,#6366F1,#BAE6FD,#3B82F6,#93C5FD);animation:dimi-swirl 13s linear infinite}
+.dimi-mark::after{content:'';position:absolute;inset:-12%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),transparent 46%)}
+@keyframes dimi-blob{0%,100%{border-radius:50%;transform:rotate(0deg) scale(1)}25%{border-radius:58% 42% 47% 53% / 45% 57% 43% 55%;transform:rotate(8deg) scale(1.04,.97)}50%{border-radius:43% 57% 61% 39% / 58% 42% 58% 42%;transform:rotate(-6deg) scale(.97,1.04)}75%{border-radius:55% 45% 40% 60% / 41% 59% 49% 51%;transform:rotate(4deg) scale(1.03,1)}}
+@keyframes dimi-swirl{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.dimi-mark,.dimi-mark::before{animation:none}}

@@ -57,7 +57,8 @@ class DashboardApp extends DashboardModel {
   componentDidUpdate(previousProps, previousState) {
     super.componentDidUpdate(previousProps);
     if (!this.popping && (previousState.view !== this.state.view || previousState.detailId !== this.state.detailId)) {
-      const path = this.state.view === 'detail' ? '/items/' + encodeURIComponent(this.state.detailId) : '/' + this.state.view;
+      const path = this.state.view === 'detail' ? '/items/' + encodeURIComponent(this.state.detailId)
+        : this.state.view === 'home' ? '/dashboard' : '/' + this.state.view;
       if (location.pathname !== path) history.pushState(null, '', path);
     }
     const overlay = document.querySelector('.overlay, .cook');
@@ -133,7 +134,7 @@ class DashboardApp extends DashboardModel {
     const { error } = await supabase.from('account_links').delete().eq('user_id', this.state.user.id);
     this.setState({ modal: null });
     if (error) return this.toast('연결을 해제하지 못했어요. 잠시 후 다시 시도해 주세요.');
-    this.toast('연결을 해제했어요. 다시 연결하려면 @inthon2team에 “연결”을 보내 주세요.');
+    this.toast('연결을 해제했어요. 다시 연결하려면 @dimi_in에 “연결”을 보내 주세요.');
     await this.loadLive();
   }
 
@@ -150,7 +151,7 @@ class DashboardApp extends DashboardModel {
 
   linkGuide() {
     this.setState({ modal: null, flow: 'idle' });
-    this.toast('Instagram에서 @inthon2team에 “연결”이라고 보내면 연결 링크가 와요.', 'DM 열기', () => this.openBotDm(), 8000);
+    this.toast('Instagram에서 @dimi_in에 “연결”이라고 보내면 연결 링크가 와요.', 'DM 열기', () => this.openBotDm(), 8000);
   }
 
   // Demo scenarios always leave real-data mode first.
@@ -199,4 +200,6 @@ class DashboardApp extends DashboardModel {
   }
 }
 
-render(h(DashboardApp, { theme: 'light' }), document.getElementById('app'));
+const response = await fetch('/data/dashboard-template.json');
+if (!response.ok) throw new Error('Dashboard template unavailable');
+render(h(DashboardApp, { theme: 'light', template: await response.json() }), document.getElementById('app'));
