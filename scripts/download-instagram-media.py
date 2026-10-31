@@ -114,9 +114,9 @@ def resolve_video(url):
         info = ydl.extract_info(source, download=False)
     entries = info.get("entries") or [info]
     video = entries[0] if len(entries) == 1 and isinstance(entries[0], dict) else {}
-    # Separate tracks, playlists, silent/unknown codecs and HLS use the complete staging path.
-    if (video.get("ext") != "mp4" or video.get("vcodec") in {None, "none"}
-            or video.get("acodec") in {None, "none"} or video.get("requested_formats")
+    # Instagram may omit codec names; keep the original combined-format selector, never split tracks.
+    if (video.get("ext") != "mp4" or video.get("vcodec") == "none"
+            or video.get("acodec") == "none" or video.get("requested_formats")
             or video.get("protocol") not in {None, "http", "https"} or not video.get("url")):
         return info, None
     check_media_url(video["url"])
