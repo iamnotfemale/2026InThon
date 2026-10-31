@@ -221,9 +221,10 @@ test('server events are checked before they render', () => {
   }
 });
 
-test('the mobile calendar shares stored schedules and actions with desktop and renders date dots and sheets',()=>{
+test('the mobile calendar shares stored schedules and actions with desktop and renders date dots and sheets',async()=>{
   const {calendar,messages}=fixture();
-  draft(calendar); calendar.values().save();
+  calendar.values(); await settle();
+  draft(calendar); calendar.values().save(); await settle();
   const mobile=calendar.values(true);
   const day=mobile.cells.find(c=>c.aria.startsWith('11월 7일'));
   assert.match(day.cls,/^mday/); assert.deepEqual(day.dots,[{cls:'dot t-recipe'}]);
@@ -235,5 +236,5 @@ test('the mobile calendar shares stored schedules and actions with desktop and r
   calendar.values(true).viewWeek();
   assert.equal(calendar.values(true).weekCols.filter(c=>c.pressed==='true').length,1);
   assert.match(calendar.values().cells[0].cls,/^mc/);
-  calendar.values(true).selEvents[0].remove(); assert.equal(calendar.values().filters[0].count,0);
+  calendar.values(true).selEvents[0].remove(); await settle(); assert.equal(calendar.values().filters[0].count,0);
 });
