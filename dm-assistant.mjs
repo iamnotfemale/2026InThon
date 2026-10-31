@@ -8,6 +8,7 @@ import { createContentChoices } from './content-choices.mjs';
 import { recipeProcessorFromEnv } from './recipe.mjs';
 import { contestProcessorFromEnv } from './contest.mjs';
 import { restaurantProcessorFromEnv } from './restaurant.mjs';
+import { spaceProcessorFromEnv } from './space.mjs';
 
 const TTL = 30 * 60000;
 const MAX_MESSAGES = 12;
@@ -88,9 +89,10 @@ export function dmAssistantFromEnv({ loadAccessToken, env = process.env } = {}) 
   const recipe = mediaFactCheckerFromEnv(recipeProcessorFromEnv(env), { loadAccessToken, env });
   const contest = mediaFactCheckerFromEnv(contestProcessorFromEnv(env), { loadAccessToken, env });
   const restaurant = mediaFactCheckerFromEnv(restaurantProcessorFromEnv(env), { loadAccessToken, env });
+  const space = mediaFactCheckerFromEnv(spaceProcessorFromEnv(env), { loadAccessToken, env });
   return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: chatModel,
     thinkingLevel: chatModel === 'gemini-3.5-flash-lite' ? 'minimal' : undefined }),
-    processContent: (message, action) => (action === 'recipe' ? recipe : action === 'schedule' ? contest : action === 'restaurant' ? restaurant : factcheck)(message),
+    processContent: (message, action) => (action === 'recipe' ? recipe : action === 'schedule' ? contest : action === 'restaurant' ? restaurant : action === 'space' ? space : factcheck)(message),
     history: createChatHistory({ secret: env.META_APP_SECRET }),
     choices: createContentChoices({ secret: env.META_APP_SECRET }) });
 }

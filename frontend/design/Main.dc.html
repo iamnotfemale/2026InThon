@@ -207,7 +207,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .s-neutral{--c:var(--muted)}
 .tag{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;flex:none}
-.t-recipe{background:#F97316}.t-news{background:#3B82F6}.t-exhibit{background:#A855F7}.t-contest{background:#22C55E}.t-restaurant{background:#14B8A6}.t-unknown{background:#A3A3A3}
+.t-recipe{background:#F97316}.t-news{background:#3B82F6}.t-exhibit{background:#A855F7}.t-contest{background:#22C55E}.t-restaurant{background:#14B8A6}.t-space{background:#EC4899}.t-unknown{background:#A3A3A3}
 .orb{position:relative;display:block;border-radius:50%;overflow:hidden;flex:none;isolation:isolate;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);animation:blob 9s ease-in-out infinite;will-change:border-radius,transform}
 .orb::before{content:'';position:absolute;inset:-40%;filter:blur(12px) saturate(1.1);animation:swirl 13s ease-in-out infinite}
 .orb::after{content:'';position:absolute;inset:-12%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,255,255,0) 46%);animation:glint 6.5s ease-in-out infinite alternate}
@@ -216,11 +216,13 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .o-exhibit::before{background:radial-gradient(circle at 30% 30%,#FBCFE8 0,transparent 38%),radial-gradient(circle at 70% 64%,#A78BFA 0,transparent 42%),radial-gradient(circle at 40% 78%,#F0ABFC 0,transparent 40%),conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
 .o-contest::before{background:radial-gradient(circle at 30% 30%,#FDE047 0,transparent 38%),radial-gradient(circle at 70% 62%,#34D399 0,transparent 42%),radial-gradient(circle at 40% 78%,#A7F3D0 0,transparent 40%),conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
 .o-restaurant::before{background:radial-gradient(circle at 30% 30%,#CCFBF1 0,transparent 38%),radial-gradient(circle at 70% 62%,#14B8A6 0,transparent 42%),radial-gradient(circle at 40% 78%,#FDE68A 0,transparent 40%),conic-gradient(from 140deg,#5EEAD4,#FDE68A,#14B8A6,#99F6E4,#5EEAD4)}
+.o-space::before{background:radial-gradient(circle at 30% 30%,#FCE7F3 0,transparent 38%),radial-gradient(circle at 70% 62%,#EC4899 0,transparent 42%),radial-gradient(circle at 40% 78%,#FDBA74 0,transparent 40%),conic-gradient(from 60deg,#F9A8D4,#FDBA74,#EC4899,#FBCFE8,#F9A8D4)}
 .o-unknown::before{background:radial-gradient(circle at 30% 30%,#F5F5F5 0,transparent 40%),radial-gradient(circle at 70% 64%,#A3A3A3 0,transparent 42%),conic-gradient(from 0deg,#E5E5E5,#BDBDBD,#F5F5F5,#A3A3A3,#E5E5E5)}
 .o-news{animation-duration:11s;animation-delay:-3s}.o-news::before{animation-duration:15s;animation-delay:-6s}.o-news::after{animation-delay:-2s}
 .o-exhibit{animation-duration:10s;animation-delay:-6s;animation-direction:reverse}.o-exhibit::before{animation-duration:12s;animation-delay:-4s;animation-direction:reverse}
 .o-contest{animation-duration:8s;animation-delay:-2s}.o-contest::before{animation-duration:11s;animation-delay:-8s}.o-contest::after{animation-delay:-4s}
 .o-restaurant{animation-duration:9.5s;animation-delay:-4s}.o-restaurant::before{animation-duration:14s;animation-delay:-5s}.o-restaurant::after{animation-delay:-3s}
+.o-space{animation-duration:10.5s;animation-delay:-5s;animation-direction:reverse}.o-space::before{animation-duration:13s;animation-delay:-2s}.o-space::after{animation-delay:-5s}
 .o-unknown{animation-duration:12s}
 .orb.fast{animation-duration:2.6s}
 .orb.fast::before{animation-duration:3.2s}
@@ -553,6 +555,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <div class="ex-card rise"><span class="tag"><span class="dot t-exhibit"></span>전시·팝업</span><ul><li>장소·지도</li><li>일정·운영 시간·비용</li><li>예약·신청 링크</li></ul></div>
             <div class="ex-card rise"><span class="tag"><span class="dot t-contest"></span>공모전·대외활동</span><ul><li>지원 조건·마감일</li><li>준비물·제출 방법</li><li>공식 공고 링크</li></ul></div>
             <div class="ex-card rise"><span class="tag"><span class="dot t-restaurant"></span>맛집</span><ul><li>위치·지도</li><li>메뉴·가격</li><li>영업 시간·예약·웨이팅</li></ul></div>
+            <div class="ex-card rise"><span class="tag"><span class="dot t-space"></span>취향공간</span><ul><li>위치·지도</li><li>운영 시간·휴무일</li><li>예약·대기·주차</li></ul></div>
           </div>
         </section>
       </sc-if>
@@ -1187,6 +1190,64 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
                 <div class="field"><span class="k">예약</span><span class="{{d.reservationCls}}">{{d.reservation}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">웨이팅</span><span class="{{d.waitingCls}}">{{d.waiting}}</span></div>
+                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">주차</span><span class="{{d.parkingCls}}">{{d.parking}}</span></div>
+                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">전화</span><span class="{{d.phoneCls}}">{{d.phone}}</span></div>
+              </div>
+              <sc-if value="{{d.hasPlaceLinks}}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap">
+                  <sc-for list="{{d.placeLinks}}" as="pl" hint-placeholder-count="1">
+                    <a class="btn" href="{{pl.url}}" target="_blank" rel="noopener">{{pl.label}}
+                      <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+                    </a>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </section>
+          </sc-if>
+
+          <!-- SPACE (취향공간): 맛집 detail without menus and price range -->
+          <sc-if value="{{d.isSpace}}" hint-placeholder-val="{{ false }}">
+            <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+              <div class="label">한눈에 보기</div>
+              <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+                <div class="field"><span class="k">분류</span><span class="v">{{d.category}}</span></div>
+                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">운영 시간</span><span class="{{d.hoursCls}}">{{d.hours}}</span></div>
+                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
+              </div>
+              <sc-for list="{{d.checks}}" as="c" hint-placeholder-count="1">
+                <div class="flagtile">{{c}}</div>
+              </sc-for>
+            </section>
+            <section class="card" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
+              <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px">
+                <h2 class="h2">위치</h2>
+                <p style="font-size: 15px; font-weight: 500">{{d.title}}</p>
+                <p class="{{d.addressCls}}" style="font-size: 13.5px">{{d.address}}</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                  <a class="btn" href="{{d.mapNaver}}" target="_blank" rel="noopener">
+                    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    네이버 지도
+                  </a>
+                  <a class="btn" href="{{d.mapKakao}}" target="_blank" rel="noopener">카카오맵</a>
+                  <a class="btn btn-ghost" href="{{d.mapGoogle}}" target="_blank" rel="noopener">Google 지도
+                    <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
+                  </a>
+                </div>
+                <p class="muted" style="font-size: 12px">외부 지도 서비스에서 공간 이름으로 검색해요. 위치 권한은 요청하지 않아요.</p>
+              </div>
+              <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
+                <span class="road" style="left: 0; right: 0; top: 42%; height: 9px"></span>
+                <span class="road" style="top: 0; bottom: 0; left: 58%; width: 8px"></span>
+                <span class="road" style="top: 0; bottom: 0; left: 24%; width: 6px; transform: skewX(10deg)"></span>
+                <span class="pin-shadow"></span>
+                <span class="pin"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" stroke="var(--surface)" stroke-width="1.5"><path d="M12 22s-7.5-6.6-7.5-12.2a7.5 7.5 0 0 1 15 0C19.5 15.4 12 22 12 22z"/><circle cx="12" cy="9.8" r="2.6" fill="var(--surface)" stroke="none"/></svg></span>
+              </div>
+            </section>
+            <section class="card" style="overflow: hidden">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
+                <div class="field"><span class="k">예약</span><span class="{{d.reservationCls}}">{{d.reservation}}</span></div>
+                <div class="field" style="border-left: 1px solid var(--border)"><span class="k">대기</span><span class="{{d.waitingCls}}">{{d.waiting}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">주차</span><span class="{{d.parkingCls}}">{{d.parking}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">전화</span><span class="{{d.phoneCls}}">{{d.phone}}</span></div>
               </div>
@@ -2013,6 +2074,7 @@ class Component extends DCLogic {
       exhibit: { label: '전시·팝업', dot: 'dot t-exhibit', orb: 'o-exhibit' },
       contest: { label: '공모전·대외활동', dot: 'dot t-contest', orb: 'o-contest' },
       restaurant: { label: '맛집', dot: 'dot t-restaurant', orb: 'o-restaurant' },
+      space: { label: '취향공간', dot: 'dot t-space', orb: 'o-space' },
       unknown: { label: '유형 미정', dot: 'dot t-unknown', orb: 'o-unknown' }
     };
     const STATUS = {
@@ -2151,6 +2213,12 @@ class Component extends DCLogic {
         ],
         reservation: '예약 받지 않음', waiting: '점심 시간 웨이팅 있음', parking: '주차 정보 미기재', phone: '전화번호 미기재',
         placeLinks: [], checks: ['감자전 가격이 원본에 없어요.'] },
+      { id: 'sp1', type: 'space', title: '가상 그림책 서점', status: 'done', dm: 'sent', dmAt: '오늘 11:05', received: '오늘 11:02', ts: 10311102, key: '서점·책방 · 연남동 · 월요일 휴무', author: '@sample_bookshelf', origin: 'https://example.com/instagram/p/sp1', organized: '오늘 11:05', checkedAt: '2026.10.31 11:05 KST', thumb: true,
+        intro: '그림책과 독립출판물을 모아 둔 작은 서점이에요. 주말에는 그림책 낭독회를 열어요. (가상 데이터)', category: '서점·책방',
+        hours: '화–일 12:00 – 20:00', closed: '월요일 휴무', address: '가상시 연남로 3',
+        mapNaver: 'https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', mapKakao: 'https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203', mapGoogle: 'https://www.google.com/maps/search/?api=1&query=%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203',
+        reservation: '낭독회는 DM으로 신청', waiting: '대기 정보 미기재', parking: '주차 불가', phone: '전화번호 미기재',
+        placeLinks: [], checks: ['낭독회 날짜는 원본에 없어요.'] },
       { id: 'r4', type: 'recipe', title: '들기름 막국수', status: 'done', dm: 'sent', dmAt: '10월 26일 19:12', received: '10월 26일', ts: 10261910, key: '조리 10분 · 재료 5개', author: '@sample_noodle', origin: 'https://example.com/instagram/reel/r4', organized: '10월 26일 19:12', checkedAt: '2026.10.26 19:12 KST', thumb: true,
         summary: '삶은 메밀면에 들기름과 간장 양념을 버무리는 비빔면이에요. (가상 데이터)',
         serving: '1인분', prep: '3분', cook: '7분',
@@ -2338,7 +2406,7 @@ class Component extends DCLogic {
       });
     };
     const items = all.map(deco);
-    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0 };
+    const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0 };
     items.forEach(it => { if (counts[it.type] !== undefined) counts[it.type]++; });
     const tasteItemsAll = items.filter(it => s.taste[it.id] && it.status === 'done' && ['recipe','exhibit','space','contest','restaurant'].includes(it.type));
 
@@ -2352,9 +2420,9 @@ class Component extends DCLogic {
     const libFirst = items.length === 0;
     const libSearchEmpty = !libFirst && lib.length === 0 && !!q;
     const libFilterEmpty = !libFirst && lib.length === 0 && !q;
-    const typeTabs = [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
+    const typeTabs = [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
     const statusChips = [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k, menuId: null }) }));
-    const sideTypes = [['recipe', '레시피'], ['news', '뉴스·정보'], ['exhibit', '전시·팝업'], ['contest', '공모전·대외활동'], ['restaurant', '맛집']].map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) }));
+    const sideTypes = [['recipe', '레시피'], ['news', '뉴스·정보'], ['exhibit', '전시·팝업'], ['contest', '공모전·대외활동'], ['restaurant', '맛집'], ['space', '취향공간']].map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) }));
 
     // home
     const active = items.filter(it => it.status === 'processing' || it.status === 'needtype').sort((a, b) => b.ts - a.ts);
@@ -2370,7 +2438,7 @@ class Component extends DCLogic {
     if (raw) {
       d = Object.assign({}, raw);
       const done = raw.status === 'done';
-      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isContest = done && raw.type === 'contest'; d.isRestaurant = done && raw.type === 'restaurant';
+      d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isContest = done && raw.type === 'contest'; d.isRestaurant = done && raw.type === 'restaurant'; d.isSpace = done && raw.type === 'space';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
@@ -2460,6 +2528,14 @@ class Component extends DCLogic {
         d.menuCount = raw.menus.length; d.noMenus = raw.menus.length === 0;
         d.placeLinks = raw.placeLinks || []; d.hasPlaceLinks = d.placeLinks.length > 0;
         d.shareIncludes = ['가게 이름·분류·소개', '위치와 지도 검색 링크', '메뉴·가격과 이용 정보'];
+      }
+      if (raw.type === 'space' && done) {
+        const miss = v => /미기재|없어요/.test(v || '') ? 'v miss' : 'v';
+        d.hoursCls = miss(raw.hours); d.closedCls = miss(raw.closed);
+        d.reservationCls = miss(raw.reservation); d.waitingCls = miss(raw.waiting); d.parkingCls = miss(raw.parking); d.phoneCls = miss(raw.phone);
+        d.addressCls = /미기재/.test(raw.address || '') ? 'miss' : 'muted';
+        d.placeLinks = raw.placeLinks || []; d.hasPlaceLinks = d.placeLinks.length > 0;
+        d.shareIncludes = ['공간 이름·분류·소개', '위치와 지도 검색 링크', '운영 시간과 이용 정보'];
       }
     }
 
@@ -2582,9 +2658,9 @@ class Component extends DCLogic {
       copyIngredients: () => { if (!raw || !raw.ingredients) return; this.copy(raw.title + ' 재료\n' + raw.ingredients.map(g => '- ' + g.name + ' ' + g.qty).join('\n'), '재료 목록을 복사했어요'); },
       visitOpen: s.visitOpen, visitExpanded: s.visitOpen ? 'true' : 'false', toggleVisit: () => this.setState({ visitOpen: !s.visitOpen }),
       addDeadline: () => this.toast('마감 일정(11.14 18:00 KST)을 캘린더에 추가하도록 열었어요 (데모)'),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
-      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
+      requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       fbUpCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'up' ? ' btn-primary' : ''), fbDownCls: 'btn btn-sm' + (raw && s.feedback[raw.id] === 'down' ? ' btn-primary' : ''),
       fbUpPressed: raw && s.feedback[raw.id] === 'up' ? 'true' : 'false', fbDownPressed: raw && s.feedback[raw.id] === 'down' ? 'true' : 'false',
       fbUp: () => { this.setState({ feedback: Object.assign({}, s.feedback, { [raw.id]: 'up' }) }); this.toast('의견을 보냈어요. 고마워요!'); },

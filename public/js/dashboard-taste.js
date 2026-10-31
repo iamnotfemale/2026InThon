@@ -4,7 +4,7 @@ const CATEGORIES = [['recipe','레시피','A',30], ['exhibit','전시·공간','
 const categoryOf = item => item.type === 'space' ? 'exhibit' : item.type;
 export function applyTasteOrbitValues(v, s, app) {
   const items = app.allItems().filter(item => s.taste[item.id] && item.status === 'done' && CATEGORIES.some(([type]) => type === categoryOf(item)));
-  const tab = s.tasteTab || 'all';
+  const tab = s.tasteTab === 'space' ? 'exhibit' : (s.tasteTab || 'all');
   const select = id => () => app.setState({ tasteSel: s.tasteSel === id ? null : id });
   const groups = CATEGORIES.map(([type, label]) => {
     const list = items.filter(item => categoryOf(item) === type);
