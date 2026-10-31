@@ -8,6 +8,7 @@ function fixture() {
   const app = new DashboardModel({ theme: 'light' });
   app.setState = update => Object.assign(app.state, typeof update === 'function' ? update(app.state) : update);
   app.state.mode = 'live';
+  app.pageValues = () => ({ schedule: [], hasSchedule: false });
   const calls = [];
   app.toast = () => {};
   for (const method of ['changeDelivery', 'removeItem', 'enterLive', 'loadLive', 'openBotDm', 'checkLink', 'copy', 'signOut']) {
@@ -29,6 +30,16 @@ test('mobile uses the current account and existing routes, never the prototype i
   v.openSettings(); assert.equal(app.state.view, 'settings');
   assert.equal(values().settingsOpen, true); values().closeSettings(); assert.equal(app.state.view, 'library');
   app.state.view='calendar'; values().openSettings(); values().closeSettings(); assert.equal(app.state.view,'calendar');
+});
+
+test('mobile home keeps the shared calendar schedule and its date-navigation action', () => {
+  const { app, values, calls } = fixture();
+  const schedule = [{ id: 'saved-event', title: '내가 등록한 요리', mon: '11월', day: '02', what: '요리할 날 · 18:30 KST',
+    badge: 'D-1', open: () => calls.push(['calendar', '2026-11-02']) }];
+  app.pageValues = () => ({ schedule, hasSchedule: true, scheduleNote: '캘린더에 등록한 일정이에요.' });
+  const v = values();
+  assert.equal(v.schedule, schedule); assert.equal(v.hasSchedule, true); assert.match(v.scheduleNote, /캘린더/);
+  v.schedule[0].open(); assert.deepEqual(calls, [['calendar', '2026-11-02']]);
 });
 
 test('mobile recipes use shared ingredients, cooking state and validated timer parsing', () => {

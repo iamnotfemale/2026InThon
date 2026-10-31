@@ -306,35 +306,10 @@ export function applyLiveMode(v, s, app) {
   return v;
 }
 
-const SCHEDULE_DAYS = 60;
-const EVENT_WHAT = { start: '접수 시작', deadline: '접수 마감', announce: '결과 발표', activity: '활동 시작', event: '행사', other: '일정' };
-
-/**
- * Home "다가오는 일정" from real 공모전·대외활동 and exhibition results (the design hard-codes demo items c1/e1),
- * and "캘린더에 추가" on a contest detail as a Google Calendar link for its deadline.
- */
+/** External calendar links on content details; home schedules come from the member calendar. */
 export function contestLiveValues(v, s, app) {
   const all = (app.allItems?.() ?? []).filter(item => item.type === 'contest');
-  const schedule = all.flatMap(item => (item.contestEvents ?? [])
-    .filter(event => event.days <= SCHEDULE_DAYS)
-    .map(event => ({ item, event })))
-    .sort((a, b) => a.event.date.localeCompare(b.event.date) || (a.event.time ?? '').localeCompare(b.event.time ?? ''))
-    .slice(0, 6)
-    .map(({ item, event }) => ({
-      date: event.date, mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title,
-      what: (event.type === 'other' || event.type === 'event' ? event.label : EVENT_WHAT[event.type]) + (event.time ? ' · ' + event.time + ' KST' : ''),
-      badge: event.days === 0 ? 'D-DAY' : 'D-' + event.days,
-      badgeCls: 'badge nodot ' + (event.type === 'deadline' && event.days <= 7 ? 's-warn' : 's-neutral'),
-      open: () => app.openDetail(item.id),
-    }));
-  // Exhibitions add their closing day ("전시 종료일"), as in the design's demo schedule.
-  const exhibits = (app.allItems?.() ?? []).filter(item => item.type === 'exhibit' && item.exhibitEnd && item.exhibitDaysLeft <= SCHEDULE_DAYS)
-    .map(item => ({ item, event: { date: item.exhibitEnd, days: item.exhibitDaysLeft } }));
-  const merged = [...schedule.map(entry => ({ entry, date: entry.date })), ...exhibits.map(({ item, event }) => ({ date: event.date, entry: {
-    mon: Number(event.date.slice(5, 7)) + '월', day: event.date.slice(8, 10), title: item.title, what: '전시 종료일 · ' + item.phase,
-    badge: event.days === 0 ? 'D-DAY' : 'D-' + event.days, badgeCls: 'badge nodot s-neutral', open: () => app.openDetail(item.id) } }))]
-    .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6).map(({ entry }) => entry);
-  const values = { schedule: merged, hasSchedule: merged.length > 0 };
+  const values = {};
   const shown = v.isDetail ? (app.allItems?.() ?? []).find(item => item.id === s.detailId && item.type === 'exhibit') : null;
   if (shown && v.d) {
     // "일정에 추가" opens a Google Calendar event for the chosen visit day instead of the demo toast.

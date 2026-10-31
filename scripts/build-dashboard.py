@@ -112,7 +112,7 @@ def compile_page(source_path, name, model_name, output):
   <meta property="og:title" content="디미 · 당신의 가장 가까운 비서">
   <meta property="og:description" content="Instagram으로 보낸 콘텐츠를 레시피·팩트체크·일정·미용 정보로 정리하고, 나만의 취향으로 모아보세요.">
   <meta property="og:url" content="https://inthon.yeoziphab.com__ROUTE__">
-  <meta property="og:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v1.png">
+  <meta property="og:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v2.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -120,7 +120,7 @@ def compile_page(source_path, name, model_name, output):
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="디미 · 당신의 가장 가까운 비서">
   <meta name="twitter:description" content="Instagram으로 보낸 콘텐츠를 레시피·팩트체크·일정·미용 정보로 정리하고, 나만의 취향으로 모아보세요.">
-  <meta name="twitter:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v1.png">
+  <meta name="twitter:image" content="https://inthon.yeoziphab.com/assets/dimi-og-v2.png">
   <meta name="twitter:image:alt" content="당신의 가장 가까운 비서 디미 · 컬러 구슬 로고 · @dimi_in">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

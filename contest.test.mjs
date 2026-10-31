@@ -145,10 +145,7 @@ test('stored contests render through the original design logic, and fill the hom
   const opened = [];
   const app = { allItems: () => [item], openDetail: id => opened.push(['detail', id]), openExternal: url => opened.push(['url', url]), toast: () => {} };
   const live = contestLiveValues(v, { detailId: 'fc42' }, app);
-  assert.equal(live.hasSchedule, true);
-  assert.deepEqual(live.schedule.map(e => [e.mon, e.day, e.badge, e.what]),
-    [['11월', '14', 'D-14', '접수 마감 · 18:00 KST']], 'only the next 60 days; the January announcement is later');
-  live.schedule[0].open(); live.addDeadline();
-  assert.deepEqual(opened[0], ['detail', 'fc42']);
-  assert.match(opened[1][1], /^https:\/\/calendar\.google\.com\/calendar\/render\?/);
+  assert.equal(live.schedule, undefined, 'extracted deadlines never replace the member calendar on home');
+  live.addDeadline();
+  assert.match(opened[0][1], /^https:\/\/calendar\.google\.com\/calendar\/render\?/);
 });
