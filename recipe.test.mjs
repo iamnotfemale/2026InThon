@@ -103,3 +103,16 @@ test('a single recipe stays one result, and an array or overlong evidence from t
     assert.ok(result.recipe.ingredients[0].evidence.length <= 400);
   }
 });
+
+test('every recipe found in a collection is organized, not only the first five', async () => {
+  const titles = Array.from({ length: 8 }, (_, i) => `요리${i + 1}`);
+  const result = await createRecipeProcessor({
+    listModel: async () => JSON.stringify({ recipes: titles.map(title => ({ title })) }),
+    model: async ({ content }) => {
+      const title = content.at(-1).text.match(/<focus>.*?'(.+?)'/)?.[1] ?? titles[0];
+      return JSON.stringify({ ...sample(), title, ingredients: [{ ...sample().ingredients[0], name: title + ' 재료' }],
+        steps: [{ ...sample().steps[0], uses: [] }], checks: [] });
+    } })({ text: '레시피 모음' });
+  assert.deepEqual(result.parts.map(p => p.recipe.title), titles);
+  assert.doesNotMatch(result.messages[0], /남은 레시피/);
+});
