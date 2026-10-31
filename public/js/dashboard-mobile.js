@@ -39,6 +39,9 @@ export function createMobileDashboard(app) {
     const v = mobile.renderVals();
     Object.assign(v, app.pageValues?.());
     applyTasteOrbitValues(v, s, app);
+    v.tasteFilter = v.tasteTabs.find(tab => tab.pressed === 'true')?.value || 'all';
+    v.filterTaste = event => app.setState({ tasteTab: event.currentTarget.value, tasteSel: null });
+    v.tasteGroups = v.tasteGroups.filter(group => v.tasteFilter === 'all' || group.type === v.tasteFilter);
     applyDmPreview(v, s, app);
     v.d.hasTips = Array.isArray(v.d.tips) && v.d.tips.length > 0;
     v.d.hasComparisons = Array.isArray(v.d.cmp) && v.d.cmp.length > 0;

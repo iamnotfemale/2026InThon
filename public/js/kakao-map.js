@@ -115,9 +115,6 @@ export function createCategoryPin(doc, { kind, name, placeUrl, label, onSelect }
   const head = doc.createElement('span');
   head.className = 'kmap-pin-head';
   head.setAttribute('aria-hidden', 'true');
-  const orb = doc.createElement('span');
-  orb.className = `orb o-${category}`;
-  head.appendChild(orb);
   pin.appendChild(head);
   return pin;
 }
@@ -130,7 +127,8 @@ function createMap(container, kakao, center, level) {
   canvas.className = 'kmap-canvas';
   container.appendChild(canvas);
   const map = new kakao.maps.Map(canvas, { center, level });
-  map.setZoomable(false); // the page keeps scrolling with the wheel; zoom with the buttons
+  // Keep desktop wheel scrolling, but let the SDK handle touch zoom on phones and tablets.
+  map.setZoomable(Boolean(container.closest?.('.m') || doc.defaultView?.matchMedia?.('(any-pointer: coarse)')?.matches));
   const zoom = doc.createElement('div');
   zoom.className = 'kmap-zoom';
   for (const [text, label, delta] of [['+', '지도 확대', -1], ['−', '지도 축소', 1]]) {

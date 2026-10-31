@@ -105,7 +105,7 @@ function fakeKakao() {
   return { made, overlays, kakao: { maps: { LatLng, Map, CustomOverlay } } };
 }
 
-test('category pins reuse the existing orbs, safely label the place and keep only linked locations interactive', () => {
+test('static category pins safely label places and keep only linked locations interactive', () => {
   const doc = { createElement: tag => ({ ...fakeNode(), tagName: tag }) };
   for (const [kind, expected] of [['exhibit', 'exhibit'], ['restaurant', 'restaurant'], ['space', 'space'], ['unrecognised', 'unknown']]) {
     const pin = createCategoryPin(doc, { kind, name: '<장소 이름>', label: '주소' });
@@ -113,13 +113,26 @@ test('category pins reuse the existing orbs, safely label the place and keep onl
     assert.equal(pin.attrs['aria-label'], '<장소 이름> 위치');
     assert.equal(pin.className, 'kmap-pin kmap-pin-' + expected);
     assert.equal(pin.children[0].attrs['aria-hidden'], 'true');
-    assert.equal(pin.children[0].children[0].className, 'orb o-' + expected);
+    assert.equal(pin.children[0].className, 'kmap-pin-head');
+    assert.equal(pin.children[0].children.length, 0, 'no animated orb or pseudo layers to escape the rounded head on iOS');
   }
   const link = createCategoryPin(doc, { kind: 'space', label: '장소 주소', placeUrl: 'https://place.map.kakao.com/1' });
   assert.equal(link.tagName, 'a'); assert.equal(link.attrs.role, undefined, 'retain native link semantics and keyboard activation');
   assert.equal(link.href, 'https://place.map.kakao.com/1');
   assert.match(link.attrs['aria-label'], /장소 주소.*새 창/);
   assert.equal(link.target, '_blank'); assert.equal(link.rel, 'noopener noreferrer');
+});
+
+test('mobile layouts and coarse-pointer screens allow native SDK zoom while desktop keeps wheel scrolling', async () => {
+  for (const mode of ['mobile', 'coarse', 'desktop']) {
+    const { el, root } = placeholder({ name: '테스트 장소', address: '서울 성동구', kind: 'exhibit' });
+    el.closest = selector => mode === 'mobile' && selector === '.m' ? {} : null;
+    el.ownerDocument.defaultView = { matchMedia: query => ({ matches: mode === 'coarse' && query === '(any-pointer: coarse)' }) };
+    const { made, kakao } = fakeKakao();
+    await attachMaps(root, { load: async () => kakao,
+      services: () => services({ address: [{ x: '127.05', y: '37.54', address_name: '서울 성동구' }] }) });
+    assert.deepEqual(made.filter(entry => entry[0] === 'zoomable'), [['zoomable', mode !== 'desktop']]);
+  }
 });
 
 test('placeholders mount a pinned map, explain name-based or missing locations, and never load Kakao for nothing', async () => {

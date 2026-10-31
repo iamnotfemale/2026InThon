@@ -32,6 +32,25 @@ test('mobile uses the current account and existing routes, never the prototype i
   app.state.view='calendar'; values().openSettings(); values().closeSettings(); assert.equal(app.state.view,'calendar');
 });
 
+test('mobile taste uses a category dropdown, filters the saved list and opens a row directly', () => {
+  const { app, values } = fixture();
+  const items = [{ id: 'fc1', type: 'recipe', status: 'done', title: '요리' }, { id: 'fc2', type: 'exhibit', status: 'done', title: '전시' },
+    { id: 'fc3', type: 'space', status: 'done', title: '서점' }];
+  app.allItems = () => items;
+  Object.assign(app.state, { view: 'taste', taste: { fc1: true, fc2: true, fc3: true }, tasteTab: 'all' });
+  assert.equal(values().tasteFilter, 'all');
+  assert.deepEqual(values().tasteTabs.map(t => [t.value, t.count]), [['all', 3], ['recipe', 1], ['exhibit', 2], ['contest', 0], ['restaurant', 0]]);
+  assert.ok(values().tasteGroups.every(g => !g.label.includes('궤도')));
+  values().filterTaste({ currentTarget: { value: 'exhibit' } });
+  assert.equal(values().tasteFilter, 'exhibit');
+  assert.deepEqual(values().tasteGroups.map(g => g.type), ['exhibit']);
+  assert.deepEqual(values().tasteGroups[0].items.map(i => i.id), ['fc2', 'fc3']);
+  values().tasteGroups[0].items[0].open(); assert.equal(app.state.view, 'detail'); assert.equal(app.state.detailId, 'fc2');
+  const template = readFileSync('public/data/mobile-template.json', 'utf8');
+  assert.doesNotMatch(template, /궤도|mo-stage|tasteOrbits|tasteSelection/);
+  assert.match(template, /mobile-taste-filter/); assert.match(template, /\{\{ti.open\}\}/);
+});
+
 test('mobile home keeps the shared calendar schedule and its date-navigation action', () => {
   const { app, values, calls } = fixture();
   const schedule = [{ id: 'saved-event', title: '내가 등록한 요리', mon: '11월', day: '02', what: '요리할 날 · 18:30 KST',

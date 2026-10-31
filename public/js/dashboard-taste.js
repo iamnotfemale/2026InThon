@@ -1,4 +1,4 @@
-// Both screen sizes use the same saved picks and selected planet.
+// Desktop orbits and the mobile list share the same saved picks.
 const CATEGORIES = [['recipe','레시피','A',30], ['exhibit','전시·공간','B',105],
   ['contest','공모전·대외활동','C',195], ['restaurant','맛집','D',285]];
 const categoryOf = item => item.type === 'space' ? 'exhibit' : item.type;
@@ -8,7 +8,7 @@ export function applyTasteOrbitValues(v, s, app) {
   const select = id => () => app.setState({ tasteSel: s.tasteSel === id ? null : id });
   const groups = CATEGORIES.map(([type, label]) => {
     const list = items.filter(item => categoryOf(item) === type);
-    return { label:label + ' 궤도', dot: 'dot t-' + type, count: list.length, empty: !list.length,
+    return { type, label, dot: 'dot t-' + type, count: list.length, empty: !list.length,
       cls: 'tl-group' + (tab !== 'all' && tab !== type ? ' dim' : ''),
       items: list.map(item => ({ ...item, orbCls: 'orb o-' + item.type, dot: 'dot t-' + item.type,
         typeLabel: item.type === 'space' ? '취향공간' : label, select: select(item.id), isSel: s.tasteSel === item.id,
@@ -27,7 +27,7 @@ export function applyTasteOrbitValues(v, s, app) {
     clearTasteSelection: () => app.setState({ tasteSel: null }),
     tasteCount: items.length, tasteHasAny: !!items.length, tasteNone: !items.length, tasteGroups: groups,
     tasteTabs: [['all', '전체', ''], ...CATEGORIES.map(([type,label])=>[type,label,'dot t-'+type])]
-      .map(([key, label, dot]) => ({ label, dot, count: key === 'all' ? items.length : items.filter(item => categoryOf(item) === key).length,
+      .map(([key, label, dot]) => ({ value: key, label, dot, count: key === 'all' ? items.length : items.filter(item => categoryOf(item) === key).length,
         cls: tab === key ? 'on' : '', pressed: String(tab === key), pick: () => app.setState({ tasteTab: key, tasteSel: null }) })),
     tasteOrbits: CATEGORIES.map(([type,label,ring,offset],i)=>({ label, dot:'dot t-'+type,
       lineCls:'os-line l-'+ring.toLowerCase(), labelCls:'os-ring-label r'+ring.toLowerCase()+(tab!=='all'&&tab!==type?' dim':''),

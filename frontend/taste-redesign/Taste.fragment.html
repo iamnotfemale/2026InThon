@@ -18,7 +18,7 @@
           <div class="taste-legend">
             <sc-for list="{{tasteGroups}}" as="g" hint-placeholder-count="2">
               <div class="{{g.cls}}">
-                <div class="tl-head"><span class="{{g.dot}}"></span><span>{{g.label}}</span><span class="mono muted" style="margin-left: auto; font-size: 11.5px">{{g.count}}</span></div>
+                <div class="tl-head"><span class="{{g.dot}}"></span><span>{{g.label}} 궤도</span><span class="mono muted" style="margin-left: auto; font-size: 11.5px">{{g.count}}</span></div>
                 <sc-for list="{{g.items}}" as="ti" hint-placeholder-count="2">
                   <div class="{{ti.rowCls}}">
                     <button type="button" class="tl-main" aria-pressed="{{ti.selPressed}}" onClick="{{ti.select}}">
