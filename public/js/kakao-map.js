@@ -90,15 +90,34 @@ export function kakaoServices(kakao) {
   return { addressSearch: address => call(cb => geocoder.addressSearch(address, cb)), keywordSearch: query => call(cb => places.keywordSearch(query, cb)) };
 }
 
+// Kakao's own ZoomControl (with its level slider) is taller than the 140–150px map boxes and gets cut off, so the
+// map gets a compact +/− pair styled like the dashboard (.kmap-zoom in the design sources).
+const MIN_LEVEL = 1, MAX_LEVEL = 14;
 function mount(container, kakao, place) {
+  const doc = container.ownerDocument ?? globalThis.document;
   const position = new kakao.maps.LatLng(place.lat, place.lng);
   container.innerHTML = '';
-  const map = new kakao.maps.Map(container, { center: position, level: 3 });
+  const canvas = doc.createElement('div');
+  canvas.className = 'kmap-canvas';
+  container.appendChild(canvas);
+  const map = new kakao.maps.Map(canvas, { center: position, level: 3 });
   map.setZoomable(false); // the page keeps scrolling with the wheel; zoom with the buttons
-  map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+  const zoom = doc.createElement('div');
+  zoom.className = 'kmap-zoom';
+  for (const [text, label, delta] of [['+', '지도 확대', -1], ['−', '지도 축소', 1]]) {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.textContent = text;
+    button.setAttribute('aria-label', label);
+    button.addEventListener('click', () => map.setLevel(Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, map.getLevel() + delta)), { animate: true }));
+    zoom.appendChild(button);
+  }
+  container.appendChild(zoom);
   const marker = new kakao.maps.Marker({ position, map });
   if (place.placeUrl) kakao.maps.event.addListener(marker, 'click', () => globalThis.open(place.placeUrl, '_blank', 'noopener'));
   map.relayout(); map.setCenter(position);
+  // The illustrated box is decorative (aria-hidden); a live map with buttons is not.
+  container.parentElement?.removeAttribute?.('aria-hidden');
 }
 
 const cache = new Map();
