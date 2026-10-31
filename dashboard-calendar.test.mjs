@@ -55,6 +55,41 @@ test('unavailable content is omitted, fixed contest facts stay locked and no dat
   app.allItems=()=>[]; assert.equal(calendar.values().filters[0].count,0);
   assert.equal(calendar.values().upcoming.length,0);
 });
+
+test('restaurant and space visits save, reload, filter and open the exact content without invented restrictions',()=>{
+  const {app,calendar,storage,messages}=fixture();
+  app.allItems=()=>[
+    {...recipe,type:'restaurant',id:'fc12-2',title:'두 번째 맛집',address:'서울 성동구',priceRange:'1만 원대'},
+    {...recipe,type:'space',id:'fc15',title:'서점',address:'서울 마포구'},
+    {...recipe,type:'news',id:'fc16'},
+  ];
+  let v=calendar.values();
+  assert.deepEqual(v.filters.map(f=>f.label),['전체','레시피','전시·팝업','공모전·대외활동','맛집','취향공간']);
+  v.openAddSel(); calendar.values().contentOpts[0].pick();
+  assert.equal(calendar.model.state.modal.kind,'visit');
+  calendar.model.setDraft({date:'2026-11-07',time:'12:00'}); calendar.values().save();
+  calendar.values().openAddSel(); calendar.values().contentOpts[1].pick();
+  calendar.model.setDraft({date:'2026-11-07',allDay:true}); calendar.values().save();
+  const reloaded=createCalendarDashboard(app,storage,now);
+  v=reloaded.values();
+  assert.equal(v.contentOpts.length,0);
+  assert.equal(reloaded.model.consts().CONTENT.fc16,undefined);
+  assert.equal(reloaded.model.consts().CONTENT.fc15.from,undefined);
+  assert.equal(v.filters[0].count,2); assert.equal(v.filters[4].count,1); assert.equal(v.filters[5].count,1);
+  reloaded.model.setState({sel:'2026-11-07'});
+  reloaded.values().filters[4].toggle();
+  assert.deepEqual(reloaded.values().selEvents.map(e=>e.title),['두 번째 맛집']);
+  reloaded.values().selEvents[0].view();
+  assert.equal(reloaded.values().cvType,'맛집');
+  assert.ok(reloaded.values().cvFacts.some(f=>f.k==='가격대' && f.v==='1만 원대'));
+  reloaded.values().openFullContent();
+  assert.equal(messages.at(-1),'fc12-2');
+  reloaded.values().filters[5].toggle();
+  assert.deepEqual(reloaded.values().selEvents.map(e=>e.title),['서점']);
+  assert.equal(reloaded.values().selEvents[0].timeLabel,'종일');
+  reloaded.values().filters[0].toggle();
+  assert.equal(reloaded.values().selEvents.length,2);
+});
 test('storage failures keep the draft and do not report success, corrupt data never renders sample events',()=>{
   const {app,messages}=fixture();
   const calendar=createCalendarDashboard(app,{getItem:()=>'{broken',setItem:()=>{throw Error('quota');}},now);

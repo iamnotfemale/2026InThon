@@ -13,7 +13,7 @@ export default class MobileModel extends DCLogic {
       fav: { r1: true, r2: true, e1: true, c1: true }, taste: { r1: true, r2: true, e1: true },
       ing: st === 'cook' ? { r1i1: true, r1i2: true, r1i3: true, r1i4: true } : {}, steps: st === 'cook' ? { r1s1: true } : {},
       share: null, shares: {}, srcOpen: false, retype: null, over: {},
-      tasteState: 'ai', tasteRemoved: false, dmMode: 'summary', toast: null, dark: props && props.theme === 'dark'
+      tasteState: 'ai', tasteRemoved: false, dmMode: 'full', toast: null, dark: props && props.theme === 'dark'
     };
   }
   componentDidUpdate(prev) {

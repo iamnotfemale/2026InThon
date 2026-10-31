@@ -198,9 +198,9 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           }
           let messages = result.messages;
           if (savedId && config.publicUrl && getDeliveryMode) {
-            let mode = 'summary';
+            let mode = 'full';
             try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
-            if (mode !== 'full') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
+            if (mode === 'summary') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
           }
           for (const text of messages) await send(text);
           await activity.finish();

@@ -11,8 +11,8 @@ export function createResultPreferences({ secret, getBlob = get, putBlob = put, 
     { access: 'private', addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json' });
   const delivery = async uid => {
     const value = await getBlob(prefix(uid) + 'delivery.json', { access: 'private', useCache: false });
-    if (!value?.stream) return 'summary';
-    return openToken(await new Response(value.stream).json(), secret).delivery === 'full' ? 'full' : 'summary';
+    if (!value?.stream) return 'full';
+    return openToken(await new Response(value.stream).json(), secret).delivery === 'summary' ? 'summary' : 'full';
   };
   const hidden = async uid => {
     const path = prefix(uid) + 'hidden/'; const ids = []; let cursor;

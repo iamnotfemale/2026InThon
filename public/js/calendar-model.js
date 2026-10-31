@@ -5,7 +5,7 @@ export default class CalendarModel extends DCLogic {
     super(props);
     this.state = {
       view: 'month', cursor: '2026-11-01', sel: '2026-11-07',
-      filter: { recipe: true, exhibit: true, contest: true },
+      filter: { recipe: true, exhibit: true, contest: true, restaurant: true, space: true },
       events: [
         { id: 1, item: 'r1', kind: 'cook', date: '2026-11-01', time: '18:30', rem: ['h1'], dm: true },
         { id: 2, item: 'e1', kind: 'visit', date: '2026-11-07', time: '14:00', rem: ['eve', 'day9'], dm: true },
@@ -31,7 +31,7 @@ export default class CalendarModel extends DCLogic {
       c1: { type: 'contest', title: '대학생 생활 아이디어 공모전', sub: '공모전 · 마감 11.14 (토) 18:00', summary: '국내 대학생 2–4인 팀이 생활 속 문제를 푸는 아이디어를 제안하는 공모전이에요.', facts: [['주최', '가상 재단'], ['마감', '11.14 (토) 18:00'], ['참가 대상', '대학 재학·휴학생 2–4인 팀']], listTitle: '공고 일정', list: [['접수 시작', '10.20 (화) 10:00'], ['접수 마감', '11.14 (토) 18:00'], ['서류 결과 발표', '11.28 (토)'], ['본선 발표', '12.12 (토)']], fixed: { deadline: ['2026-11-14', '18:00'], result: ['2026-11-28', null] } },
       c2: { type: 'contest', title: '로컬 기록단 모집', sub: '공모전 · 마감됨', disabled: true }
     };
-    const KINDS = { recipe: [['cook', '요리할 날']], exhibit: [['visit', '방문할 날']], contest: [['deadline', '마감일'], ['prep', '준비 시작'], ['result', '결과 발표']] };
+    const KINDS = { recipe: [['cook', '요리할 날']], exhibit: [['visit', '방문할 날']], contest: [['deadline', '마감일'], ['prep', '준비 시작'], ['result', '결과 발표']], restaurant: [['visit', '방문할 날']], space: [['visit', '방문할 날']] };
     const KLABEL = { cook: '요리할 날', visit: '방문할 날', deadline: '마감일', prep: '준비 시작', result: '결과 발표' };
     const KSHORT = { cook: '요리', visit: '방문', deadline: '마감', prep: '준비', result: '발표' };
     const REM = [['day9', '당일 오전 9시'], ['h1', '1시간 전'], ['eve', '전날 오후 8시'], ['d3', '3일 전 오전 9시']];
@@ -67,7 +67,7 @@ export default class CalendarModel extends DCLogic {
   cvVals() {
     const C = this.consts(); const s = this.state; const c = s.viewItem ? C.CONTENT[s.viewItem] : null;
     if (!c) return { cvOpen: false, cvFacts: [], cvList: [], cvEvents: [] };
-    const TL = { recipe: '레시피', exhibit: '전시·팝업', contest: '공모전·대외활동' };
+    const TL = { recipe: '레시피', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간' };
     const evs = s.events.filter(e => e.item === s.viewItem).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     return {
       cvOpen: true, cvTitle: c.title, cvType: TL[c.type], cvDot: 'dot t-' + c.type, cvOrb: 'orb o-' + c.type, cvSummary: c.summary || '',
@@ -146,8 +146,8 @@ export default class CalendarModel extends DCLogic {
     const ups = [];
     events.forEach(e => { if (!e.dm) return; (e.rem || []).forEach(r => { const at = this.remAt(e, r); if (at && at >= C.NOW) ups.push({ at, e }); }); });
     ups.sort((a, b) => a.at - b.at);
-    const counts = { recipe: 0, exhibit: 0, contest: 0 }; events.forEach(e => counts[C.CONTENT[e.item].type]++);
-    const allOn = s.filter.recipe && s.filter.exhibit && s.filter.contest;
+    const counts = { recipe: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0 }; events.forEach(e => counts[C.CONTENT[e.item].type]++);
+    const allOn = Object.keys(C.KINDS).every(type => s.filter[type]);
 
     // modal
     const m = s.modal; let mv = { modalOpen: false, contentOpts: [], kindOpts: [], miniDays: [], remOpts: [] };
@@ -194,10 +194,10 @@ export default class CalendarModel extends DCLogic {
       next: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() + 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, 7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
       goToday: () => this.setState({ sel: today, cursor: today.slice(0,7) + '-01' }),
       openAddSel: () => this.openModal({ date: s.sel < today ? today : s.sel }),
-      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => {
+      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => {
         const on = k === 'all' ? allOn : (!allOn && s.filter[k]);
         return { label, dot, hasDot: !!dot, count, cls: on ? 'on' : '', pressed: on ? 'true' : 'false',
-          toggle: () => this.setState({ filter: k === 'all' ? { recipe: true, exhibit: true, contest: true } : { recipe: k === 'recipe', exhibit: k === 'exhibit', contest: k === 'contest' } }) };
+          toggle: () => this.setState({ filter: Object.fromEntries(Object.keys(C.KINDS).map(type => [type, k === 'all' || type === k])) }) };
       }),
       cells, weekCols,
       ...this.cvVals(),

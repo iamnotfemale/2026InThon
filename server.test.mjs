@@ -534,13 +534,13 @@ test('signed six-character verification DMs bypass AI and preserve the authentic
   assert.deepEqual(verified,[['ab12cd','123456789']]); assert.deepEqual(sent,['확인했어요']);
 });
 
-test('processed results default to their saved private URL; full DM mode and failed saves keep the result text', async t => {
-  for (const mode of ['summary','full','storage-error']) {
+test('processed results keep explicit private-link mode and default to full DM on a preference failure', async t => {
+  for (const mode of ['summary','full','storage-error','preference-error']) {
     const sent=[];const marked=[];
     const f=await fixture(t,{config:{accessToken:'test-token',userId:IG_ID,publicUrl:'https://inthon.yeoziphab.com'},
       factCheck:async()=>({status:'done',extracted:{claim:'검증한 주장'},messages:['전체 분석 결과','근거 링크']}),
       saveFactCheck:async()=>{if(mode==='storage-error')throw new Error('storage down');return{id:15};},
-      getDeliveryMode:async()=>mode,markFactCheckSent:async id=>marked.push(id),
+      getDeliveryMode:async()=>{if(mode==='preference-error')throw new Error('preferences down');return mode;},markFactCheckSent:async id=>marked.push(id),
       apiFetch:async(_url,options)=>{sent.push(JSON.parse(options.body).message.text);return json({message_id:'out'});}});
     await deliver(f,[incoming({message:{mid:'delivery-'+mode,text:'주장'}})]);await eventually(()=>f.stats.replies===1);
     assert.equal(sent[0],FACTCHECK_ACK);

@@ -47,7 +47,7 @@ export default function handler(req, res) {
     ...state, loadAccessToken, loadProfileToken, background: task => waitUntil(task),
     getDeliveryMode: async sender => {
       const uid = await state.linkedUser?.(sender);
-      return uid ? createResultPreferences({ secret: process.env.META_APP_SECRET }).delivery(uid) : 'summary';
+      return uid ? createResultPreferences({ secret: process.env.META_APP_SECRET }).delivery(uid) : 'full';
     },
     verifyInstagramCode: state.issueLinkToken ? (code, sender) => createInstagramLink({
       secret: process.env.META_APP_SECRET, issueLinkToken: state.issueLinkToken,

@@ -56,6 +56,8 @@
 .calendar-page .t-recipe{background:#F97316}
 .calendar-page .t-exhibit{background:#A855F7}
 .calendar-page .t-contest{background:#22C55E}
+.calendar-page .t-restaurant{background:#14B8A6}
+.calendar-page .t-space{background:#EC4899}
 .calendar-page .t-news{background:#3B82F6}
 .calendar-page .cal{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
 .calendar-page .cal-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border);background:var(--bg)}
@@ -176,14 +178,17 @@
 }
 
 
-.calendar-page .calendar-note{padding:20px 32px 0;font-size:12px;color:var(--muted)}
+.calendar-page{width:100%;max-width:1200px;margin:0 auto;padding:36px 40px 72px}
+.calendar-page .calendar-note{padding-top:16px;font-size:12px;color:var(--muted)}
+.calendar-page .calendar-type-tabs{max-width:100%;flex-wrap:nowrap;overflow-x:auto}
+.calendar-page .calendar-type-tabs button{flex-shrink:0}
 .calendar-page .calendar-grid-column{min-inline-size:0}
 .calendar-page .calendar-agenda{min-inline-size:0;max-width:none!important}
 .calendar-page .opt{min-width:0}.calendar-page .opt>span{overflow:hidden}
 .calendar-page .week{min-height:440px}.calendar-page .wadd{opacity:1}
 .calendar-page button:disabled{cursor:not-allowed}
-.m .calendar-page .calendar-layout{padding:16px 20px 28px!important}
-.m .calendar-page .calendar-note{padding:4px 20px 0}
+.m .calendar-page{padding:16px 20px 28px}
+@media(min-width:768px) and (max-width:860px){.calendar-page{padding-inline:16px}}
 .m .calendar-page .mc{min-height:76px;padding:4px;overflow:hidden}
 .m .calendar-page .num{min-width:20px;height:22px;padding:0;font-size:11px}
 .m .calendar-page .ev{padding:0 3px;height:20px;gap:3px;font-size:10px}.m .calendar-page .ev .k{display:none}
@@ -208,10 +213,9 @@
 </style>
 </helmet>
 <div class="calendar-page {{themeClass}}">
-<p class="calendar-note" role="status">{{storageNote}}</p>
 
 
-    <div class="calendar-layout" style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px 32px 48px; align-items: flex-start">
+    <div class="calendar-layout" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
       <!-- calendar column -->
       <section class="calendar-grid-column" style="flex: 999 1 680px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
@@ -224,8 +228,8 @@
           </button>
         </div>
         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
-          <div class="seg" role="group" aria-label="유형 필터">
-            <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+          <div class="seg calendar-type-tabs" role="group" aria-label="유형 필터">
+            <sc-for list="{{filters}}" as="f" hint-placeholder-count="6">
               <button type="button" class="{{f.cls}}" aria-pressed="{{f.pressed}}" onClick="{{f.toggle}}"><sc-if value="{{f.hasDot}}" hint-placeholder-val="{{ true }}"><span class="{{f.dot}}"></span></sc-if>{{f.label}}<span class="n">{{f.count}}</span></button>
             </sc-for>
           </div>
@@ -314,7 +318,7 @@
             <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 16px; border: 1px dashed var(--border-strong); border-radius: 14px; text-align: center">
               <img src="./assets/aded32cac58d52519b0a843ab10f3095.png" alt="" style="width: 72px; filter: drop-shadow(0 6px 8px rgba(120,80,30,.15))">
               <span style="font-size: 14px; font-weight: 600">이 날은 일정이 없어요</span>
-              <span class="muted" style="font-size: 12.5px">레시피 해먹을 날과 전시 갈 날을 정해보세요.</span>
+              <span class="muted" style="font-size: 12.5px">모아둔 콘텐츠로 나만의 일정을 정해보세요.</span>
               <button type="button" class="btn" onClick="{{openAddSel}}" style="margin-top: 4px">일정 추가</button>
             </div>
           </sc-if>
@@ -338,7 +342,7 @@
         </section>
       </aside>
     </div>
-
+    <p class="calendar-note" role="status">{{storageNote}}</p>
 
   <!-- CONTENT VIEW MODAL -->
   <sc-if value="{{cvOpen}}" hint-placeholder-val="{{ false }}">
@@ -397,7 +401,7 @@
           <!-- left: content -->
           <div class="calendar-content-list" role="region" aria-label="일정 콘텐츠 목록" style="flex: 1 1 300px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--border)">
             <span class="label" style="margin-bottom: 2px">1 · 어떤 콘텐츠의 일정인가요?</span>
-            <sc-if value="{{noContentOptions}}"><p class="muted" style="font-size:13px">아직 일정으로 만들 콘텐츠가 없어요. @dimi_in으로 보낸 레시피·전시·공모전을 먼저 정리해 주세요.</p></sc-if>
+            <sc-if value="{{noContentOptions}}"><p class="muted" style="font-size:13px">아직 일정으로 만들 콘텐츠가 없어요. @dimi_in에 콘텐츠를 보내 정리한 뒤 일정을 추가해 주세요.</p></sc-if>
             <sc-for list="{{contentOpts}}" as="o" hint-placeholder-count="6">
               <button type="button" class="{{o.cls}}" onClick="{{o.pick}}" disabled="{{o.disabled}}" aria-pressed="{{o.pressed}}">
                 <span class="{{o.orb}}" style="width: 30px; height: 30px"></span>
@@ -486,7 +490,7 @@ class Component extends DCLogic {
     super(props);
     this.state = {
       view: 'month', cursor: '2026-11-01', sel: '2026-11-07',
-      filter: { recipe: true, exhibit: true, contest: true },
+      filter: { recipe: true, exhibit: true, contest: true, restaurant: true, space: true },
       events: [
         { id: 1, item: 'r1', kind: 'cook', date: '2026-11-01', time: '18:30', rem: ['h1'], dm: true },
         { id: 2, item: 'e1', kind: 'visit', date: '2026-11-07', time: '14:00', rem: ['eve', 'day9'], dm: true },
@@ -512,7 +516,7 @@ class Component extends DCLogic {
       c1: { type: 'contest', title: '대학생 생활 아이디어 공모전', sub: '공모전 · 마감 11.14 (토) 18:00', summary: '국내 대학생 2–4인 팀이 생활 속 문제를 푸는 아이디어를 제안하는 공모전이에요.', facts: [['주최', '가상 재단'], ['마감', '11.14 (토) 18:00'], ['참가 대상', '대학 재학·휴학생 2–4인 팀']], listTitle: '공고 일정', list: [['접수 시작', '10.20 (화) 10:00'], ['접수 마감', '11.14 (토) 18:00'], ['서류 결과 발표', '11.28 (토)'], ['본선 발표', '12.12 (토)']], fixed: { deadline: ['2026-11-14', '18:00'], result: ['2026-11-28', null] } },
       c2: { type: 'contest', title: '로컬 기록단 모집', sub: '공모전 · 마감됨', disabled: true }
     };
-    const KINDS = { recipe: [['cook', '요리할 날']], exhibit: [['visit', '방문할 날']], contest: [['deadline', '마감일'], ['prep', '준비 시작'], ['result', '결과 발표']] };
+    const KINDS = { recipe: [['cook', '요리할 날']], exhibit: [['visit', '방문할 날']], contest: [['deadline', '마감일'], ['prep', '준비 시작'], ['result', '결과 발표']], restaurant: [['visit', '방문할 날']], space: [['visit', '방문할 날']] };
     const KLABEL = { cook: '요리할 날', visit: '방문할 날', deadline: '마감일', prep: '준비 시작', result: '결과 발표' };
     const KSHORT = { cook: '요리', visit: '방문', deadline: '마감', prep: '준비', result: '발표' };
     const REM = [['day9', '당일 오전 9시'], ['h1', '1시간 전'], ['eve', '전날 오후 8시'], ['d3', '3일 전 오전 9시']];
@@ -548,7 +552,7 @@ class Component extends DCLogic {
   cvVals() {
     const C = this.consts(); const s = this.state; const c = s.viewItem ? C.CONTENT[s.viewItem] : null;
     if (!c) return { cvOpen: false, cvFacts: [], cvList: [], cvEvents: [] };
-    const TL = { recipe: '레시피', exhibit: '전시·팝업', contest: '공모전·대외활동' };
+    const TL = { recipe: '레시피', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간' };
     const evs = s.events.filter(e => e.item === s.viewItem).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     return {
       cvOpen: true, cvTitle: c.title, cvType: TL[c.type], cvDot: 'dot t-' + c.type, cvOrb: 'orb o-' + c.type, cvSummary: c.summary || '',
@@ -627,8 +631,8 @@ class Component extends DCLogic {
     const ups = [];
     events.forEach(e => { if (!e.dm) return; (e.rem || []).forEach(r => { const at = this.remAt(e, r); if (at && at >= C.NOW) ups.push({ at, e }); }); });
     ups.sort((a, b) => a.at - b.at);
-    const counts = { recipe: 0, exhibit: 0, contest: 0 }; events.forEach(e => counts[C.CONTENT[e.item].type]++);
-    const allOn = s.filter.recipe && s.filter.exhibit && s.filter.contest;
+    const counts = { recipe: 0, exhibit: 0, contest: 0, restaurant: 0, space: 0 }; events.forEach(e => counts[C.CONTENT[e.item].type]++);
+    const allOn = Object.keys(C.KINDS).every(type => s.filter[type]);
 
     // modal
     const m = s.modal; let mv = { modalOpen: false, contentOpts: [], kindOpts: [], miniDays: [], remOpts: [] };
@@ -675,10 +679,10 @@ class Component extends DCLogic {
       next: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() + 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, 7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
       goToday: () => this.setState({ sel: today, cursor: today.slice(0,7) + '-01' }),
       openAddSel: () => this.openModal({ date: s.sel < today ? today : s.sel }),
-      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest]].map(([k, label, dot, count]) => {
+      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => {
         const on = k === 'all' ? allOn : (!allOn && s.filter[k]);
         return { label, dot, hasDot: !!dot, count, cls: on ? 'on' : '', pressed: on ? 'true' : 'false',
-          toggle: () => this.setState({ filter: k === 'all' ? { recipe: true, exhibit: true, contest: true } : { recipe: k === 'recipe', exhibit: k === 'exhibit', contest: k === 'contest' } }) };
+          toggle: () => this.setState({ filter: Object.fromEntries(Object.keys(C.KINDS).map(type => [type, k === 'all' || type === k])) }) };
       }),
       cells, weekCols,
       ...this.cvVals(),

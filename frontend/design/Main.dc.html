@@ -890,16 +890,12 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <!-- RECIPE -->
           <sc-if value="{{d.isRecipe}}" hint-placeholder-val="{{ false }}">
             <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
-              <div class="label">한눈에 보기</div>
               <p style="font-size: 15px; line-height: 1.6">{{d.summary}}</p>
               <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
                 <div class="field"><span class="k">인분</span><span class="{{d.servingCls}}">{{d.serving}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">준비</span><span class="{{d.prepCls}}">{{d.prep}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">조리</span><span class="{{d.cookCls}}">{{d.cook}}</span></div>
               </div>
-              <sc-for list="{{d.checks}}" as="c" hint-placeholder-count="1">
-                <div class="flagtile">{{c}}</div>
-              </sc-for>
             </section>
             <section class="card" style="overflow: hidden">
               <div style="display: flex; align-items: center; gap: 10px; padding: 16px">
@@ -1063,7 +1059,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <!-- EXHIBIT -->
           <sc-if value="{{d.isExhibit}}" hint-placeholder-val="{{ false }}">
             <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
-              <div class="label">한눈에 보기</div>
               <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
                 <div class="field"><span class="k">개최 기간</span><span class="v">{{d.period}}</span></div>
@@ -1076,12 +1071,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <h2 class="h2">장소</h2>
                 <p style="font-size: 15px; font-weight: 500">{{d.place}}</p>
                 <p class="muted" style="font-size: 13.5px">{{d.address}}</p>
-                <a class="btn" href="{{d.mapUrl}}" target="_blank" rel="noopener" style="align-self: flex-start">
-                  <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-                  지도 보기
-                  <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-                </a>
-                <p class="muted" style="font-size: 12px">외부 지도 서비스로 이동해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
                 <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
@@ -1133,7 +1122,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <!-- RESTAURANT -->
           <sc-if value="{{d.isRestaurant}}" hint-placeholder-val="{{ false }}">
             <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
-              <div class="label">한눈에 보기</div>
               <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
                 <div class="field"><span class="k">분류</span><span class="v">{{d.category}}</span></div>
@@ -1141,26 +1129,12 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">영업 시간</span><span class="{{d.hoursCls}}">{{d.hours}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
               </div>
-              <sc-for list="{{d.checks}}" as="c" hint-placeholder-count="1">
-                <div class="flagtile">{{c}}</div>
-              </sc-for>
             </section>
             <section class="card" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
               <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px">
                 <h2 class="h2">위치</h2>
                 <p style="font-size: 15px; font-weight: 500">{{d.title}}</p>
                 <p class="{{d.addressCls}}" style="font-size: 13.5px">{{d.address}}</p>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap">
-                  <a class="btn" href="{{d.mapNaver}}" target="_blank" rel="noopener">
-                    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-                    네이버 지도
-                  </a>
-                  <a class="btn" href="{{d.mapKakao}}" target="_blank" rel="noopener">카카오맵</a>
-                  <a class="btn btn-ghost" href="{{d.mapGoogle}}" target="_blank" rel="noopener">Google 지도
-                    <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-                  </a>
-                </div>
-                <p class="muted" style="font-size: 12px">외부 지도 서비스에서 가게 이름으로 검색해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
                 <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
@@ -1214,33 +1188,18 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <!-- SPACE (취향공간): 맛집 detail without menus and price range -->
           <sc-if value="{{d.isSpace}}" hint-placeholder-val="{{ false }}">
             <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
-              <div class="label">한눈에 보기</div>
               <p style="font-size: 15px; line-height: 1.6">{{d.intro}}</p>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
                 <div class="field"><span class="k">분류</span><span class="v">{{d.category}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">운영 시간</span><span class="{{d.hoursCls}}">{{d.hours}}</span></div>
                 <div class="field" style="border-left: 1px solid var(--border)"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
               </div>
-              <sc-for list="{{d.checks}}" as="c" hint-placeholder-count="1">
-                <div class="flagtile">{{c}}</div>
-              </sc-for>
             </section>
             <section class="card" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
               <div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px">
                 <h2 class="h2">위치</h2>
                 <p style="font-size: 15px; font-weight: 500">{{d.title}}</p>
                 <p class="{{d.addressCls}}" style="font-size: 13.5px">{{d.address}}</p>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap">
-                  <a class="btn" href="{{d.mapNaver}}" target="_blank" rel="noopener">
-                    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-                    네이버 지도
-                  </a>
-                  <a class="btn" href="{{d.mapKakao}}" target="_blank" rel="noopener">카카오맵</a>
-                  <a class="btn btn-ghost" href="{{d.mapGoogle}}" target="_blank" rel="noopener">Google 지도
-                    <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>
-                  </a>
-                </div>
-                <p class="muted" style="font-size: 12px">외부 지도 서비스에서 공간 이름으로 검색해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
                 <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
@@ -2053,7 +2012,7 @@ class Component extends DCLogic {
       ing: {}, steps: {},
       modal: null, connModal: 'disconnect', delTarget: null, shareStage: 'preview', shares: {},
       toast: null,
-      dmMode: 'summary', dmType: 'recipe',
+      dmMode: 'full', dmType: 'recipe',
       tasteTab: 'all', tasteSel: null,
       tasteLabel: '15분 안팎의 간단한 팬·면 요리', tasteState: 'ai', tasteRemoved: false, tasteDraft: '',
       conds: [{ id: 1, cat: '조리도구', val: '프라이팬' }, { id: 2, cat: '조리도구', val: '전자레인지' }, { id: 3, cat: '요리 시간', val: '20분 이내' }],
@@ -2736,7 +2695,7 @@ class Component extends DCLogic {
       connModalCta: s.connModal === 'disconnect' ? '연결 해제' : '새 연결 코드 만들기',
       connModalBtnCls: s.connModal === 'disconnect' ? 'btn btn-danger-solid' : 'btn btn-primary',
       confirmConnModal: () => { if (s.connModal === 'disconnect') { this.setState({ connected: false, flow: 'idle', modal: null }); this.toast('연결을 해제했어요. 기존 기록은 그대로 있어요.'); } else { this.startCode(); } },
-      dmModes: [['summary', '핵심 요약과 링크', 'DM에서 핵심만 보고, 자세한 내용은 페이지에서 확인해요.', true], ['full', 'DM에서 전체 보기', '정리한 내용을 DM에서 읽어요. 긴 내용은 나눠서 보낼 수 있어요.', false]].map(([k, label, desc, def]) => ({ label, desc, isDefault: def, checked: s.dmMode === k ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === k ? ' on' : ''), pick: () => { if (s.dmMode !== k) { this.setState({ dmMode: k }); this.toast('앞으로 받을 DM에 적용했어요'); } } })),
+      dmModes: [['summary', '핵심 요약과 링크', 'DM에서 핵심만 보고, 자세한 내용은 페이지에서 확인해요.', false], ['full', 'DM에서 전체 보기', '정리한 내용을 DM에서 읽어요. 긴 내용은 나눠서 보낼 수 있어요.', true]].map(([k, label, desc, def]) => ({ label, desc, isDefault: def, checked: s.dmMode === k ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === k ? ' on' : ''), pick: () => { if (s.dmMode !== k) { this.setState({ dmMode: k }); this.toast('앞으로 받을 DM에 적용했어요'); } } })),
       dmTypes: [['recipe', '레시피'], ['news', '뉴스'], ['exhibit', '전시'], ['contest', '공모전']].map(([k, label]) => ({ label, dot: 'dot t-' + k, cls: s.dmType === k ? 'on' : '', pressed: s.dmType === k ? 'true' : 'false', pick: () => this.setState({ dmType: k }) })),
       dmBubbles: dmSample[s.dmMode].map((text, i) => ({ text, k: s.dmType + s.dmMode + i })), dmOrbCls: 'orb ' + dmSample.orb, dmSampleTitle: dmSample.title,
       activeShares, noShares: activeShares.length === 0,

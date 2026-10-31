@@ -38,7 +38,7 @@ class DashboardApp extends DashboardModel {
     this.demoDefaults = Object.fromEntries(DEMO_KEYS.map(key => [key, this.state[key]]));
     this.state = { ...this.state, ...routeState(location.pathname), mode: 'demo', user: null, liveItems: [],
       liveGuide: false, liveLoaded: false };
-    this.state.resultPreferences = { delivery: 'summary', hidden: [] };
+    this.state.resultPreferences = { delivery: 'full', hidden: [] };
     this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
     this.calendar = createCalendarDashboard(this);
     this.mobileMedia = matchMedia('(max-width: 767px)');

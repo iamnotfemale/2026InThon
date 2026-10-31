@@ -43,6 +43,8 @@
 .calendar-page .t-recipe{background:#F97316}
 .calendar-page .t-exhibit{background:#A855F7}
 .calendar-page .t-contest{background:#22C55E}
+.calendar-page .t-restaurant{background:#14B8A6}
+.calendar-page .t-space{background:#EC4899}
 .calendar-page .t-news{background:#3B82F6}
 .calendar-page .cal{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
 .calendar-page .cal-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border);background:var(--bg)}
@@ -163,14 +165,17 @@
 }
 
 
-.calendar-page .calendar-note{padding:20px 32px 0;font-size:12px;color:var(--muted)}
+.calendar-page{width:100%;max-width:1200px;margin:0 auto;padding:36px 40px 72px}
+.calendar-page .calendar-note{padding-top:16px;font-size:12px;color:var(--muted)}
+.calendar-page .calendar-type-tabs{max-width:100%;flex-wrap:nowrap;overflow-x:auto}
+.calendar-page .calendar-type-tabs button{flex-shrink:0}
 .calendar-page .calendar-grid-column{min-inline-size:0}
 .calendar-page .calendar-agenda{min-inline-size:0;max-width:none!important}
 .calendar-page .opt{min-width:0}.calendar-page .opt>span{overflow:hidden}
 .calendar-page .week{min-height:440px}.calendar-page .wadd{opacity:1}
 .calendar-page button:disabled{cursor:not-allowed}
-.m .calendar-page .calendar-layout{padding:16px 20px 28px!important}
-.m .calendar-page .calendar-note{padding:4px 20px 0}
+.m .calendar-page{padding:16px 20px 28px}
+@media(min-width:768px) and (max-width:860px){.calendar-page{padding-inline:16px}}
 .m .calendar-page .mc{min-height:76px;padding:4px;overflow:hidden}
 .m .calendar-page .num{min-width:20px;height:22px;padding:0;font-size:11px}
 .m .calendar-page .ev{padding:0 3px;height:20px;gap:3px;font-size:10px}.m .calendar-page .ev .k{display:none}

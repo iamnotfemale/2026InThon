@@ -68,8 +68,8 @@ export function createMobileDashboard(app) {
     }
     Object.assign(v, {
       schedule: [], tasteShowCard: false,
-      dmModes: [['summary', '핵심 안내와 고유 링크', '기본 · DM으로 안내를 받고, 자세한 정리는 개인 결과 페이지에서 봐요.'],
-        ['full', 'DM에서 전체 받기', '정리한 내용을 DM으로 받아요. 긴 내용은 나눠서 보내요.']].map(([key, label, desc]) => ({
+      dmModes: [['summary', '핵심 안내와 고유 링크', 'DM으로 안내를 받고, 자세한 정리는 개인 결과 페이지에서 봐요.'],
+        ['full', 'DM에서 전체 보기', '기본 · 정리한 내용을 DM으로 받아요. 긴 내용은 나눠서 보내요.']].map(([key, label, desc]) => ({
           label, desc, checked: s.dmMode === key ? 'true' : 'false', cls: 'radio-card' + (s.dmMode === key ? ' on' : ''), pick: () => app.changeDelivery(key),
         })),
       changeAccount: () => app.setState({ liveGuide: true }),

@@ -407,7 +407,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border)"><span class="label" style="font-size: 12px">준비</span><span class="{{d.prepCls}}">{{d.prep}}</span></div>
               <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border)"><span class="label" style="font-size: 12px">조리</span><span class="{{d.cookCls}}">{{d.cook}}</span></div>
             </div>
-            <sc-for list="{{d.checks}}" as="c" hint-placeholder-count="1"><div class="flagtile">{{c}}</div></sc-for>
             <section class="card" style="overflow: hidden">
               <div style="display: flex; align-items: center; gap: 8px; padding: 14px 16px">
                 <span class="sec-title" style="font-size: 15px">재료</span><span class="mono muted" style="font-size: 12px">{{d.ingReady}}/{{d.ingCount}}</span>
@@ -528,7 +527,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               </div>
               <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px">
                 <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{d.place}}</span><span class="muted" style="font-size: 13px">{{d.address}}</span></span>
-                <a class="btn btn-sm" href="{{d.mapUrl}}" target="_blank" rel="noopener">지도 ↗</a>
               </div>
             </section>
           </sc-if>
@@ -546,7 +544,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               </div>
               <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px">
                 <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{d.title}}</span><span class="muted" style="font-size: 13px">{{d.address}}</span></span>
-                <span style="display: flex; gap: 8px; flex-wrap: wrap"><a class="btn btn-sm" href="{{d.mapNaver}}" target="_blank" rel="noopener">네이버 지도 ↗</a><a class="btn btn-sm" href="{{d.mapKakao}}" target="_blank" rel="noopener">카카오맵 ↗</a></span>
               </div>
             </section>
             <section class="card" style="overflow: hidden">
@@ -580,7 +577,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               </div>
               <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px">
                 <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{d.title}}</span><span class="muted" style="font-size: 13px">{{d.address}}</span></span>
-                <span style="display: flex; gap: 8px; flex-wrap: wrap"><a class="btn btn-sm" href="{{d.mapNaver}}" target="_blank" rel="noopener">네이버 지도 ↗</a><a class="btn btn-sm" href="{{d.mapKakao}}" target="_blank" rel="noopener">카카오맵 ↗</a></span>
               </div>
             </section>
             <section class="card" style="overflow: hidden">
@@ -909,7 +905,7 @@ class Component extends DCLogic {
       fav: { r1: true, r2: true, e1: true, c1: true }, taste: { r1: true, r2: true, e1: true },
       ing: st === 'cook' ? { r1i1: true, r1i2: true, r1i3: true, r1i4: true } : {}, steps: st === 'cook' ? { r1s1: true } : {},
       share: null, shares: {}, srcOpen: false, retype: null, over: {},
-      tasteState: 'ai', tasteRemoved: false, dmMode: 'summary', toast: null, dark: props && props.theme === 'dark'
+      tasteState: 'ai', tasteRemoved: false, dmMode: 'full', toast: null, dark: props && props.theme === 'dark'
     };
   }
   componentDidUpdate(prev) {

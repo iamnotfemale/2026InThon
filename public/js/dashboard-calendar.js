@@ -1,6 +1,6 @@
 import CalendarModel from './calendar-model.js';
 
-const TYPES = ['recipe', 'exhibit', 'contest'];
+const TYPES = ['recipe', 'exhibit', 'contest', 'restaurant', 'space'];
 const VALID_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 export function validCalendarDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
@@ -14,13 +14,15 @@ export function calendarContent(item) {
   const event = item.exhibitEvent;
   const facts = item.type === 'recipe' ? [['인분', item.serving], ['준비', item.prep], ['조리', item.cook]]
     : item.type === 'exhibit' ? [['기간', item.period], ['운영', item.hours], ['휴무', item.closed], ['장소', item.place], ['입장료', item.fee]]
-      : [['주최', item.host], ['마감', item.deadline]];
+      : item.type === 'contest' ? [['주최', item.host], ['마감', item.deadline]]
+        : [['분류', item.category], ['주소', item.address], ['운영', item.hours], ['휴무', item.closed], ['예약', item.reservation],
+          ...(item.type === 'restaurant' ? [['가격대', item.priceRange]] : [])];
   const fixed = Object.fromEntries((item.contestEvents || []).filter(e => ['deadline', 'announce'].includes(e.type) && validCalendarDate(e.date))
     .map(e => [e.type === 'announce' ? 'result' : 'deadline', [e.date, VALID_TIME.test(e.time) ? e.time : null]]));
   return { type: item.type, title: item.title, sub: item.key || '', summary: item.summary || item.intro || '',
     facts: facts.filter(([, value]) => value), fixed,
     ...(event && validCalendarDate(event.start) && validCalendarDate(event.end) ? { from: event.start, to: event.end, closed: [] } : {}),
-    listTitle: item.type === 'recipe' ? '재료' : '지원 대상',
+    listTitle: item.type === 'recipe' ? '재료' : item.type === 'contest' ? '지원 대상' : '',
     list: item.type === 'recipe' ? (item.ingredients || []).map(g => [g.name, g.qty, g.miss]) : (item.elig || []).map(value => [value, '']),
   };
 }

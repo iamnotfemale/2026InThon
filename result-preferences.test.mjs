@@ -3,17 +3,18 @@ import assert from 'node:assert/strict';
 import { createResultPreferences, resultLinkMessage } from './result-preferences.mjs';
 const UID='11111111-1111-4111-8111-111111111111';
 const OTHER='22222222-2222-4222-8222-222222222222';
-test('link delivery is default; settings and hidden records persist per user with reversible removal', async () => {
+test('full DM delivery is default; explicit settings and hidden records persist per user with reversible removal', async () => {
   const data=new Map();
   const store=createResultPreferences({secret:'test-secret',
     getBlob:async key=>data.has(key)?{stream:new Response(data.get(key)).body}:null,
     putBlob:async(key,value,options)=>{assert.equal(options.access,'private');data.set(key,value);},
     listBlob:async({prefix})=>({blobs:[...data.keys()].filter(k=>k.startsWith(prefix)).map(pathname=>({pathname})),hasMore:false}),
     deleteBlob:async key=>data.delete(key)});
-  assert.deepEqual(await store.read(UID),{delivery:'summary',hidden:[]});
-  await store.update(UID,{delivery:'full'}); await store.update(UID,{item:'fc15',hidden:true});
-  assert.deepEqual(await store.read(UID),{delivery:'full',hidden:['fc15']});
-  assert.deepEqual(await store.read(OTHER),{delivery:'summary',hidden:[]});
+  assert.deepEqual(await store.read(UID),{delivery:'full',hidden:[]});
+  await store.update(UID,{delivery:'summary'}); await store.update(UID,{item:'fc15',hidden:true});
+  assert.deepEqual(await store.read(UID),{delivery:'summary',hidden:['fc15']});
+  assert.deepEqual(await store.read(OTHER),{delivery:'full',hidden:[]});
+  await store.update(UID,{delivery:'full'}); assert.equal(await store.delivery(UID),'full');
   await store.update(UID,{item:'fc15',hidden:false}); assert.deepEqual((await store.read(UID)).hidden,[]);
   for (const bad of [{delivery:'public'},{item:'../other',hidden:true},{item:'fc15',hidden:'yes'}]) await assert.rejects(store.update(UID,bad));
   assert.doesNotMatch([...data.keys()].join(''),new RegExp(UID));
