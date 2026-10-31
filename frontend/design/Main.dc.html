@@ -344,6 +344,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .toast .btn:hover{background:rgba(127,127,127,.18);color:var(--bg)}
 .pop{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:320px;padding:8px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-lg);animation:menuIn .2s cubic-bezier(.16,1,.3,1) both;transform-origin:top right}
 .mapbox{position:relative;height:150px;border-radius:12px;overflow:hidden;background-color:var(--surface-2);background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:24px 24px}
+.kmap{position:absolute;inset:0;z-index:2;visibility:hidden}.kmap.ready{visibility:visible}
+.kmap-note{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;padding:6px 10px;border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:12px;line-height:1.45;color:var(--text-2)}.kmap-note[hidden]{display:none}
 .mapbox .road{position:absolute;background:var(--surface);box-shadow:0 0 0 1px var(--border)}
 .pin{position:absolute;left:50%;top:46%;transform:translate(-50%,-100%);color:var(--text);animation:pinDrop .6s cubic-bezier(.34,1.56,.64,1) both .15s}
 .pin-shadow{position:absolute;left:50%;top:46%;width:14px;height:5px;border-radius:50%;background:rgba(0,0,0,.18);transform:translate(-50%,-2px)}
@@ -1082,6 +1084,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <p class="muted" style="font-size: 12px">외부 지도 서비스로 이동해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span class="road" style="left: 0; right: 0; top: 58%; height: 10px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 38%; width: 8px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 72%; width: 6px; transform: skewX(-12deg)"></span>
@@ -1159,6 +1163,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <p class="muted" style="font-size: 12px">외부 지도 서비스에서 가게 이름으로 검색해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span class="road" style="left: 0; right: 0; top: 42%; height: 9px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 58%; width: 8px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 24%; width: 6px; transform: skewX(10deg)"></span>
@@ -1237,6 +1243,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                 <p class="muted" style="font-size: 12px">외부 지도 서비스에서 공간 이름으로 검색해요. 위치 권한은 요청하지 않아요.</p>
               </div>
               <div class="mapbox" aria-hidden="true" style="flex: 1 1 260px">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span class="road" style="left: 0; right: 0; top: 42%; height: 9px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 58%; width: 8px"></span>
                 <span class="road" style="top: 0; bottom: 0; left: 24%; width: 6px; transform: skewX(10deg)"></span>

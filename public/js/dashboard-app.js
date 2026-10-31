@@ -1,4 +1,5 @@
 import { h, render } from './vendor/preact.module.js';
+import { watchMaps } from './kakao-map.js';
 import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
@@ -379,3 +380,6 @@ const [response, mobileResponse] = await Promise.all([fetch('/data/dashboard-tem
 if (!response.ok) throw new Error('Dashboard template unavailable');
 if (!mobileResponse.ok) throw new Error('Mobile dashboard template unavailable');
 render(h(DashboardApp, { theme: 'light', template: await response.json(), mobileTemplate: await mobileResponse.json() }), document.getElementById('app'));
+
+// Kakao maps for detail pages (desktop and mobile). The SDK loads only when a detail with a place is shown.
+watchMaps(document.getElementById('app'));

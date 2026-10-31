@@ -123,6 +123,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .info:first-child{border-top:0}
 .info .k{width:76px;flex:none;font-size:13.5px;color:var(--muted);padding-top:1px}
 .info .v{flex:1;font-size:15px;font-weight:500;line-height:1.5}
+.kmap{position:absolute;inset:0;z-index:2;visibility:hidden}.kmap.ready{visibility:visible}
+.kmap-note{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;padding:6px 10px;border-radius:8px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:12px;line-height:1.45;color:var(--text-2)}.kmap-note[hidden]{display:none}
 .mmenu{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-top:1px solid var(--border)}
 .mmenu:first-child{border-top:0}
 .mmenu .price{margin-left:auto;font-family:'Geist Mono',monospace;font-size:14px;font-weight:500;white-space:nowrap}
@@ -506,6 +508,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             </section>
             <section class="card" style="overflow: hidden">
               <div style="position: relative; height: 140px; background-color: var(--surface-2); background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 22px 22px" aria-hidden="true">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span style="position: absolute; left: 0; right: 0; top: 58%; height: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <span style="position: absolute; top: 0; bottom: 0; left: 40%; width: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <svg viewBox="0 0 24 24" width="30" height="30" fill="var(--text)" stroke="var(--surface)" stroke-width="1.5" style="position: absolute; left: 50%; top: 44%; transform: translate(-50%, -100%)"><path d="M12 22s-7.5-6.6-7.5-12.2a7.5 7.5 0 0 1 15 0C19.5 15.4 12 22 12 22z"></path><circle cx="12" cy="9.8" r="2.6" fill="var(--surface)"></circle></svg>
@@ -522,6 +526,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <p style="font-size: 15.5px; line-height: 1.65; color: var(--text-2)">{{d.intro}}</p>
             <section class="card" style="overflow: hidden">
               <div style="position: relative; height: 140px; background-color: var(--surface-2); background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 22px 22px">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span style="position: absolute; left: 0; right: 0; top: 42%; height: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <span style="position: absolute; top: 0; bottom: 0; left: 58%; width: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <svg viewBox="0 0 24 24" width="30" height="30" fill="var(--text)" stroke="var(--surface)" stroke-width="1.5" style="position: absolute; left: 50%; top: 44%; transform: translate(-50%, -100%)"><path d="M12 22s-7.5-6.6-7.5-12.2a7.5 7.5 0 0 1 15 0C19.5 15.4 12 22 12 22z"/><circle cx="12" cy="9.8" r="2.6" fill="var(--surface)" stroke="none"/></svg>
@@ -554,6 +560,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             <p style="font-size: 15.5px; line-height: 1.65; color: var(--text-2)">{{d.intro}}</p>
             <section class="card" style="overflow: hidden">
               <div style="position: relative; height: 140px; background-color: var(--surface-2); background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 22px 22px">
+                <div class="kmap" data-kmap="1" data-name="{{d.mapName}}" data-address="{{d.mapAddress}}" data-area="{{d.mapArea}}" data-kind="{{d.type}}"></div>
+                <span class="kmap-note" hidden></span>
                 <span style="position: absolute; left: 0; right: 0; top: 42%; height: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <span style="position: absolute; top: 0; bottom: 0; left: 58%; width: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--border)"></span>
                 <svg viewBox="0 0 24 24" width="30" height="30" fill="var(--text)" stroke="var(--surface)" stroke-width="1.5" style="position: absolute; left: 50%; top: 44%; transform: translate(-50%, -100%)"><path d="M12 22s-7.5-6.6-7.5-12.2a7.5 7.5 0 0 1 15 0C19.5 15.4 12 22 12 22z"/><circle cx="12" cy="9.8" r="2.6" fill="var(--surface)" stroke="none"/></svg>
