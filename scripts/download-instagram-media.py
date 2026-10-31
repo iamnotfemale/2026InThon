@@ -9,7 +9,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 
@@ -44,9 +44,17 @@ def best_image(entry):
     images = [image for image in entry.get("thumbnails", []) if image.get("url")]
     if not images:
         raise ValueError("No image candidates available")
-    # yt-dlp orders equal/unknown-size thumbnails from lower to higher preference.
-    return max(enumerate(images), key=lambda pair: (
-        (pair[1].get("width") or 0) * (pair[1].get("height") or 0), pair[0]))[1]
+    def quality(pair):
+        index, image = pair
+        url = urlparse(image["url"])
+        transform = parse_qs(url.query).get("stp", [""])[0]
+        resize = re.search(r"(?:^|[_/])(?:s|p)(\d+)x(\d+)", url.path + "/" + transform)
+        area = (image.get("width") or 0) * (image.get("height") or 0)
+        if not area and resize:
+            area = int(resize[1]) * int(resize[2])
+        # Candidate order can end with a tiny WebP; prefer the unscaled source.
+        return (resize is None, area, index)
+    return max(enumerate(images), key=quality)[1]
 
 
 class MediaRedirects(HTTPRedirectHandler):

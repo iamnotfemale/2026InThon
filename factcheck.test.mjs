@@ -78,11 +78,30 @@ test('shared post cover image is sent to the model and the scope says video was 
   const checker = createFactChecker({
     model: async ({ system, content }) => { calls.push(content); return system.includes('1단계') ? '{"claim":"","checkable":false}' : '{}'; },
     search: {}, fetchPage: async () => page(''),
-    fetchMedia: async () => ({ url: 'https://lookaside.fbsbx.com/x', contentType: 'image/jpeg', body: Buffer.from('jpeg') }) });
+    fetchMedia: async () => ({ url: 'https://lookaside.fbsbx.com/x', contentType: 'image/jpeg', body: Buffer.from([255, 216, 255, 224]) }) });
   const result = await checker({ attachments: [{ type: 'ig_post', payload: { url: 'https://lookaside.fbsbx.com/x', title: '캡션 내용' } }] });
   assert.equal(calls[0][0].type, 'image');
   assert.match(calls[0].at(-1).text, /캡션 1: 캡션 내용/);
-  assert.match(result.messages[0], /대표 이미지만 받을 수 있어 영상·나머지 장은 확인하지 못함/);
+  assert.match(result.messages[0], /공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함/);
+});
+
+test('CDN JPEG mislabeled WebP is sent with the actual image MIME, and HTML mislabeled as image is excluded', async () => {
+  const calls = [];
+  let body = Buffer.from([255, 216, 255, 224]);
+  const checker = createFactChecker({
+    model: async ({ content }) => { calls.push(content); return '{"claim":"","checkable":false}'; },
+    search: {}, fetchPage: async () => page(''),
+    fetchMedia: async () => ({ contentType: 'image/webp', body }),
+  });
+  const message = { attachments: [{ type: 'ig_post', payload: { url: 'https://lookaside.fbsbx.com/x' } }] };
+  await checker(message);
+  assert.equal(calls[0][0].source.media_type, 'image/jpeg');
+  assert.equal(calls[0][0].source.data, body.toString('base64'));
+  body = Buffer.from('<html>login required</html>');
+  const result = await checker(message);
+  assert.equal(calls.length, 1);
+  assert.equal(result.status, 'no_input');
+  assert.match(result.notes.join('\n'), /이미지 형식을 확인하지 못함/);
 });
 
 test('safe fetch rejects non-https, private addresses and redirects into private networks', async () => {

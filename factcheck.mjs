@@ -209,10 +209,18 @@ async function gatherInput(message, { fetchMedia, readVideo }) {
     let media;
     try { media = await fetchMedia(item.url, MAX_VIDEO_BYTES); }
     catch (error) { notes.push(`${item.type} 첨부를 받지 못함(${error.message})`); continue; }
-    if (media.contentType.startsWith('image/') && images.length < MAX_IMAGES && media.body.length <= MAX_IMAGE_BYTES) {
-      images.push({ mediaType: media.contentType, data: media.body.toString('base64') });
+    const b = media.body;
+    // Meta CDN can label JPEG bytes as WebP; model inputs must match the bytes.
+    const imageType = b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff ? 'image/jpeg'
+      : b.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? 'image/png'
+      : b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP' ? 'image/webp'
+      : /^GIF8[79]a$/.test(b.subarray(0, 6).toString()) ? 'image/gif' : null;
+    if (imageType && images.length < MAX_IMAGES && b.length <= MAX_IMAGE_BYTES) {
+      images.push({ mediaType: imageType, data: b.toString('base64') });
       // A JPEG ig_post attachment alone does not establish coverage of all slides or video.
-      if (item.type === 'ig_post') notes.push('공유 게시물은 대표 이미지만 받을 수 있어 영상·나머지 장은 확인하지 못함');
+      if (item.type === 'ig_post') notes.push('공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함');
+    } else if (media.contentType.startsWith('image/') && !imageType) {
+      notes.push(`${item.type} 첨부의 이미지 형식을 확인하지 못함`);
     } else if (media.contentType.startsWith('video/')) {
       if (!readVideo) { notes.push('영상은 열었지만 화면·음성 분석 모델이 없어 확인하지 못함'); continue; }
       try {

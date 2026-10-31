@@ -49,6 +49,18 @@ class MediaChecks(unittest.TestCase):
             {"url": "square-preview"}, {"url": "uncropped-original"},
         ]})["url"], "uncropped-original")
 
+    def test_unscaled_source_beats_last_resized_webp_without_dimension_metadata(self):
+        original = "https://scontent.example.fbcdn.net/image.jpg"
+        self.assertEqual(media.best_image({"thumbnails": [
+            {"url": original},
+            {"url": "https://scontent.example.fbcdn.net/a?stp=dst-webp_s1080x1080"},
+            {"url": "https://scontent.example.fbcdn.net/a?stp=dst-webp_s640x640"},
+        ]})["url"], original)
+        self.assertIn("s1080x1080", media.best_image({"thumbnails": [
+            {"url": "https://scontent.example.fbcdn.net/a?stp=dst-webp_s1080x1080"},
+            {"url": "https://scontent.example.fbcdn.net/a?stp=dst-webp_s640x640"},
+        ]})["url"])
+
     def test_webhook_url_and_opaque_media_id_rejection(self):
         self.assertEqual(media.source_from_attachment({"type": "ig_reel", "payload": {
             "url": "https://www.instagram.com/reel/Example123/?tracking=1"}}),
