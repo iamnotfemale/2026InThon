@@ -201,34 +201,44 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           timing.analysis_ms = Math.round(performance.now() - analysisStarted);
           timing.kind = result.kind ?? 'content'; timing.action = result.action ?? null; timing.status = result.status ?? null;
-          let savedId = null;
+          // A post with several recipes comes back as parts: each part is saved as its own record.
+          const parts = Array.isArray(result.parts) && result.parts.length ? result.parts.map(part => ({ ...part, media: result.media })) : [result];
+          const collection = parts.length > 1;
+          const savedIds = [];
           const shouldSave = (result.kind === 'content' || !respondToMessage) && result.status === 'done' && saveFactCheck;
           const saveResult = async () => {
             const saveStarted = performance.now();
             await track(); // The sender row must exist before writing a content result with its foreign key.
-            await quietly(async () => { savedId = (await saveFactCheck(sender, result))?.id ?? null; }, '팩트체크 기록 실패');
+            for (const part of parts) {
+              await quietly(async () => { const id = (await saveFactCheck(sender, part))?.id; if (id) savedIds.push([id, part]); }, '팩트체크 기록 실패');
+            }
             timing.save_ms = Math.round(performance.now() - saveStarted);
           };
           let mode = 'full';
-          if (shouldSave && config.publicUrl && getDeliveryMode) {
+          if (shouldSave && !collection && config.publicUrl && getDeliveryMode) {
             const preferenceStarted = performance.now();
             try { mode = await getDeliveryMode(sender); } catch { stats.lastError = '받는 방식 조회 실패'; }
             timing.preference_ms = Math.round(performance.now() - preferenceStarted);
           }
-          // Private links need a saved ID; full DMs can arrive before optional search embeddings and storage.
-          if (shouldSave && mode === 'summary') await saveResult();
+          // Private links need saved IDs. Several recipes would be dozens of DMs in full mode, so a collection
+          // always gets one link per recipe; full DMs can arrive before optional search embeddings and storage.
+          const linksFirst = shouldSave && (collection || mode === 'summary');
+          if (linksFirst) await saveResult();
           let messages = result.messages;
-          if (savedId && mode === 'summary') messages = [resultLinkMessage(config.publicUrl, savedId, result)];
+          if (linksFirst && config.publicUrl && savedIds.length === parts.length) {
+            messages = [...(collection && Array.isArray(result.intro) ? result.intro : []),
+              ...savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part))];
+          }
           try {
             for (const text of messages) await send(text);
             timing.result_sent_ms = elapsed();
           } finally {
             await activity.finish();
             // Keep completed analysis even when one DM chunk fails; its delivery state stays pending.
-            if (shouldSave && mode !== 'summary') await saveResult();
+            if (shouldSave && !linksFirst) await saveResult();
           }
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
-          if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
+          if (markFactCheckSent) for (const [id] of savedIds) await quietly(() => markFactCheckSent(id), 'DM 발송 기록 실패');
           await backfill();
         } else await send('안녕, 디미예요!');
         await track();

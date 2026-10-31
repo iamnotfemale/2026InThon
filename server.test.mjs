@@ -685,3 +685,33 @@ test('handle lookups use the Page token when available and record which token fa
   assert.deepEqual(auths, ['Bearer page-token-value', 'Bearer user-token-value']);
   assert.deepEqual(recorded, [{ username: 'dimi.fan' }, { error: 'user-token: HTTP 400, code 36103, OAuthException' }]);
 });
+
+test('a recipe collection saves each recipe as its own record and always sends one link per recipe', async t => {
+  for (const mode of ['summary', 'full']) {
+    const sent = []; const saved = []; const marked = []; let next = 40;
+    const part = title => ({ status: 'done', action: 'recipe', recipe: { title }, extracted: { claim: title }, messages: [title + ' 정리'] });
+    const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID, publicUrl: 'https://inthon.yeoziphab.com' },
+      factCheck: async () => ({ status: 'done', action: 'recipe', media: { sourceUrl: 'https://www.instagram.com/p/DDqP4fhTkJb/' },
+        parts: [part('두부찌개'), part('부추장')], intro: ['레시피 2개'], messages: ['레시피 2개', '두부찌개 정리', '부추장 정리'] }),
+      saveFactCheck: async (_sender, result) => { saved.push(result); return { id: next++ }; },
+      getDeliveryMode: async () => mode, markFactCheckSent: async id => marked.push(id),
+      apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'out' }); } });
+    await deliver(f, [incoming({ message: { mid: 'collection-' + mode, text: '레시피' } })]); await eventually(() => f.stats.replies === 1);
+    assert.deepEqual(saved.map(r => r.recipe.title), ['두부찌개', '부추장']);
+    assert.ok(saved.every(r => r.media.sourceUrl.endsWith('/DDqP4fhTkJb/')), 'each record keeps the source link');
+    // Both modes: the intro plus one private link per recipe, never every recipe's full text.
+    assert.equal(sent.length, 4); assert.equal(sent[1], '레시피 2개');
+    assert.match(sent[2], /두부찌개[\s\S]*\/items\/fc40/); assert.match(sent[3], /부추장[\s\S]*\/items\/fc41/);
+    assert.deepEqual(marked, [40, 41]);
+  }
+  // A failed save falls back to the full text so no recipe is lost from the DM.
+  const sent = []; let saves = 0;
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID, publicUrl: 'https://inthon.yeoziphab.com' },
+    factCheck: async () => ({ status: 'done', action: 'recipe', parts: [{ status: 'done', recipe: {} }, { status: 'done', recipe: {} }],
+      intro: ['레시피 2개'], messages: ['레시피 2개', 'A 정리', 'B 정리'] }),
+    saveFactCheck: async () => (saves++ ? null : { id: 50 }),
+    getDeliveryMode: async () => 'summary',
+    apiFetch: async (_url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'out' }); } });
+  await deliver(f, [incoming({ message: { mid: 'collection-partial', text: '레시피' } })]); await eventually(() => f.stats.replies === 1);
+  assert.equal(saves, 2); assert.deepEqual(sent.slice(1), ['레시피 2개', 'A 정리', 'B 정리']);
+});
