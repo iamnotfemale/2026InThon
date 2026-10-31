@@ -90,7 +90,7 @@ function fakeNode() {
     setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; }, addEventListener(t, fn) { this.listeners[t] = fn; } };
 }
 function placeholder(dataset) {
-  const noteEl = { textContent: '', hidden: true };
+  const noteEl = { textContent: '', hidden: true, children: [], appendChild(c) { this.children.push(c); return c; } };
   const box = { attrs: { 'aria-hidden': 'true' }, querySelector: () => noteEl, removeAttribute(k) { delete this.attrs[k]; } };
   const el = { ...fakeNode(), dataset: { kmap: '1', ...dataset }, isConnected: true, innerHTML: 'x', classList: { added: [], add(c) { this.added.push(c); } },
     parentElement: box, ownerDocument: { createElement: () => fakeNode() } };
@@ -144,6 +144,11 @@ test('placeholders mount a pinned map, explain name-based or missing locations, 
   const byName = placeholder({ name: '가상 커피', area: '명동', kind: 'restaurant' });
   await attachMaps(byName.root, { load: async () => kakao, services: () => services({ keyword: [place('가상 커피', '서울 중구 명동 1')] }) });
   assert.equal(byName.noteEl.textContent, NOTES.name); assert.equal(byName.noteEl.hidden, false);
+  // The note can be dismissed with an X so it stops covering the map.
+  const close = byName.noteEl.children.at(-1);
+  assert.equal(close.className, 'kmap-note-close'); assert.equal(close.type, 'button'); assert.equal(close.attrs['aria-label'], '안내 닫기');
+  close.listeners.click(); assert.equal(byName.noteEl.hidden, true);
+  assert.equal(byAddress.noteEl.children.length, 0, 'no close button without a note');
   assert.equal(overlays[1].content.href, 'https://place.map.kakao.com/1');
   assert.equal(overlays[1].content.target, '_blank'); assert.equal(overlays[1].content.rel, 'noopener noreferrer');
   assert.equal(overlays[1].clickable, true);

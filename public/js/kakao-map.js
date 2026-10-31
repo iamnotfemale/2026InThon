@@ -175,6 +175,15 @@ function note(el, kind) {
   if (!target) return;
   target.textContent = NOTES[kind] ?? '';
   target.hidden = !target.textContent;
+  if (target.hidden) return;
+  // An X lets the reader hide the note so it no longer covers the map. The glyph is drawn in CSS so the note's
+  // textContent stays exactly the message; the note comes back the next time a (different) place is shown.
+  const close = (el.ownerDocument ?? globalThis.document).createElement('button');
+  close.type = 'button';
+  close.className = 'kmap-note-close';
+  close.setAttribute('aria-label', '안내 닫기');
+  close.addEventListener('click', () => { target.hidden = true; });
+  target.appendChild(close);
 }
 
 /** Watches the app for map placeholders (both dashboard layouts) and mounts them once they appear. */

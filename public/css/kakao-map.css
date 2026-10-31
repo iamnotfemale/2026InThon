@@ -13,3 +13,10 @@ a.kmap-pin{cursor:pointer}
 a.kmap-pin:hover .kmap-pin-head{box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}
 a.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offset:3px;border-radius:22px}
 @media(prefers-reduced-motion:reduce){.kmap-pin,.kmap-pin *,.kmap-pin::before,.kmap-pin::after{animation:none;transition:none}}
+
+/* Close button on the map note (.kmap-note is styled per layout in dashboard.css / mobile.css). */
+.kmap-note:has(.kmap-note-close){padding-right:34px}
+.kmap-note-close{position:absolute;top:50%;right:4px;width:26px;height:26px;margin-top:-13px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text-2,#525252);font:inherit;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.kmap-note-close::before{content:'\00D7';font-size:18px}
+.kmap-note-close:hover{background:rgba(0,0,0,.06)}
+.kmap-note-close:focus-visible{outline:2px solid var(--text,#171717);outline-offset:1px}
