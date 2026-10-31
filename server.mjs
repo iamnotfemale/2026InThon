@@ -47,7 +47,7 @@ export function readReplyKeys(file) {
 }
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {} }) {
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -86,16 +86,18 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         || m.message.is_self || m.message.is_deleted || !Number.isFinite(age) || age < -300000 || age > 86400000) continue;
       const key = createHash('sha256').update(`${IG_ID}:${m.message.mid}`).digest('hex');
       if (handledReplies.has(key)) continue;
+      handledReplies.add(key);
       try {
         // Reserve before sending: retries, concurrent deliveries and restarts must not send the greeting twice.
-        replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
-        handledReplies.add(key);
+        if (reserveReply) {
+          if (!await reserveReply(key)) continue;
+        } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
         const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
           headers: { Authorization: `Bearer ${config.accessToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text: '안녕?' } }) });
         if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
         stats.replies++;
-        replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
+        await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
       } catch (error) {
         stats.replyFailures++;
         stats.lastError = '자동 답장: ' + (error.message.startsWith('Meta API') ? error.message : '전송 결과를 확인하지 못했습니다.');
@@ -139,11 +141,11 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         .map(m => ({ accountId: e.id, event: m })))
         .filter(({ event: m }) => m?.message && !m.message.is_echo);
       const receipt = { receivedAt: new Date(now()).toISOString(), messages: messages.length, entries: event.entry.length };
-      record(receipt); // Persist before acknowledging so failed writes can be retried by Meta.
+      await record(receipt); // Persist before acknowledging so failed writes can be retried by Meta.
       stats.signedEvents++; stats.messages += messages.length; stats.lastEventAt = receipt.receivedAt;
       respond(res, 200, 'EVENT_RECEIVED');
       // Acknowledge promptly; sending the reply must not delay the webhook response.
-      await autoReply(messages);
+      await background(autoReply(messages));
       return;
     }
     if (req.method === 'GET' && url.pathname === '/auth/start') {

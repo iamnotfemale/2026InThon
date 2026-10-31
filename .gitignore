@@ -7,3 +7,6 @@ node_modules/
 *.pem
 *.key
 *.log
+
+.vercel
+.env*.local

@@ -1,0 +1,13 @@
+.local
+.git
+.agent-context.md
+.env*
+node_modules
+*.dpapi
+*.pem
+*.key
+*.log
+*.test.mjs
+docs
+start.ps1
+stop.ps1

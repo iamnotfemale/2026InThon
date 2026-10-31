@@ -2,6 +2,18 @@
   "name": "inthon-instagram-test",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node server.mjs", "test": "node --test" },
-  "engines": { "node": ">=22" }
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2",
+    "@vercel/functions": "3.10.5"
+  },
+  "overrides": {
+    "zod": "4.6.6"
+  }
 }

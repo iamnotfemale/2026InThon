@@ -107,6 +107,30 @@ test('auto reply fails closed when its durable reservation cannot be written', a
   assert.equal(calls, 0);
 });
 
+test('cloud reservation prevents duplicate sends across concurrent server instances', async t => {
+  let reserved = false; let calls = 0;
+  const options = { config: { accessToken: 'test-token', userId: IG_ID },
+    reserveReply: async () => { if (reserved) return false; reserved = true; return true; },
+    apiFetch: async () => { calls++; return json({ message_id: 'cloud-reply' }); } };
+  const a = await fixture(t, options); const b = await fixture(t, options);
+  await Promise.all([deliver(a, [incoming()]), deliver(b, [incoming()])]);
+  await eventually(() => a.stats.replies + b.stats.replies === 1);
+  assert.equal(calls, 1);
+});
+
+test('failed async receipts are not acknowledged and background replies are registered', async t => {
+  const failing = await fixture(t, { record: async () => { throw new Error('cloud down'); } });
+  assert.equal((await deliver(failing, [incoming()])).status, 500);
+  let background;
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    reserveReply: async () => true, background: task => { background = task; },
+    apiFetch: async () => json({ message_id: 'cloud-reply' }) });
+  assert.equal((await deliver(f, [incoming()])).status, 200);
+  assert.ok(background instanceof Promise);
+  await background;
+  assert.equal(f.stats.replies, 1);
+});
+
 test('webhook verification rejects wrong tokens and echoes the exact challenge', async t => {
   const f = await fixture(t);
   assert.equal((await fetch(`${f.publicUrl}/webhooks/instagram?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=00123`)).status, 403);

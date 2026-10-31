@@ -1,10 +1,12 @@
 # inthon2team Instagram DM 테스트
 
+현재 다른 Instagram 계정에서 `@inthon2team`으로 새 DM을 보내면 **안녕?**으로 답장하는 흐름을 구현했습니다. 팀원은 [DM 테스트 인수인계](docs/dm-test-handoff.md)부터 읽으세요. 서버 주소는 `https://inthon.yeoziphab.com`, 상태 확인은 `/health`, 웹훅은 `/webhooks/instagram`입니다. 클라우드 구성은 기존 계정의 토큰을 사용하는 테스트이며 개인 계정 등록·대화/릴스 저장은 아직 없습니다.
+
 팩트체크 확장 설계는 [Instagram DM 멀티모달 팩트체크 MVP 명세서](docs/instagram-factcheck-mvp-spec.md)에 정리했습니다. 이미지·영상·본문 분석, 근거 검색과 검증, DM 응답, 평가 기준을 다룹니다. 현재 실행 기능과 제안 기능을 구분해 읽으세요.
 
 Continuum의 `DeepSeek-V4.1-Flash-B300` API 테스트 설정과 실행법은 이 PC의 `.local/continuum-setup.md`에 있습니다. 비밀값을 포함한 로컬 설정은 GitHub에 올리지 않습니다. 모델 목록·텍스트·함수 호출·이미지 입력을 검증했습니다. 현재 Codex CLI 연결은 서버의 `namespace` 도구 형식 미지원(HTTP 422)으로 제한됩니다. Instagram 자동 답장에는 아직 연결하지 않았습니다.
 
-Node.js 22 이상, PowerShell 7, 인증된 ngrok이 필요합니다. 추가 npm 패키지는 없습니다.
+코드 검증에는 Node.js 22와 `npm ci`가 필요합니다. 아래 로컬 실행·토큰 재승인 도구는 Windows, PowerShell 7, 인증된 ngrok을 사용합니다. 배포된 봇의 DM 테스트만 한다면 로컬 서버를 켤 필요가 없습니다.
 
 ```powershell
 cd D:\2026\2026InThon
