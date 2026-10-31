@@ -157,3 +157,65 @@ test('a stored exhibition post becomes one item per event and renders through th
   live.d.visitDates[1].pick();
   assert.match(opened[0][1], /^https:\/\/calendar\.google\.com\/calendar\/render\?.*dates=20261101%2F20261102/);
 });
+
+test('empty fields are filled only from opened pages, with a verbatim quote, and stay marked as web information', async () => {
+  const { createExhibitFiller } = await import('./exhibit.mjs');
+  const { missingFields, shownValue } = await import('./public/js/exhibit-data.js');
+  const exhibit = normalizeExhibit(rawExhibit([songeun({ reserve_url: null, official_url: null })]), { reference: REF, sourceText: CAPTION });
+  const event = exhibit.events[0];
+  assert.deepEqual(missingFields(event), ['hours', 'closed', 'conditions', 'official_url', 'reserve_url']);
+  const html = body => ({ url: 'https://www.songeun.or.kr/exhibition/now', contentType: 'text/html',
+    body: Buffer.from(`<html><head><title>송은 LIGHT, FORM AND VISION</title></head><body><article><p>${body}</p></article></body></html>`) });
+  const page = '송은 LIGHT, FORM AND VISION 전시 안내입니다. 관람시간 화요일부터 토요일 11:00~18:30 (입장 마감 18:00) 입니다. '
+    + '휴관일은 매주 일요일, 월요일 및 공휴일입니다. 사전예약은 https://www.songeun.or.kr/reserve 에서 할 수 있어요. 이 문장은 길이를 채우기 위한 설명 문장입니다. '.repeat(2);
+  const queries = [];
+  const search = { bing: async (q) => { queries.push(q); return [
+    { url: 'https://www.songeun.or.kr/exhibition/now', title: '송은 LIGHT, FORM AND VISION', snippet: '관람 안내' },
+    { url: 'https://spam.example/', title: '무관한 광고', snippet: '대출' }]; } };
+  const fetched = [];
+  const model = async ({ content }) => {
+    assert.match(content[0].text, /비어 있는 칸: hours, closed, conditions, official_url, reserve_url/);
+    return JSON.stringify({ events: [{ id: 'T1', fills: [
+      { field: 'hours', value: '화–토 11:00 – 18:30 (입장 마감 18:00)', source: 'W1', basis: 'venue', quote: '관람시간 화요일부터 토요일 11:00~18:30 (입장 마감 18:00) 입니다.' },
+      { field: 'closed', value: '매주 일·월요일, 공휴일', source: 'W1', basis: 'venue', quote: '휴관일은 매주 일요일, 월요일 및 공휴일입니다.' },
+      { field: 'conditions', value: '만 19세 이상', source: 'W1', basis: 'event', quote: '만 19세 이상 관람 가능합니다.' },
+      { field: 'fee', value: '10,000원', source: 'W1', basis: 'event', quote: '관람시간 화요일부터' },
+      { field: 'reserve_url', value: 'https://www.songeun.or.kr/reserve', source: 'W1', basis: 'event', quote: '사전예약은 https://www.songeun.or.kr/reserve 에서 할 수 있어요.' },
+      { field: 'official_url', value: 'https://made-up.example/', source: 'W1', basis: 'event', quote: '송은 LIGHT, FORM AND VISION 전시 안내입니다.' },
+      { field: 'hours', value: '중복', source: 'W9', basis: 'event', quote: 'x' },
+    ], conflicts: ['페이지의 종료일은 11월 15일이에요.'] }] });
+  };
+  const fill = createExhibitFiller({ model, search, fetchPage: async url => { fetched.push(url); return html(page); } });
+  const stats = await fill(exhibit);
+  assert.match(queries[0], /LIGHT, FORM AND VISION 송은 운영시간 휴관일/);
+  assert.deepEqual(fetched, ['https://www.songeun.or.kr/exhibition/now'], 'unrelated results are not opened');
+  assert.deepEqual(Object.keys(event.web), ['hours', 'closed', 'reserve_url'],
+    'a made-up quote, an already-filled field, an unknown page and a link not on the page are all dropped');
+  assert.equal(stats.filled, 3);
+  assert.equal(event.hours, null, "the post's own field stays empty");
+  assert.deepEqual(shownValue(event, 'hours'), { value: '화–토 11:00 – 18:30 (입장 마감 18:00)', web: event.web.hours });
+  assert.equal(event.web.closed.basis, 'venue');
+  assert.ok(event.conflicts.includes('웹 안내와 다름: 페이지의 종료일은 11월 15일이에요.'));
+  assert.deepEqual(validateExhibit(JSON.parse(JSON.stringify(exhibit))), exhibit, 'web fills round-trip through storage');
+
+  // The view uses the web closing days for visit suggestions; the dashboard and DM mark web values.
+  const view = exhibitView(event, new Date('2026-10-31T03:00:00Z'));
+  assert.equal(view.visits.length, 0, '"공휴일" makes closing days irregular, so no visit dates are guessed');
+  const row = { id: 9, created_at: '2026-10-31T02:00:00Z', status: 'done', topic: 'exhibit', claim: event.title, verdict: null,
+    reason: JSON.stringify({ exhibit, sourceUrl: null }), sources: [], dm_status: 'sent' };
+  const [item] = exhibitRowItems(row, new Date('2026-10-31T03:00:00Z'));
+  assert.equal(item.hours, '화–토 11:00 – 18:30 (입장 마감 18:00) (웹 확인)');
+  assert.equal(item.reserveUrl, 'https://www.songeun.or.kr/reserve');
+  assert.ok(item.checks.some(c => c.startsWith('웹에서 찾은 운영 시간·휴무일·예약 링크: 송은 LIGHT, FORM AND VISION')));
+  const dm = exhibitMessages(exhibit, new Date('2026-10-31T03:00:00Z')).join('\n');
+  assert.match(dm, /운영: 화–토 11:00 – 18:30 \(입장 마감 18:00\) \*/);
+  assert.match(dm, /\* 표시는 게시물에 없어 웹에서 찾은 정보예요/);
+  assert.match(dm, /https:\/\/www\.songeun\.or\.kr\/exhibition\/now/);
+});
+
+test('a search outage keeps the post-only result', async () => {
+  const model = async () => JSON.stringify(rawExhibit());
+  const extractor = createExhibitExtractor({ model, now: () => new Date('2026-10-31T03:00:00Z'), fill: async () => { throw new Error('Bing down'); } });
+  const done = await extractor({ images: [], videos: [], captions: [CAPTION], text: '', scope: [], notes: [] });
+  assert.equal(done.status, 'done'); assert.equal(done.exhibit.events.length, 2);
+});

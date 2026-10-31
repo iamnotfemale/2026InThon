@@ -3,7 +3,7 @@
 import { validateRecipe } from './recipe-data.js';
 import { indexFromRow, storedContent } from './content-index.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
-import { validateExhibit, exhibitView, visitCalendarLink } from './exhibit-data.js';
+import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -130,13 +130,18 @@ export function exhibitRowItems(row, now = new Date()) {
   const origin = instagramOrigin(stored.sourceUrl);
   return exhibit.events.map((event, i) => {
     const view = exhibitView(event, now);
+    // Values found on the web (not in the post) are marked so they never read as the post's own.
+    const show = (field, missing) => { const { value, web } = shownValue(event, field); return value ? (web ? value + ' (웹 확인)' : value) : missing; };
+    const sources = webSources(event).map(source => `웹에서 찾은 ${source.fields.join('·')}: ${source.title ?? source.url}`
+      + `${source.basis === 'venue' ? ' (장소 일반 안내)' : ''} ${source.url}`);
     return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, type: 'exhibit', title: event.title,
       key: view.keyLine, phase: view.phase, phaseCls: view.phaseCls, intro: event.intro ?? '원본에 소개 문구가 없어요.',
-      period: view.period, hours: event.hours ?? '운영 시간 미기재', closed: event.closed ?? '휴무일 미기재',
-      place: event.place ?? event.area ?? '장소 미기재', address: event.address ?? (event.place && event.area) ?? '주소 미기재',
-      mapUrl: view.mapUrl, fee: event.fee ?? '입장료 미기재', booking: event.booking ?? '예약 필요 여부 미기재',
-      conditions: event.conditions ?? '관람 조건 미기재', reserveUrl: event.reserveUrl, officialUrl: event.officialUrl,
-      visitDates: view.visits.map(visit => visit.label), checks: [...event.conflicts, ...event.notices, ...event.checks],
+      period: view.period, hours: show('hours', '운영 시간 미기재'), closed: show('closed', '휴무일 미기재'),
+      place: event.place ?? event.area ?? '장소 미기재', address: show('address', (event.place && event.area) ?? '주소 미기재'),
+      mapUrl: view.mapUrl, fee: show('fee', '입장료 미기재'), booking: show('booking', '예약 필요 여부 미기재'),
+      conditions: show('conditions', '관람 조건 미기재'), reserveUrl: shownValue(event, 'reserve_url').value,
+      officialUrl: shownValue(event, 'official_url').value,
+      visitDates: view.visits.map(visit => visit.label), checks: [...event.conflicts, ...event.notices, ...event.checks, ...sources],
       origin, exhibitEvent: event, exhibitVisits: view.visits, exhibitEnd: view.ended ? null : event.end, exhibitDaysLeft: view.daysLeft };
   });
 }
