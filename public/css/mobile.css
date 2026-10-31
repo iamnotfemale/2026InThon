@@ -118,6 +118,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .info:first-child{border-top:0}
 .info .k{width:76px;flex:none;font-size:13.5px;color:var(--muted);padding-top:1px}
 .info .v{flex:1;font-size:15px;font-weight:500;line-height:1.5}
+.kmap{position:absolute;inset:0;z-index:2;visibility:hidden}.kmap.ready{visibility:visible}
+.kmap-note{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;padding:6px 10px;border-radius:8px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:12px;line-height:1.45;color:var(--text-2)}.kmap-note[hidden]{display:none}
 .mmenu{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-top:1px solid var(--border)}
 .mmenu:first-child{border-top:0}
 .mmenu .price{margin-left:auto;font-family:inherit;font-variant-numeric:tabular-nums;font-size:14px;font-weight:500;white-space:nowrap}

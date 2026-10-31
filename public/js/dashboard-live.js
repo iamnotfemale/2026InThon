@@ -144,6 +144,7 @@ export function exhibitRowItems(row, now = new Date()) {
       period: view.period, hours: show('hours', '운영 시간 미기재'), closed: show('closed', '휴무일 미기재'),
       place: event.place ?? event.area ?? '장소 미기재', address: show('address', (event.place && event.area) ?? '주소 미기재'),
       mapUrl: view.mapUrl, fee: show('fee', '입장료 미기재'), booking: show('booking', '예약 필요 여부 미기재'),
+      mapName: event.place ?? undefined, mapAddress: shownValue(event, 'address').value ?? undefined, mapArea: event.area ?? undefined,
       conditions: show('conditions', '관람 조건 미기재'), reserveUrl: shownValue(event, 'reserve_url').value,
       officialUrl: shownValue(event, 'official_url').value,
       visitDates: view.visits.map(visit => visit.label), checks: [...event.conflicts, ...event.notices, ...event.checks, ...sources],
@@ -174,6 +175,8 @@ export function restaurantRowItems(row, now = new Date()) {
       priceRange: place.priceRange ?? '가격대 미기재', hours: place.hours ?? '영업 시간 미기재', closed: place.closed ?? '휴무일 미기재',
       address: place.address ?? (place.area ? place.area + ' · 상세 주소 미기재' : '주소 미기재'),
       mapNaver: maps.naver, mapKakao: maps.kakao, mapGoogle: maps.google,
+      // Kakao map placeholder: clean values only (no 미기재 wording); kakao-map.js decides how to pin them.
+      mapName: place.name, mapAddress: place.address ?? undefined, mapArea: place.area ?? undefined,
       menus: place.menus.map(menu => ({ name: menu.name, price: priceLabel(menu) ?? '가격 미기재', note: menu.note, signature: menu.signature })),
       reservation: place.reservation ?? '예약 정보 미기재', waiting: place.waiting ?? '웨이팅 정보 미기재',
       parking: place.parking ?? '주차 정보 미기재', phone: place.phone ?? '전화번호 미기재',
@@ -198,6 +201,8 @@ export function spaceRowItems(row, now = new Date()) {
       hours: place.hours ?? '운영 시간 미기재', closed: place.closed ?? '휴무일 미기재',
       address: place.address ?? (place.area ? place.area + ' · 상세 주소 미기재' : '주소 미기재'),
       mapNaver: maps.naver, mapKakao: maps.kakao, mapGoogle: maps.google,
+      // Kakao map placeholder: clean values only (no 미기재 wording); kakao-map.js decides how to pin them.
+      mapName: place.name, mapAddress: place.address ?? undefined, mapArea: place.area ?? undefined,
       reservation: place.reservation ?? '예약 정보 미기재', waiting: place.waiting ?? '대기 정보 미기재',
       parking: place.parking ?? '주차 정보 미기재', phone: place.phone ?? '전화번호 미기재',
       placeLinks: place.links.map(link => ({ label: link.label, url: link.url })), checks: place.checks, origin };
