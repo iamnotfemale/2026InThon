@@ -51,7 +51,7 @@ export const FACTCHECK_ACK = '받았어요. 핵심 주장과 근거를 확인한
 export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어요. 잠시 후 다시 보내주세요.';
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck }) {
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck, observeMessages }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -164,7 +164,10 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       stats.signedEvents++; stats.messages += messages.length; stats.lastEventAt = receipt.receivedAt;
       respond(res, 200, 'EVENT_RECEIVED');
       // Acknowledge promptly; sending the reply must not delay the webhook response.
-      await background(autoReply(messages));
+      const tasks = [autoReply(messages)];
+      if (observeMessages) tasks.push(Promise.resolve().then(() => observeMessages(messages))
+        .catch(() => { console.warn('Media diagnostic storage unavailable'); }));
+      await background(Promise.all(tasks));
       return;
     }
     if (req.method === 'GET' && url.pathname === '/auth/start') {

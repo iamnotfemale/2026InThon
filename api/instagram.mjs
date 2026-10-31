@@ -4,6 +4,7 @@ import { createCloudState } from '../cloud-state.mjs';
 import { createSupabaseState } from '../supabase-state.mjs';
 import { handleCloudAuth, loadAccessToken } from '../cloud-auth.mjs';
 import { factCheckerFromEnv } from '../factcheck.mjs';
+import { mediaProbeFromEnv } from '../media-probe.mjs';
 
 // DM receipts and reply reservations go to Supabase once both variables are set; until then Blob keeps working.
 // Blob stays required either way: cloud OAuth tickets and the renewed access token are stored there.
@@ -37,6 +38,7 @@ export default function handler(req, res) {
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
     // CONTINUUM_API_KEY가 있으면 고정 인사 대신 팩트체크 답장을 보낸다.
     ...stateStore(), loadAccessToken, background: task => waitUntil(task), factCheck: factCheckerFromEnv() ?? undefined,
+    observeMessages: mediaProbeFromEnv(),
   }).publicServer.listeners('request')[0];
   return publicHandler(req, res);
 }

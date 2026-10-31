@@ -50,6 +50,22 @@ async function eventually(predicate) {
   assert.ok(predicate(), 'Expected asynchronous reply result');
 }
 
+test('optional media diagnostics only observe verified events and do not delay acknowledgement or break replies', async t => {
+  let observed = 0; let release;
+  const f = await fixture(t, { observeMessages: async messages => {
+    observed++;
+    assert.equal(messages[0].event.message.attachments[0].type, 'ig_post');
+    await new Promise(resolve => { release = resolve; });
+    throw new Error('diagnostic unavailable');
+  } });
+  const unsigned = await fetch(f.publicUrl + '/webhooks/instagram', { method: 'POST', body: '{}' });
+  assert.equal(unsigned.status, 403); assert.equal(observed, 0);
+  const r = await deliver(f, [incoming({ message: { mid: 'media-test', attachments: [{ type: 'ig_post' }] } })]);
+  assert.equal(r.status, 200);
+  await eventually(() => observed === 1); release();
+  assert.equal((await fetch(f.publicUrl + '/health')).status, 200);
+});
+
 test('auto reply sends the exact greeting, acknowledges promptly and deduplicates concurrent/restarted deliveries', async t => {
   const dir = mkdtempSync(join(tmpdir(), 'inthon-replies-')); const journal = join(dir, 'replies.jsonl');
   t.after(() => { unlinkSync(journal); rmdirSync(dir); });
