@@ -5,6 +5,7 @@ import { createGeminiModel, factCheckerFromEnv, splitBytes } from './factcheck.m
 import { mediaFactCheckerFromEnv } from './media-pipeline.mjs';
 import { isContentMessage } from './instagram-source.mjs';
 import { createContentChoices } from './content-choices.mjs';
+import { recipeProcessorFromEnv } from './recipe.mjs';
 
 const TTL = 30 * 60000;
 const MAX_MESSAGES = 12;
@@ -78,9 +79,11 @@ export function createDmAssistant({ model, processContent, history, choices, war
 export function dmAssistantFromEnv({ loadAccessToken, env = process.env } = {}) {
   if (!env.GEMINI_API_KEY) return undefined;
   const chatModel = env.GEMINI_CHAT_MODEL || 'gemini-3.5-flash-lite';
+  const factcheck = mediaFactCheckerFromEnv(factCheckerFromEnv(env), { loadAccessToken, env });
+  const recipe = mediaFactCheckerFromEnv(recipeProcessorFromEnv(env), { loadAccessToken, env });
   return createDmAssistant({ model: createGeminiModel({ apiKey: env.GEMINI_API_KEY, model: chatModel,
     thinkingLevel: chatModel === 'gemini-3.5-flash-lite' ? 'minimal' : undefined }),
-    processContent: mediaFactCheckerFromEnv(factCheckerFromEnv(env), { loadAccessToken, env }),
+    processContent: (message, action) => (action === 'recipe' ? recipe : factcheck)(message),
     history: createChatHistory({ secret: env.META_APP_SECRET }),
     choices: createContentChoices({ secret: env.META_APP_SECRET }) });
 }

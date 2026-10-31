@@ -65,6 +65,7 @@ def compile_page(source_path, name, model_name, output):
     # The only source asset change is resolving the design tool's private blob URL.
     markup = markup.replace("/_blob/3651456fa0784f684fd353c526fe36bf", "/assets/mascot.png")
     markup = markup.replace("./assets/643336e9e4b4897d48e1aefd9715f721.png", "/assets/onboarding-mascot.png")
+    markup = markup.replace("./assets/aded32cac58d52519b0a843ab10f3095.png", "/assets/mobile-mascot.png")
     for filename, route in [("Main.dc.html", "/dashboard"), ("Landing.dc.html", "/"), ("Signup.dc.html", "/register")]:
         markup = markup.replace(f'href="{filename}"', f'href="{route}"')
     markup = markup.replace('href="#top">@inthon2team', 'href="https://www.instagram.com/dimi_in/" target="_blank" rel="noopener noreferrer">@inthon2team')
@@ -84,7 +85,7 @@ def compile_page(source_path, name, model_name, output):
         "class Component extends DCLogic", f"export default class {model_name} extends DCLogic", 1).replace('서비스명이에요', '디미예요').replace('서비스명', '디미').replace('inthon2team', 'dimi_in')
     (public / f"js/{name}-model.js").write_text(module, encoding="utf-8")
     fonts = re.search(r'<link rel="stylesheet" href="([^"]+)"', source).group(1)
-    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 당신의 가장 가까운 비서', 'register': '디미 · 회원가입'}[name]
+    title = {'dashboard': '디미 · 대시보드', 'landing': '디미 · 당신의 가장 가까운 비서', 'register': '디미 · 회원가입', 'mobile': '디미 · 대시보드'}[name]
     shell = '''<!doctype html>
 <html lang="ko">
 <head>
@@ -104,7 +105,11 @@ def compile_page(source_path, name, model_name, output):
 <body><div id="app"></div><noscript>화면을 보려면 JavaScript를 켜주세요.</noscript></body>
 </html>
 '''
-    (public / output).write_text(shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts), encoding="utf-8")
+    shell = shell.replace("__PAGE__", name).replace("__TITLE__", title).replace("__FONTS__", fonts)
+    if name == 'dashboard':
+        shell = shell.replace('</head>', '  <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 767px)">\n</head>')
+    if output:
+        (public / output).write_text(shell, encoding="utf-8")
     print(f"{name}: {parser.sequence} original elements; CSS and source state logic preserved")
 
 
@@ -112,9 +117,11 @@ def build():
     compile_page("frontend/design/Main.dc.html", "dashboard", "DashboardModel", "dashboard.html")
     compile_page("frontend/landing/Landing.dc.html", "landing", "LandingModel", "index.html")
     compile_page("frontend/register/Signup.dc.html", "register", "RegisterModel", "register.html")
+    compile_page("frontend/mobile/Mobile.dc.html", "mobile", "MobileModel", None)
     public = ROOT / "public"
     shutil.copyfile(ROOT / "frontend/assets/mascot.png", public / "assets/mascot.png")
     shutil.copyfile(ROOT / "frontend/assets/onboarding-mascot.png", public / "assets/onboarding-mascot.png")
+    shutil.copyfile(ROOT / "frontend/mobile/onboarding-mascot.png", public / "assets/mobile-mascot.png")
     shutil.copyfile(ROOT / "frontend/data/sample-data.json", public / "data/dashboard-sample.json")
     shutil.copyfile(ROOT / "node_modules/preact/dist/preact.mjs", public / "js/vendor/preact.module.js")
     shutil.copyfile(ROOT / "node_modules/preact/dist/preact.mjs.map", public / "js/vendor/preact.mjs.map")

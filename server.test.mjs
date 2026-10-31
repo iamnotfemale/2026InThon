@@ -432,7 +432,7 @@ test('signed content shares send three quick replies; clicks route the original 
     claim: async key => { if (claims.has(key)) return false; claims.add(key); return true; } });
   const respondToMessage = createDmAssistant({ choices,
     history: { read: async () => [], write: async () => {} }, model: () => assert.fail('No general chat for a click'),
-    processContent: async message => { processed.push(message.mid); return { status: 'done', messages: ['실제 결과'] }; } });
+    processContent: async (message, action) => { processed.push(message.mid); return { status: 'done', action, messages: ['실제 결과'] }; } });
   const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID }, respondToMessage,
     saveFactCheck: async (_sender, result) => { saved.push(result); return { id: 'saved-result' }; },
     markFactCheckSent: async id => marked.push(id),
@@ -446,11 +446,13 @@ test('signed content shares send three quick replies; clicks route the original 
     await deliver(f, [incoming({ message: { mid: 'click-' + action, text: offer.quick_replies[index].title,
       quick_reply: { payload: offer.quick_replies[index].payload } } })]);
     await eventually(() => f.stats.replies === index * 2 + 2);
-    assert.equal(saved.length, index === 0 ? 0 : 1);
+    assert.equal(saved.length, Math.min(index + 1, 2));
   }
-  assert.deepEqual(processed, ['shared-factcheck']);
+  assert.deepEqual(processed, ['shared-recipe', 'shared-factcheck']);
   assert.deepEqual(sent.filter(m => m.text === FACTCHECK_ACK), [{ text: FACTCHECK_ACK }]);
-  assert.equal(saved[0].kind, 'content'); assert.deepEqual(marked, ['saved-result']); assert.equal(blobs.size, 0);
+  assert.equal(sent.filter(m => m.text?.includes('재료와 조리 순서')).length, 1);
+  assert.equal(saved[0].kind, 'content'); assert.equal(saved[0].action, 'recipe');
+  assert.deepEqual(marked, ['saved-result', 'saved-result']); assert.equal(blobs.size, 0);
 });
 
 test('chat outages get a chat error and the existing linking command still takes priority', async t => {

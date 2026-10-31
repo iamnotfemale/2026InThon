@@ -1,5 +1,7 @@
 import { h, render } from './vendor/preact.module.js';
 import DashboardModel from './dashboard-model.js';
+import { renderNodes } from './dashboard-runtime.js';
+import { createMobileDashboard } from './dashboard-mobile.js';
 import { BOT_DM_URL, factcheckToItem, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
@@ -22,6 +24,8 @@ const store = {
 const DEMO_KEYS = ['connected', 'account', 'connectedAt', 'name', 'nameDraft', 'email', 'dataset', 'extra', 'over', 'deleted',
   'fav', 'taste', 'shares', 'simState', 'flow', 'conds', 'tasteRemoved'];
 const LINK_DONE = 'Instagram 계정이 연결됐어요. 전에 보낸 콘텐츠도 함께 보여요.';
+const activeOverlay = () => [...document.querySelectorAll('.overlay, .cook, .m .layer')]
+  .filter(element => element.getClientRects().length).at(-1);
 
 class DashboardApp extends DashboardModel {
   constructor(props) {
@@ -31,6 +35,10 @@ class DashboardApp extends DashboardModel {
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'summary', hidden: [] };
     this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*\/?$/.test(location.pathname);
+    this.mobileMedia = matchMedia('(max-width: 767px)');
+    this.state.mobile = this.mobileMedia.matches;
+    this.mobileValues = createMobileDashboard(this);
+    this.onMobileChange = event => this.setState({ mobile: event.matches });
     if (this.state.detailId === 'r3') this.state.extra = [this.data().R3];
     this.onPop = () => {
       this.popping = true;
@@ -47,9 +55,10 @@ class DashboardApp extends DashboardModel {
       }
       if (event.key === 'Escape') {
         if (this.state.cook) this.renderVals().closeCook();
+        else if (this.state.mobile && ['detail', 'settings'].includes(this.state.view)) this.go(this.state.from || 'library', { liveGuide: false });
         else this.setState({ modal: null, menuId: null, detailMenu: false, demoOpen: false, reportOpen: false });
       }
-      const overlay = document.querySelector('.overlay, .cook');
+      const overlay = activeOverlay();
       if (event.key !== 'Tab' || !overlay) return;
       const controls = [...overlay.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex="0"]')]
         .filter(element => element.getClientRects().length);
@@ -78,6 +87,7 @@ class DashboardApp extends DashboardModel {
     };
   }
   componentDidMount() {
+    this.mobileMedia.addEventListener('change', this.onMobileChange);
     addEventListener('popstate', this.onPop);
     addEventListener('keydown', this.onKey);
     document.addEventListener('visibilitychange', this.onVisible);
@@ -100,7 +110,7 @@ class DashboardApp extends DashboardModel {
       if (previousState.fav !== this.state.fav) store.set('inthon-fav:' + this.state.user.id, this.state.fav);
       if (previousState.taste !== this.state.taste) store.set('inthon-taste:' + this.state.user.id, this.state.taste);
     }
-    const overlay = document.querySelector('.overlay, .cook');
+    const overlay = activeOverlay();
     if (overlay && overlay !== this.overlay) {
       this.returnFocus = document.activeElement;
       overlay.querySelector('button:not(:disabled),input:not(:disabled),a[href]')?.focus();
@@ -108,6 +118,7 @@ class DashboardApp extends DashboardModel {
     this.overlay = overlay;
   }
   componentWillUnmount() {
+    this.mobileMedia.removeEventListener('change', this.onMobileChange);
     super.componentWillUnmount();
     removeEventListener('popstate', this.onPop);
     removeEventListener('keydown', this.onKey);
@@ -142,7 +153,8 @@ class DashboardApp extends DashboardModel {
   }
 
   render() {
-    if (!this.state.privateAuthRequired) return super.render();
+    if (!this.state.privateAuthRequired) return this.state.mobile
+      ? renderNodes(this.props.mobileTemplate, this.mobileValues(), this.state) : super.render();
     return h('div', { class: 'app', style: 'min-height:100vh' }, h('div', { class: 'overlay' },
       h('section', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': '내 정리 결과 보기', style: 'padding:24px;max-width:420px' },
         h('h1', { class: 'h2' }, '내 정리 결과 보기'),
@@ -181,7 +193,7 @@ class DashboardApp extends DashboardModel {
     let results;
     try { results = await Promise.all([
       supabase.from('account_links').select('linked_at, ig_accounts(username)').maybeSingle(),
-      supabase.from('factchecks').select('id, created_at, status, verdict, claim, reason, sources, dm_status, dm_sent_at')
+      supabase.from('factchecks').select('id, created_at, status, verdict, claim, topic, reason, sources, dm_status, dm_sent_at')
         .eq('status', 'done').order('created_at', { ascending: false }).limit(200),
       this.resultSettings(),
     ]); } catch {
@@ -199,7 +211,7 @@ class DashboardApp extends DashboardModel {
     const next = linkState(link.data);
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
-    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done').map(row => factcheckToItem(row, now)), resultPreferences: preferences,
+    this.setState({ ...next, liveItems: rows.data.filter(row => row.status === 'done').map(row => factcheckToItem(row, now)).filter(Boolean), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
@@ -309,4 +321,6 @@ class DashboardApp extends DashboardModel {
 
 const response = await fetch('/data/dashboard-template.json');
 if (!response.ok) throw new Error('Dashboard template unavailable');
-render(h(DashboardApp, { theme: 'light', template: await response.json() }), document.getElementById('app'));
+const mobileResponse = await fetch('/data/mobile-template.json');
+if (!mobileResponse.ok) throw new Error('Mobile dashboard template unavailable');
+render(h(DashboardApp, { theme: 'light', template: await response.json(), mobileTemplate: await mobileResponse.json() }), document.getElementById('app'));

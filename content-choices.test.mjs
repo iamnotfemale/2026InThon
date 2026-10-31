@@ -43,13 +43,19 @@ test('wrong sender, malformed payload, expired and replayed tickets never reach 
   assert.equal((await choices.select(clicked(offer, 1), '123', fail)).status, 'expired');
   assert.equal(data.size, 0);
 });
-test('concurrent clicks run once; recipe and schedule acknowledge their unimplemented processors', async () => {
+test('concurrent clicks run once; recipe routes its action and only schedule remains unimplemented', async () => {
   const { choices } = fixture(); let calls = 0;
   const offer = await choices.offer({ mid: 'a' }, '123');
   const process = async () => { calls++; return { status: 'done', messages: ['결과'] }; };
   const results = await Promise.all([1, 2].map(() => choices.select(clicked(offer, 1), '123', process, async () => {})));
   assert.equal(calls, 1); assert.deepEqual(results.map(r => r.status).sort(), ['done', 'expired']);
-  for (const index of [0, 2]) {
+  const recipe = await choices.offer({ mid: 'recipe-original' }, '123');
+  let selected;
+  const recipeResult = await choices.select(clicked(recipe, 0), '123', async (message, action) => {
+    assert.equal(message.mid, 'recipe-original'); selected = action; return {status:'done',messages:['레시피']};
+  }, async action => assert.equal(action, 'recipe'));
+  assert.equal(selected, 'recipe'); assert.equal(recipeResult.action, 'recipe'); assert.equal(recipeResult.kind, 'content');
+  for (const index of [2]) {
     const pending = await choices.offer({ mid: 'b' }, '123');
     const result = await choices.select(clicked(pending, index), '123', () => assert.fail(), () => assert.fail());
     assert.equal(result.status, 'not_ready'); assert.equal(result.kind, 'choice');

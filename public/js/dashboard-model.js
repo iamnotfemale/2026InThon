@@ -289,7 +289,11 @@ export default class DashboardModel extends DCLogic {
     }, 750);
   }
 
-  secsOf(meta) { const m = /(\d+)분/.exec(meta || ''); return m ? parseInt(m[1], 10) * 60 : 0; }
+  secsOf(meta) {
+    const part = (meta || '').split(' · ').map(s => s.trim()).find(s => /^(?:약\s*)?(?:\d+분(?:\s*\d+초)?|\d+초)$/.test(s));
+    if (!part) return 0;
+    return Number(/(\d+)분/.exec(part)?.[1] || 0) * 60 + Number(/(\d+)초/.exec(part)?.[1] || 0);
+  }
   fmt(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
   chipsOf(meta) { return (meta || '').split(' · ').map(l => ({ label: l, cls: 'mchip' + (/미기재/.test(l) ? ' miss' : '') })); }
   recipe() { return this.allItems().find(it => it.id === this.state.detailId); }

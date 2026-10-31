@@ -171,7 +171,8 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, {
-            senderId: sender, acknowledge: () => send(FACTCHECK_ACK),
+            senderId: sender, acknowledge: action => send(action === 'recipe'
+              ? '받았어요. 영상·이미지와 본문에서 재료와 조리 순서를 정리할게요.' : FACTCHECK_ACK),
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
           let savedId = null;

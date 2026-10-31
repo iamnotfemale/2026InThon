@@ -42,10 +42,10 @@ export function createContentChoices({ secret, getBlob = get, putBlob = put, del
       }
       if (!await claim(key + '/used.json')) return invalid();
       try {
-        if (action !== 'factcheck') return { kind: 'choice', status: 'not_ready', action,
+        if (action === 'schedule') return { kind: 'choice', status: 'not_ready', action,
           messages: [`‘${CONTENT_ACTIONS[action]}’를 선택했어요. 지금은 버튼 테스트 단계이고, 정리 기능은 준비 중이에요. 팩트체크는 콘텐츠를 다시 공유한 뒤 선택할 수 있어요.`] };
-        await acknowledge();
-        try { return { ...await processContent(stored.message), kind: 'content', action }; }
+        await acknowledge(action);
+        try { return { ...await processContent(stored.message, action), kind: 'content', action }; }
         catch { return { kind: 'content', status: 'failed', action,
           messages: ['분석을 마치지 못했어요. 잠시 후 콘텐츠를 다시 공유해 주세요.'] }; }
       } finally {

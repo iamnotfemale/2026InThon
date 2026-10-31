@@ -159,3 +159,11 @@ test('first sentence for the verdict card and saved display names', () => {
   assert.equal(firstSentence(null), '');
   assert.equal(displayName({ user_metadata: { display_name: '지원', full_name: '배지원' } }), '지원');
 });
+
+test('recipe timers distinguish exact cooking duration from ranges, decimals and video timestamps', () => {
+  const model = designModel();
+  assert.equal(model.secsOf('중불 · 1분 30초'),90);
+  assert.equal(model.secsOf('약 3분'),180);
+  assert.equal(model.secsOf('약불 · 30초'),30);
+  for(const meta of ['3~5분','1.5분','영상 00:12','시간 미기재']) assert.equal(model.secsOf(meta),0,meta);
+});

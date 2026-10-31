@@ -174,7 +174,7 @@ export function createGeminiModel({ apiKey, model = 'gemini-3.8-flash', fetchImp
   return async ({ system, content, maxTokens = 8192, signal, history = [], json = true }) => {
     const parts = content.map(item => {
       if (item.type === 'text') return { text: item.text };
-      if (item.type === 'image' && item.source?.type === 'base64') {
+      if (['image', 'video'].includes(item.type) && item.source?.type === 'base64') {
         return { inline_data: { mime_type: item.source.media_type, data: item.source.data } };
       }
       throw new Error('지원하지 않는 Gemini 입력 형식');
@@ -223,9 +223,9 @@ export function describeMessage(message) {
   return { text, items };
 }
 
-async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, signal }) {
+export async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, signal, includeVideo = false }) {
   const { text, items } = describeMessage(message);
-  const images = []; const notes = []; const transcripts = [];
+  const images = []; const videos = []; const notes = []; const transcripts = [];
   const captions = items.map(i => i.caption).filter(Boolean);
   for (const item of items) {
     if (!item.url) continue;
@@ -250,6 +250,11 @@ async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, si
       if (requireAllMedia) throw new Error('원본 이미지 형식을 확인하지 못해 분석을 중단했어요.');
       notes.push(`${item.type} 첨부의 이미지 형식을 확인하지 못함`);
     } else if (media.contentType.startsWith('video/')) {
+      if (includeVideo) {
+        if (b.length > MAX_VIDEO_BYTES || b.subarray(4, 8).toString() !== 'ftyp') throw new Error('영상 원본 형식이나 크기를 확인하지 못했어요.');
+        videos.push({ mediaType: 'video/mp4', data: b.toString('base64') });
+        continue;
+      }
       if (requireAllMedia && !readVideo) throw new Error('영상 분석 모델이 연결되지 않았어요.');
       if (!readVideo) { notes.push('영상은 열었지만 화면·음성 분석 모델이 없어 확인하지 못함'); continue; }
       try {
@@ -267,8 +272,8 @@ async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, si
     }
   }
   const scope = [text && '메시지 본문', captions.length && `게시물 캡션 ${captions.length}개`, images.length && `이미지 ${images.length}장`,
-    transcripts.length && `영상 ${transcripts.length}개(Gemini 전사)`].filter(Boolean);
-  return { text, captions, images, transcripts, notes, scope };
+    videos.length && `영상 ${videos.length}개(화면·음성)`, transcripts.length && `영상 ${transcripts.length}개(Gemini 전사)`].filter(Boolean);
+  return { text, captions, images, videos, transcripts, notes, scope };
 }
 
 // --- 파이프라인 --------------------------------------------------------------

@@ -1,5 +1,6 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
+import { validateRecipe } from './recipe-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -53,7 +54,7 @@ export function factcheckToItem(row, now = new Date()) {
     .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
     .map(s => ({ title: s.title || host(s.url) || s.url, org: s.source || host(s.url), date: '', rel: '근거 자료',
       relCls: 'rel', why: '', url: s.url }));
-  return {
+  const item = {
     id: 'fc' + row.id, type: 'news', status: done ? 'done' : 'insufficient',
     title: row.claim || NOT_DONE_TITLE[row.status] || NOT_DONE_TITLE.failed,
     key: done ? '판단 · ' + VERDICT_LABEL[verdict] : (row.reason || '정리하지 못했어요'),
@@ -63,6 +64,28 @@ export function factcheckToItem(row, now = new Date()) {
     claim: row.claim || '', verdict, oneLine: firstSentence(row.reason), reason: row.reason || '',
     checks: [], same: [], diff: [], context: [], limits: [], needed: [], sources,
   };
+  if (done && row.topic === 'recipe') {
+    try {
+      const stored = JSON.parse(row.reason);
+      if (stored.recipe?.version !== 1) throw new Error('Unsupported recipe');
+      const recipe = validateRecipe({ ...stored.recipe, is_recipe: true });
+      let origin = null;
+      try {
+        const source = new URL(stored.sourceUrl);
+        if (source.protocol === 'https:' && ['www.instagram.com', 'instagram.com'].includes(source.hostname)
+          && /^\/(p|reel|reels)\/[A-Za-z0-9_-]+\/$/.test(source.pathname)) origin = source.origin + source.pathname;
+      } catch {}
+      return { ...item, type: 'recipe', title: recipe.title, key: [recipe.total && '총 ' + recipe.total,
+        recipe.cook && '조리 ' + recipe.cook, '재료 ' + recipe.ingredients.length + '개'].filter(Boolean).join(' · '),
+        summary: recipe.summary, serving: recipe.serving || '인분 미기재', prep: recipe.prep || '시간 미기재', cook: recipe.cook || '시간 미기재',
+        ingredients: recipe.ingredients.map((ingredient, i) => ({ id:'i'+i, name:ingredient.name, qty:(ingredient.quantity || '분량 미기재') + (ingredient.optional ? ' (선택)' : ''),
+          group:ingredient.group, miss:!ingredient.quantity, flag:!!ingredient.conflict })),
+        steps: recipe.steps.map((step, i) => ({id:'s'+i,text:step.text,meta:[step.heat,step.temperature,step.duration || '시간 미기재'].filter(Boolean).join(' · '),
+          uses:step.uses,note:step.note,tip:null})), tips:recipe.tips.map(tip=>tip.text), checks:recipe.checks, origin,
+      };
+    } catch { return null; } // A malformed recipe must not appear as a news verdict or crash the library.
+  }
+  return item;
 }
 
 /** Display name for the signed-in Google user. */
