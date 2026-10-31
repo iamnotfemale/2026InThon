@@ -39,11 +39,6 @@
 .doc ol, .doc ul { margin: 8px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
 .doc b { color: var(--text); font-weight: 600; }
 .doc a { color: var(--text); }
-/* .doc .summary beats .doc section (white card) so the dark summary keeps its background. */
-.doc .summary { padding: 22px 26px; border-radius: 20px; border-color: #0A0A0A; background: #0A0A0A; color: #FFFFFF; }
-.doc .summary h2 { color: #FFFFFF; font-size: 17px; margin-bottom: 10px; }
-.doc .summary li { color: rgba(255,255,255,.82); }
-.doc .summary b { color: #FFFFFF; }
 .note { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); font-size: 13.5px; line-height: 1.7; color: var(--text-2); }
 
 .table-wrap { overflow-x: auto; margin-top: 10px; border: 1px solid var(--border); border-radius: 14px; }

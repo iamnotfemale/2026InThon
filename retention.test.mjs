@@ -59,10 +59,3 @@ test('the daily cron and DB retention migration are registered', () => {
     assert.ok(sql.includes(rule), rule);
   }
 });
-
-test('the policy summary box keeps its dark background over the white section card', () => {
-  const css = readFileSync('public/css/policy.css', 'utf8');
-  const rule = /\.doc \.summary \{([^}]*)\}/.exec(css)?.[1] ?? '';
-  assert.match(rule, /background: #0A0A0A/); assert.match(rule, /color: #FFFFFF/);
-  assert.doesNotMatch(css, /^\.summary \{/m, 'a bare .summary rule loses to .doc section');
-});
