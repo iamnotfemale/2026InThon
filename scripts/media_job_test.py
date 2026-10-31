@@ -131,6 +131,10 @@ class MediaJobChecks(unittest.TestCase):
         signature = hmac.new(b"test", b"inthon-media-v1:" + body, hashlib.sha256).hexdigest()
         with self.assertRaises(ValueError):
             validate_request(body, signature, "test", now=lambda: 1000)
+        body = json.dumps({**JOB, 'directVideo': 'yes'}).encode()
+        signature = hmac.new(b'test', b'inthon-media-v1:' + body, hashlib.sha256).hexdigest()
+        with self.assertRaises(ValueError):
+            validate_request(body, signature, 'test', now=lambda: 1000)
 
     def test_image_is_normalized_with_actual_jpeg_format_and_bounded_dimensions(self):
         from PIL import Image

@@ -5,7 +5,7 @@ import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("media", Path(__file__).with_name("download-instagram-media.py"))
@@ -14,6 +14,33 @@ spec.loader.exec_module(media)
 
 
 class MediaChecks(unittest.TestCase):
+    def test_direct_resolution_selects_the_same_combined_mp4_without_downloading(self):
+        info = {'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'protocol': 'https',
+                'url': 'https://video.example.fbcdn.net/full.mp4', 'description': '본문'}
+        ydl = MagicMock()
+        ydl.__enter__.return_value.extract_info.return_value = info
+        factory = Mock(return_value=ydl)
+        with patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=factory)}):
+            original, video = media.resolve_video('https://www.instagram.com/reel/Example/')
+        self.assertIs(original, info)
+        self.assertEqual(video['url'], info['url'])
+        self.assertEqual(factory.call_args.args[0]['format'], 'b[ext=mp4]/b')
+        ydl.__enter__.return_value.extract_info.assert_called_once_with('https://www.instagram.com/reel/Example/', download=False)
+        ydl.__enter__.return_value.process_ie_result.assert_not_called()
+
+    def test_playlists_images_separate_or_missing_tracks_and_hls_do_not_use_direct_video(self):
+        full = {'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'protocol': 'https', 'url': 'https://video.example.fbcdn.net/full.mp4'}
+        cases = [{'entries': [full, full]}, {**full, 'ext': 'jpg'}, {**full, 'acodec': 'none'},
+                 {**full, 'vcodec': 'none'}, {**full, 'acodec': None}, {**full, 'protocol': 'm3u8_native'},
+                 {**full, 'requested_formats': [full]}, {'entries': [None]}]
+        for info in cases:
+            ydl = MagicMock()
+            ydl.__enter__.return_value.extract_info.return_value = info
+            with patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=Mock(return_value=ydl))}):
+                original, video = media.resolve_video('https://www.instagram.com/p/Example/')
+            self.assertIs(original, info)
+            self.assertIsNone(video)
+
     def test_parallel_mixed_download_keeps_every_item_in_original_order(self):
         barrier = threading.Barrier(3, timeout=5)
         lock = threading.Lock()

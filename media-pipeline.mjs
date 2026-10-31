@@ -71,7 +71,9 @@ export function createMediaFactChecker({ check, resolveSource, prepare,
 }
 
 export function createMediaPreparer({ origin, secret, fetchImpl = fetch, getBlob = get, listBlobs = list, deleteBlobs = del,
-  now = Date.now, uuid = randomUUID }) {
+  now = Date.now, uuid = randomUUID,
+  fetchVideo = url => safeFetch(url, { maxBytes: 20 * 1024 * 1024, timeout: 20000,
+    headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://www.instagram.com/' } }) }) {
   const target = new URL('/api/media', origin);
   if (target.protocol !== 'https:' || target.origin !== origin) throw new Error('Invalid media worker origin');
   return async url => {
@@ -86,12 +88,45 @@ export function createMediaPreparer({ origin, secret, fetchImpl = fetch, getBlob
       } while (cursor);
     };
     try {
-      const body = JSON.stringify({ jobId, at: Math.floor(now() / 1000), url });
-      const signature = createHmac('sha256', secret).update('inthon-media-v1:' + body).digest('hex');
-      const response = await fetchImpl(target, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(125000),
-        headers: { 'content-type': 'application/json', 'x-inthon-media-signature': signature }, body });
-      if (!response.ok) throw new Error('Media worker unavailable');
-      const result = await response.json();
+      const signal = AbortSignal.timeout(125000);
+      const request = async directVideo => {
+        const body = JSON.stringify({ jobId, at: Math.floor(now() / 1000), url, directVideo });
+        const signature = createHmac('sha256', secret).update('inthon-media-v1:' + body).digest('hex');
+        const response = await fetchImpl(target, { method: 'POST', redirect: 'error', signal,
+          headers: { 'content-type': 'application/json', 'x-inthon-media-signature': signature }, body });
+        if (!response.ok) throw new Error('Media worker unavailable');
+        return response.json();
+      };
+      let result = await request(true);
+      if (canonicalInstagramUrl(result.sourceUrl) !== url || typeof result.caption !== 'string') throw new Error('Invalid media manifest');
+      if (result.video) {
+        if (result.files?.length || result.video.contentType !== 'video/mp4' || !metaCdn(result.video.url)) throw new Error('Invalid direct video');
+        let video;
+        try {
+          const transferStarted = performance.now();
+          video = await fetchVideo(result.video.url);
+          signal.throwIfAborted();
+          if (!metaCdn(video.url) || !video.body.length || video.body.length > 20 * 1024 * 1024
+            || video.body.subarray(4, 8).toString() !== 'ftyp') throw new Error('Invalid MP4');
+          result.timings = { ...result.timings, direct_transfer_ms: Math.round(performance.now() - transferStarted) };
+        } catch {
+          video?.body.fill(0);
+          video = null;
+          // Some CDN links work only from the extractor's region; retry the existing staging path once.
+          result = await request(false);
+        }
+        if (video) {
+          const path = prefix + 'original_video_01.mp4'; let released = false;
+          return { sourceUrl: result.sourceUrl, caption: result.caption, timings: result.timings,
+            files: [{ index: 1, kind: 'video', path, bytes: video.body.length, contentType: 'video/mp4',
+              width: result.video.width, height: result.video.height, duration: result.video.duration }],
+            async fetchMedia(value, maxBytes) {
+              if (released || value !== path || video.body.length > maxBytes) throw new Error('Invalid direct video input');
+              return { ...video, contentType: 'video/mp4' };
+            },
+            async cleanup() { released = true; video.body.fill(0); } };
+        }
+      }
       if (canonicalInstagramUrl(result.sourceUrl) !== url || !Array.isArray(result.files)
         || result.files.length < 1 || result.files.length > 10 || typeof result.caption !== 'string') throw new Error('Invalid media manifest');
       const paths = new Map();

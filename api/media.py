@@ -3,8 +3,9 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
-from scripts.media_job import validate_request, prepare_job, purge_stale
+from scripts.media_job import validate_request, prepare_job, purge_stale, downloader
 
 
 class handler(BaseHTTPRequestHandler):
@@ -41,7 +42,18 @@ class handler(BaseHTTPRequestHandler):
             # Old-job recovery and the new job use disjoint ages; both finish before the response.
             with ThreadPoolExecutor(max_workers=2) as pool:
                 cleanup = pool.submit(purge)
-                result = prepare_job(data, blob)
+                if data.get("directVideo"):
+                    resolve_started = time.perf_counter()
+                    info, video = downloader.resolve_video(data["url"])
+                    resolve_ms = round((time.perf_counter() - resolve_started) * 1000)
+                    if video:
+                        result = {"sourceUrl": data["url"], "caption": (info.get("description") or "")[:5000],
+                                  "video": video, "timings": {"metadata_ms": resolve_ms}}
+                    else:
+                        result = prepare_job(data, blob, download=partial(downloader.download, info=info))
+                        result["timings"]["metadata_ms"] = resolve_ms
+                else:
+                    result = prepare_job(data, blob)
                 purge_ms = cleanup.result()
             print(json.dumps({"event": "MEDIA_PREP_TIMING", **result["timings"], "sdk_ms": sdk_ms,
                               "purge_ms": purge_ms, "handler_ms": round((time.perf_counter() - started) * 1000)}))

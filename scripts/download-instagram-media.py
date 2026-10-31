@@ -102,6 +102,28 @@ class QuietLogger:
         pass  # The caller reports the exception without temporary media URLs.
 
 
+def resolve_video(url):
+    """Resolve exactly one complete MP4 using the same combined-format selector as download()."""
+    import yt_dlp
+
+    source = canonical_url(url)
+    with yt_dlp.YoutubeDL({"quiet": True, "noprogress": True, "logger": QuietLogger(),
+                          "socket_timeout": 20, "retries": 1, "extractor_retries": 1,
+                          "ignore_no_formats_error": True, "skip_download": True,
+                          "format": "b[ext=mp4]/b"}) as ydl:
+        info = ydl.extract_info(source, download=False)
+    entries = info.get("entries") or [info]
+    video = entries[0] if len(entries) == 1 and isinstance(entries[0], dict) else {}
+    # Separate tracks, playlists, silent/unknown codecs and HLS use the complete staging path.
+    if (video.get("ext") != "mp4" or video.get("vcodec") in {None, "none"}
+            or video.get("acodec") in {None, "none"} or video.get("requested_formats")
+            or video.get("protocol") not in {None, "http", "https"} or not video.get("url")):
+        return info, None
+    check_media_url(video["url"])
+    return info, {"url": video["url"], "contentType": "video/mp4", "width": video.get("width"),
+                  "height": video.get("height"), "duration": video.get("duration")}
+
+
 def download(url, directory, info=None, ffmpeg=None, *, max_entries=20, max_video_bytes=150 * 1024 * 1024):
     import yt_dlp
 

@@ -33,6 +33,8 @@ def validate_request(body, signature, secret, now=None):
             or not isinstance(data.get("at"), int) or abs((now or time.time)() - data["at"]) > 180):
         raise ValueError("Expired or invalid job")
     data["url"] = downloader.canonical_url(data.get("url", ""))
+    if not isinstance(data.get("directVideo", False), bool):
+        raise ValueError("Invalid video mode")
     return data
 
 
