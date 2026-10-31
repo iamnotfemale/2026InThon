@@ -159,7 +159,7 @@ test('a stored exhibition post becomes one item per event and renders through th
 });
 
 test('empty fields are filled only from opened pages, with a verbatim quote, and stay marked as web information', async () => {
-  const { createExhibitFiller } = await import('./exhibit.mjs');
+  const { createExhibitFiller, fillQuestion } = await import('./exhibit.mjs');
   const { missingFields, shownValue } = await import('./public/js/exhibit-data.js');
   const exhibit = normalizeExhibit(rawExhibit([songeun({ reserve_url: null, official_url: null })]), { reference: REF, sourceText: CAPTION });
   const event = exhibit.events[0];
@@ -169,9 +169,9 @@ test('empty fields are filled only from opened pages, with a verbatim quote, and
   const page = '송은 LIGHT, FORM AND VISION 전시 안내입니다. 관람시간 화요일부터 토요일 11:00~18:30 (입장 마감 18:00) 입니다. '
     + '휴관일은 매주 일요일, 월요일 및 공휴일입니다. 사전예약은 https://www.songeun.or.kr/reserve 에서 할 수 있어요. 이 문장은 길이를 채우기 위한 설명 문장입니다. '.repeat(2);
   const queries = [];
-  const search = { bing: async (q) => { queries.push(q); return [
-    { url: 'https://www.songeun.or.kr/exhibition/now', title: '송은 LIGHT, FORM AND VISION', snippet: '관람 안내' },
-    { url: 'https://spam.example/', title: '무관한 광고', snippet: '대출' }]; } };
+  const search = async event => { queries.push(fillQuestion(event)); return [
+    { url: 'https://www.songeun.or.kr/exhibition/now', title: 'songeun.or.kr' },
+    { url: 'https://spam.example/', title: 'spam.example' }]; };
   const fetched = [];
   const model = async ({ content }) => {
     assert.match(content[0].text, /비어 있는 칸: hours, closed, conditions, official_url, reserve_url/);
@@ -185,10 +185,11 @@ test('empty fields are filled only from opened pages, with a verbatim quote, and
       { field: 'hours', value: '중복', source: 'W9', basis: 'event', quote: 'x' },
     ], conflicts: ['페이지의 종료일은 11월 15일이에요.'] }] });
   };
-  const fill = createExhibitFiller({ model, search, fetchPage: async url => { fetched.push(url); return html(page); } });
+  const spam = { url: 'https://spam.example/', contentType: 'text/html', body: Buffer.from(`<article><p>${'Google Sites 웹사이트 제작 도구 소개 문장입니다. '.repeat(20)}</p></article>`) };
+  const fill = createExhibitFiller({ model, search, fetchPage: async url => { fetched.push(url); return url.includes('spam') ? spam : html(page); } });
   const stats = await fill(exhibit);
-  assert.match(queries[0], /LIGHT, FORM AND VISION 송은 운영시간 휴관일/);
-  assert.deepEqual(fetched, ['https://www.songeun.or.kr/exhibition/now'], 'unrelated results are not opened');
+  assert.equal(queries[0], '송은 X 불가리 《LIGHT, FORM AND VISION》 송은 (2026-10-29 ~ 2026-11-14) 전시의 운영 시간, 휴관일, 관람 조건, 공식 안내 페이지, 예약 페이지');
+  assert.deepEqual(fetched.sort(), ['https://spam.example/', 'https://www.songeun.or.kr/exhibition/now']);
   assert.deepEqual(Object.keys(event.web), ['hours', 'closed', 'reserve_url'],
     'a made-up quote, an already-filled field, an unknown page and a link not on the page are all dropped');
   assert.equal(stats.filled, 3);
@@ -218,4 +219,21 @@ test('a search outage keeps the post-only result', async () => {
   const extractor = createExhibitExtractor({ model, now: () => new Date('2026-10-31T03:00:00Z'), fill: async () => { throw new Error('Bing down'); } });
   const done = await extractor({ images: [], videos: [], captions: [CAPTION], text: '', scope: [], notes: [] });
   assert.equal(done.status, 'done'); assert.equal(done.exhibit.events.length, 2);
+});
+
+test('pages that do not name the exhibition, artist or venue are not given to the model', async () => {
+  const { identityNames, createGroundedSearch } = await import('./exhibit.mjs');
+  const [event] = normalizeExhibit(rawExhibit([songeun({ place: '페이스갤러리 서울', name: null, host_or_artist: null, title: '《Friedrich Kunath》' })]),
+    { reference: REF, sourceText: '' }).events;
+  assert.deepEqual(identityNames(event), ['페이스갤러리', 'friedrichkunath'], '"서울" alone never identifies a page');
+
+  const calls = [];
+  const search = createGroundedSearch({ apiKey: 'k', fetchImpl: async (url, init) => { calls.push(JSON.parse(init.body));
+    return new Response(JSON.stringify({ candidates: [{ groundingMetadata: { groundingChunks: [
+      { web: { uri: 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/a', title: 'pacegallery.com' } },
+      { web: { uri: 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/a', title: 'dup' } },
+      { web: { uri: 'http://insecure.example', title: 'x' } }] } }] }), { status: 200 }); } });
+  assert.deepEqual(await search(event), [{ url: 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/a', title: 'pacegallery.com' }]);
+  assert.deepEqual(calls[0].tools, [{ google_search: {} }]);
+  assert.match(calls[0].contents[0].parts[0].text, /^다음 내용을 Google에서 검색해 확인해 줘: 《Friedrich Kunath》 페이스갤러리 서울/);
 });
