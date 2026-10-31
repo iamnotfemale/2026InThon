@@ -358,11 +358,13 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 18px; padding: 18px 20px; overflow: auto">
           <p style="font-size: 14px; line-height: 1.65; color: var(--text-2)">{{cvSummary}}</p>
-          <div class="cv-facts">
-            <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
-              <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
-            </sc-for>
-          </div>
+          <sc-if value="{{cvHasFacts}}" hint-placeholder-val="{{ true }}">
+            <div class="cv-facts">
+              <sc-for list="{{cvFacts}}" as="f" hint-placeholder-count="3">
+                <div style="display: flex; flex-direction: column; gap: 3px"><span class="k">{{f.k}}</span><span class="v">{{f.v}}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
           <sc-if value="{{cvHasList}}" hint-placeholder-val="{{ true }}">
             <div class="cv-sec">
               <span class="label">{{cvListTitle}}</span>
@@ -508,9 +510,9 @@ class Component extends DCLogic {
   consts() {
     if (this._c) return this._c;
     const CONTENT = {
-      r1: { type: 'recipe', title: '15분 매콤 두부면', sub: '레시피 · 조리 15분', summary: '두부면에 파기름과 고춧가루 양념을 버무리는 한 그릇 요리예요.', facts: [['인분', '1인분'], ['준비', '5분'], ['조리', '10분']], listTitle: '재료', list: [['두부면', '1팩 (100g)'], ['대파', '1/2대'], ['고춧가루', '1큰술 또는 2큰술'], ['간장', '1큰술'], ['참기름', '분량 미기재', 1]] },
-      r2: { type: 'recipe', title: '바삭한 감자 팬 요리', sub: '레시피 · 조리 시간 미기재', summary: '채 썬 감자에 전분을 버무려 팬에 납작하게 굽는 요리예요. 원본에 인분과 시간 정보가 없어요.', facts: [['인분', '미기재'], ['준비', '미기재'], ['조리', '미기재']], listTitle: '재료', list: [['감자', '2개'], ['전분', '2큰술'], ['소금', '분량 미기재', 1], ['식용유', '분량 미기재', 1]] },
-      r4: { type: 'recipe', title: '들기름 막국수', sub: '레시피 · 조리 10분', summary: '삶은 메밀면에 들기름과 간장 양념을 버무리는 비빔면이에요.', facts: [['인분', '1인분'], ['준비', '3분'], ['조리', '7분']], listTitle: '재료', list: [['메밀면', '1인분 (100g)'], ['들기름', '2큰술'], ['간장', '1큰술'], ['설탕', '1/2작은술'], ['김가루', '분량 미기재', 1]] },
+      r1: { type: 'recipe', title: '15분 매콤 두부면', sub: '레시피 · 조리 15분', summary: '두부면에 파기름과 고춧가루 양념을 버무리는 한 그릇 요리예요.', listTitle: '재료', list: [['두부면', '1팩 (100g)'], ['대파', '1/2대'], ['고춧가루', '1큰술 또는 2큰술'], ['간장', '1큰술'], ['참기름', '분량 미기재', 1]] },
+      r2: { type: 'recipe', title: '바삭한 감자 팬 요리', sub: '레시피 · 조리 시간 미기재', summary: '채 썬 감자에 전분을 버무려 팬에 납작하게 굽는 요리예요. 원본에 인분과 시간 정보가 없어요.', listTitle: '재료', list: [['감자', '2개'], ['전분', '2큰술'], ['소금', '분량 미기재', 1], ['식용유', '분량 미기재', 1]] },
+      r4: { type: 'recipe', title: '들기름 막국수', sub: '레시피 · 조리 10분', summary: '삶은 메밀면에 들기름과 간장 양념을 버무리는 비빔면이에요.', listTitle: '재료', list: [['메밀면', '1인분 (100g)'], ['들기름', '2큰술'], ['간장', '1큰술'], ['설탕', '1/2작은술'], ['김가루', '분량 미기재', 1]] },
       e1: { type: 'exhibit', title: '빛의 방 — 가상 전시', sub: '전시 · 10.10 – 12.20 · 월 휴무', summary: '빛과 그림자를 주제로 한 몰입형 설치 전시예요.', facts: [['기간', '2026.10.10 – 12.20'], ['운영', '화–일 10:00 – 19:00'], ['휴무', '매주 월요일'], ['장소', '가상 미술관 2층'], ['관람료', '성인 15,000원'], ['예약', '사전 예약 권장']], from: '2026-10-10', to: '2026-12-20', closed: [1] },
       e2: { type: 'exhibit', title: '작은 서재 팝업', sub: '전시 · 종료됨', disabled: true },
       c1: { type: 'contest', title: '대학생 생활 아이디어 공모전', sub: '공모전 · 마감 11.14 (토) 18:00', summary: '국내 대학생 2–4인 팀이 생활 속 문제를 푸는 아이디어를 제안하는 공모전이에요.', facts: [['주최', '가상 재단'], ['마감', '11.14 (토) 18:00'], ['참가 대상', '대학 재학·휴학생 2–4인 팀']], listTitle: '공고 일정', list: [['접수 시작', '10.20 (화) 10:00'], ['접수 마감', '11.14 (토) 18:00'], ['서류 결과 발표', '11.28 (토)'], ['본선 발표', '12.12 (토)']], fixed: { deadline: ['2026-11-14', '18:00'], result: ['2026-11-28', null] } },
@@ -556,7 +558,7 @@ class Component extends DCLogic {
     const evs = s.events.filter(e => e.item === s.viewItem).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     return {
       cvOpen: true, cvTitle: c.title, cvType: TL[c.type], cvDot: 'dot t-' + c.type, cvOrb: 'orb o-' + c.type, cvSummary: c.summary || '',
-      cvFacts: (c.facts || []).map(([k, v]) => ({ k, v })), cvHasList: !!(c.list && c.list.length), cvListTitle: c.listTitle || '', cvList: (c.list || []).map(([a, b, miss]) => ({ a, b, bCls: 'b' + (miss ? ' miss' : '') })),
+      cvFacts: (c.facts || []).map(([k, v]) => ({ k, v })), cvHasFacts: !!(c.facts && c.facts.length), cvHasList: !!(c.list && c.list.length), cvListTitle: c.listTitle || '', cvList: (c.list || []).map(([a, b, miss]) => ({ a, b, bCls: 'b' + (miss ? ' miss' : '') })),
       cvEvents: evs.map(e => ({ label: this.dlabel(e.date) + (e.time ? ' ' + e.time : ''), kind: C.KLABEL[e.kind], cls: 'cv-ev' + (e.id === s.viewEv ? ' cur' : ''), pick: () => this.setState({ sel: e.date, cursor: e.date.slice(0, 7) + '-01', viewItem: null, viewEv: null }) })),
       cvHasEvents: evs.length > 0, cvEvCount: evs.length,
       closeCv: () => this.setState({ viewItem: null, viewEv: null }),

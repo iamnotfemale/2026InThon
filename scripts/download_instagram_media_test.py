@@ -31,7 +31,7 @@ class MediaChecks(unittest.TestCase):
     def test_playlists_images_separate_or_missing_tracks_and_hls_do_not_use_direct_video(self):
         full = {'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'protocol': 'https', 'url': 'https://video.example.fbcdn.net/full.mp4'}
         cases = [{'entries': [full, full]}, {**full, 'ext': 'jpg'}, {**full, 'acodec': 'none'},
-                 {**full, 'vcodec': 'none'}, {**full, 'acodec': None}, {**full, 'protocol': 'm3u8_native'},
+                 {**full, 'vcodec': 'none'}, {**full, 'protocol': 'm3u8_native'},
                  {**full, 'requested_formats': [full]}, {'entries': [None]}]
         for info in cases:
             ydl = MagicMock()
@@ -40,6 +40,14 @@ class MediaChecks(unittest.TestCase):
                 original, video = media.resolve_video('https://www.instagram.com/p/Example/')
             self.assertIs(original, info)
             self.assertIsNone(video)
+
+    def test_instagram_omitted_codec_names_keep_the_selected_original_mp4(self):
+        info = {'ext': 'mp4', 'protocol': 'https', 'url': 'https://video.example.fbcdn.net/full.mp4'}
+        ydl = MagicMock()
+        ydl.__enter__.return_value.extract_info.return_value = info
+        with patch.dict(sys.modules, {'yt_dlp': SimpleNamespace(YoutubeDL=Mock(return_value=ydl))}):
+            original, video = media.resolve_video('https://www.instagram.com/reel/Example/')
+        self.assertEqual(video['url'], original['url'])
 
     def test_parallel_mixed_download_keeps_every_item_in_original_order(self):
         barrier = threading.Barrier(3, timeout=5)
