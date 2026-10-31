@@ -49,9 +49,15 @@ export function readReplyKeys(file) {
 
 export const FACTCHECK_ACK = '받았어요. 핵심 주장과 근거를 확인한 뒤 답장할게요.';
 export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어요. 잠시 후 다시 보내주세요.';
+// DMs that ask for a web login link instead of a fact-check.
+export const LINK_COMMANDS = new Set(['연결', '로그인', '대시보드']);
+export const LINK_FAILED = '지금은 연결 링크를 만들지 못했어요. 잠시 후 다시 "연결"이라고 보내주세요.';
+export const linkMessage = url => '아래 링크를 열고 구글로 로그인하면 이 Instagram 계정이 연결돼요.\n'
+  + '링크는 10분 동안 한 번만 쓸 수 있어요. 다른 사람에게 보내지 마세요.\n\n' + url;
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
-  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck }) {
+  handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, factCheck,
+  trackSender, issueLinkToken, saveFactCheck }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
     tokenSaved: Boolean(config.accessToken), subscription: '미확인', lastError: null };
@@ -107,13 +113,29 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
             body: JSON.stringify({ recipient: { id: m.sender.id }, message: { text } }) });
           if (typeof result.message_id !== 'string' || !result.message_id) throw new Error('Send not confirmed');
         };
-        if (factCheck) {
+        const sender = m.sender.id;
+        // Storage problems must not stop the reply itself; they only cost history.
+        const quietly = async (task, label) => { try { await task(); } catch { stats.lastError = label; } };
+        if (trackSender) await quietly(() => trackSender(sender), '발신자 기록 실패');
+        const command = typeof m.message.text === 'string' ? m.message.text.trim() : '';
+        if (issueLinkToken && config.publicUrl && LINK_COMMANDS.has(command)) {
+          let username;
+          try {
+            username = (await api(`${GRAPH}/${sender}?fields=username`,
+              { headers: { Authorization: `Bearer ${accessToken}` } })).username;
+          } catch {} // The handle is only for display; linking works without it.
+          let text;
+          try { text = linkMessage(`${config.publicUrl}/link#token=${await issueLinkToken({ igsid: sender, username })}`); }
+          catch { stats.lastError = '연결 링크 생성 실패'; text = LINK_FAILED; }
+          await send(text);
+        } else if (factCheck) {
           await send(FACTCHECK_ACK);
-          let texts;
+          let result;
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
-          try { texts = (await factCheck(m.message)).messages; }
-          catch { stats.lastError = '팩트체크 처리 실패'; texts = [FACTCHECK_FAILED]; }
-          for (const text of texts) await send(text);
+          try { result = await factCheck(m.message); }
+          catch { stats.lastError = '팩트체크 처리 실패'; result = { status: 'failed', messages: [FACTCHECK_FAILED] }; }
+          if (saveFactCheck) await quietly(() => saveFactCheck(sender, result), '팩트체크 기록 실패');
+          for (const text of result.messages) await send(text);
         } else await send('안녕?');
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });

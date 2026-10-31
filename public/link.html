@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Instagram 계정 연결 · inthon2team 팩트체크</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/link.js"></script>
+</head>
+<body>
+<main>
+  <h1>Instagram 계정 연결</h1>
+  <p id="loading" class="muted">확인하는 중…</p>
+
+  <section id="inapp" hidden>
+    <p>Instagram 앱 안에서는 구글 로그인이 막혀 있어요.</p>
+    <p>오른쪽 위 <strong>⋯</strong> 메뉴에서 <strong>외부 브라우저로 열기</strong>를 선택한 뒤 계속해 주세요.</p>
+    <div class="row"><button id="copy">링크 복사</button></div>
+    <p id="copied" class="muted" hidden>복사했어요. Chrome이나 Safari 주소창에 붙여 넣으세요.</p>
+  </section>
+
+  <section id="need-login" hidden>
+    <p>구글로 로그인하면 DM을 보낸 Instagram 계정이 이 구글 계정에 연결돼요.</p>
+    <div class="row"><button id="login" class="primary">구글로 로그인하고 연결하기</button></div>
+  </section>
+
+  <section id="done" hidden>
+    <p class="ok"><strong id="handle"></strong> 계정이 연결됐어요.</p>
+    <div class="row"><a class="button primary" href="/dashboard">대시보드로 가기</a></div>
+  </section>
+
+  <section id="failed" hidden>
+    <p id="error" class="error"></p>
+    <p>Instagram에서 <strong>@inthon2team</strong>에 <code>연결</code>이라고 다시 보내면 새 링크를 받을 수 있어요.</p>
+  </section>
+</main>
+</body>
+</html>

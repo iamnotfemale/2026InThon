@@ -5,7 +5,7 @@ import { createHmac } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, appendFileSync, unlinkSync, rmdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED } from './server.mjs';
+import { createServers, readReplyKeys, SCOPES, FACTCHECK_ACK, FACTCHECK_FAILED, LINK_FAILED, linkMessage } from './server.mjs';
 import { readSecrets, writeSecrets } from './secrets.mjs';
 
 async function fixture(t, options = {}) {
@@ -324,4 +324,53 @@ test('fact check mode acknowledges first, sends each result message once and rep
   await deliver(failing, [incoming()]);
   await eventually(() => failing.stats.replies === 1);
   assert.deepEqual(sent, [FACTCHECK_ACK, FACTCHECK_FAILED]);
+});
+
+test('"연결" DM sends a one-time web link instead of a fact-check, using the sender handle when available', async t => {
+  const sent = []; const issued = []; const tracked = []; let checks = 0;
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => { checks++; return { messages: ['결과'] }; },
+    trackSender: async id => { tracked.push(id); },
+    issueLinkToken: async args => { issued.push(args); return 'f'.repeat(64); },
+    apiFetch: async (url, options) => {
+      if (url.endsWith('/123456789?fields=username')) return json({ id: '123456789', username: 'tester.one' });
+      sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' });
+    } });
+  await deliver(f, [incoming({ message: { mid: 'link-1', text: ' 연결 ' } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.equal(checks, 0);
+  assert.deepEqual(tracked, ['123456789']);
+  assert.deepEqual(issued, [{ igsid: '123456789', username: 'tester.one' }]);
+  assert.deepEqual(sent, [linkMessage(`https://example.ngrok-free.dev/link#token=${'f'.repeat(64)}`)]);
+});
+
+test('link token failures send a retry message, and storage failures never block replies', async t => {
+  const sent = [];
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    trackSender: async () => { throw new Error('db down'); },
+    issueLinkToken: async () => { throw new Error('db down'); },
+    apiFetch: async (url, options) => {
+      if (url.includes('fields=username')) throw new Error('profile unavailable');
+      sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' });
+    } });
+  await deliver(f, [incoming({ message: { mid: 'link-2', text: '연결' } })]);
+  await eventually(() => f.stats.replies === 1);
+  assert.deepEqual(sent, [LINK_FAILED]);
+});
+
+test('fact-check results are saved per sender, including outages, and save failures still deliver the answer', async t => {
+  const saved = []; const sent = [];
+  const send = async (url, options) => { sent.push(JSON.parse(options.body).message.text); return json({ message_id: 'm' }); };
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => ({ status: 'done', verdict: 'refuted', messages: ['결과'] }),
+    saveFactCheck: async (id, result) => { saved.push([id, result.status, result.verdict]); }, apiFetch: send });
+  await deliver(f, [incoming({ message: { mid: 'fc-1', text: '주장' } })]);
+  await eventually(() => f.stats.replies === 1);
+  const failing = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID },
+    factCheck: async () => { throw new Error('model down'); },
+    saveFactCheck: async (id, result) => { saved.push([id, result.status, result.verdict]); throw new Error('db down'); }, apiFetch: send });
+  await deliver(failing, [incoming({ message: { mid: 'fc-2', text: '주장' } })]);
+  await eventually(() => failing.stats.replies === 1);
+  assert.deepEqual(saved, [['123456789', 'done', 'refuted'], ['123456789', 'failed', undefined]]);
+  assert.deepEqual(sent, [FACTCHECK_ACK, '결과', FACTCHECK_ACK, FACTCHECK_FAILED]);
 });

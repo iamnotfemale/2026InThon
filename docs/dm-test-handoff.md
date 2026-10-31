@@ -109,7 +109,7 @@ Vercel 프로젝트의 Storage에서 비공개 Blob을 확인할 수 있습니�
 - `dm/oauth/tickets/`, `dm/oauth/states/`: 로그인 요청 재사용 방지용 임의 nonce·사용 시각.
 - `dm/credentials/<timestamp-random>.json`: 암호화된 운영 토큰 버전. 평문 토큰을 담지 않습니다.
 
-수신·답장 기록에 본문·발신자 ID·원문 메시지 ID·릴스 URL·토큰을 넣지 않습니다. 토큰은 위의 별도 암호화 영역에만 저장합니다. `sending`만 있고 `sent`가 없으면 실패 또는 결과 미확인 상태입니다. 이 파일을 지우거나 이벤트를 수동 재전송해 재시도하지 말고 전송 여부부터 확인하세요. Blob은 현재 테스트의 메타데이터·운영 인증정보 저장소이며 사용자 기록 조회용 DB가 아닙니다. 자동 정리 기능은 아직 없고 저장소 사용량 제한에 도달하면 수신 저장에 실패할 수 있습니다.
+수신·답장 기록(`dm_receipts`, `dm_replies`)에는 본문·발신자 ID·원문 메시지 ID·릴스 URL·토큰을 넣지 않습니다. 발신자 ID와 팩트체크 결과는 아래 [웹 로그인과 Instagram 계정 연결](#웹-로그인과-instagram-계정-연결)의 별도 테이블에만 저장합니다. 토큰은 위의 별도 암호화 영역에만 저장합니다. `sending`만 있고 `sent`가 없으면 실패 또는 결과 미확인 상태입니다. 이 파일을 지우거나 이벤트를 수동 재전송해 재시도하지 말고 전송 여부부터 확인하세요. Blob은 현재 테스트의 메타데이터·운영 인증정보 저장소이며 사용자 기록 조회용 DB가 아닙니다. 자동 정리 기능은 아직 없고 저장소 사용량 제한에 도달하면 수신 저장에 실패할 수 있습니다.
 
 | 증상 | 확인 순서 |
 | --- | --- |
@@ -156,8 +156,26 @@ Supabase 프로젝트 `InthonTeam2`(`epokaecxlgymchtqnjkn`, 서울)에 수신·�
 - `dm_replies`: 메시지 ID 해시(기본 키), `sending`/`sent` 상태, 예약·전송 시각. 기본 키 덕분에 **여러 함수 인스턴스 중 한 곳만 삽입에 성공**하고 나머지는 `23505`로 거부되어 답장을 생략합니다.
 - 두 테이블 모두 RLS를 켜고 정책을 두지 않았으며 `anon`·`authenticated` 권한을 회수했습니다. 서버의 secret 키만 접근합니다. 브라우저용 publishable 키로는 읽을 수 없습니다.
 
-개인 계정 연결·DM/릴스 원문 보관은 아직 만들지 않았습니다. 원문은 요청 처리 중 메모리에만 존재하며, 과거 대화를 조회할 API도 없습니다. 기존 Blob 기록은 Supabase로 옮기지 않았으므로, 전환 직전에 받은 DM이 재전송되면 한 번 더 답장할 수 있습니다.
+기존 Blob 기록은 Supabase로 옮기지 않았으므로, 전환 직전에 받은 DM이 재전송되면 한 번 더 답장할 수 있습니다.
 
-대시보드 사용자와 Instagram 발신자 연결, 원문·첨부 저장 형식, 보관·삭제 기간과 본인 기록 조회 권한은 해당 담당자가 합의해서 구현합니다. 팩트체크·근거 검색·영상 분석·개인화는 이 테스트에 포함되지 않습니다.
+## 웹 로그인과 Instagram 계정 연결
+
+기본 사용은 로그인 없이 Instagram DM으로 합니다. 구글로 로그인하고 Instagram 계정을 연결하면 웹 대시보드(`/dashboard`)를 볼 수 있습니다. 첫 버전의 대시보드는 연결 상태만 보여 주고, 팩트체크 기록 화면은 이후에 추가합니다.
+
+1. 사용자가 `@inthon2team`에 `연결`(또는 `로그인`, `대시보드`)이라고 DM을 보냅니다. 이 DM은 팩트체크하지 않습니다.
+2. 봇이 `https://inthon.yeoziphab.com/link#token=…` 링크로 답장합니다. 토큰은 10분 동안 한 번만 쓸 수 있고, DB에는 SHA-256 해시만 저장합니다. 토큰은 `#` 뒤에 있어 서버 로그·Referer로 전달되지 않습니다.
+3. 링크를 열고 구글로 로그인하면 DB 함수 `link_instagram`이 토큰을 확인·소모하고 계정을 연결합니다. DM을 받을 수 있는 사람이 계정 주인이므로, 새 링크로 연결하면 이전 구글 계정의 연결은 해제됩니다.
+4. Instagram 앱 안의 브라우저에서는 구글이 로그인을 막습니다. 링크 페이지가 이를 감지해 **외부 브라우저로 열기**를 안내합니다.
+
+| 테이블 | 내용 | 웹(로그인 사용자) 권한 |
+| --- | --- | --- |
+| `ig_accounts` | DM을 보낸 모든 계정의 Instagram 범위 ID(IGSID), 연결 시 확인한 아이디, 처음·마지막 수신 시각 | 연결된 본인 계정만 읽기 |
+| `link_tokens` | 연결 토큰 해시, 만료·사용 시각 | 접근 불가 |
+| `account_links` | 구글 사용자 ↔ IGSID (1:1) | 본인 행 읽기·삭제(연결 해제) |
+| `factchecks` | 발신자별 팩트체크 결과: 추출한 주장, 판정, 이유, 출처 링크(최대 3개), 상태 | 연결된 본인 계정 기록만 읽기 |
+
+**개인정보 범위가 바뀌었습니다.** 이제 DM을 보낸 **모든** 계정의 IGSID와 팩트체크 결과를 로그인 여부와 관계없이 저장합니다. 나중에 계정을 연결하면 과거 기록도 볼 수 있게 하기 위해서입니다. DM 본문·첨부·원문 메시지 ID는 여전히 저장하지 않습니다. **보관 기간과 삭제 요청 처리는 아직 정하지 않았으므로** 일반 사용자 공개 전에 정하고 안내해야 합니다.
+
+웹 페이지는 `public/`의 정적 HTML과 `supabase-js`(jsDelivr CDN)로 만들었습니다. 브라우저에는 publishable 키만 들어가며, 읽을 수 있는 범위는 RLS 정책이 정합니다. 구글 로그인을 쓰려면 Supabase **Authentication → Sign In / Providers → Google**을 켜고, **URL Configuration**에 사이트 주소와 리디렉션 주소를 등록해야 합니다.
 
 공식 참고: [Meta 통합 로그인](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-unified-login), [Vercel waitUntil](https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package), [Vercel Blob](https://vercel.com/docs/vercel-blob).

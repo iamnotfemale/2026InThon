@@ -317,7 +317,7 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
       verdict = 'unverified'; reason = '판단을 뒷받침할 근거 링크를 확보하지 못해 결론을 내리지 않았어요.';
     }
     const messages = composeMessages({ claim: extracted.claim, verdict, reason, cited, scope, unclear: extracted.unclear, today });
-    const result = { status: 'done', verdict, extracted, cited: cited.map(({ id, url, title, source, via }) => ({ id, url, title, source, via })),
+    const result = { status: 'done', verdict, reason, extracted, cited: cited.map(({ id, url, title, source, via }) => ({ id, url, title, source, via })),
       gathered: { evidence: gathered.evidence.length, searched: gathered.searched, unopened: gathered.unopened, failures: gathered.failures },
       notes: input.notes, timings: { ...timings, total: elapsed(started) }, messages };
     log(result);

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createSupabaseState } from './supabase-state.mjs';
 
 // Minimal in-memory stand-in for PostgREST with a primary key on dm_replies.key.
@@ -61,4 +62,39 @@ test('supabase errors fail closed without leaking the key, and invalid input is 
   await assert.rejects(state.reserveReply('../invalid'), /Invalid reply key/);
   await assert.rejects(state.replyRecord({ key: 'a'.repeat(64), status: 'failed', at: 't' }), /Unsupported/);
   assert.throws(() => createSupabaseState({ url: '', key: 'k' }), /required/);
+});
+
+test('senders are upserted, link tokens store only a hash with a 10-minute expiry, and fact-checks keep no DM text', async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => { calls.push({ url, ...init, body: JSON.parse(init.body) }); return new Response(null, { status: 201 }); };
+  const state = createSupabaseState({ url: 'https://x.supabase.co', key: 'sb_secret_test', fetchImpl, now: () => Date.parse('2026-10-31T00:00:00Z') });
+
+  await state.trackSender('123');
+  assert.equal(calls[0].url, 'https://x.supabase.co/rest/v1/ig_accounts?on_conflict=igsid');
+  assert.equal(calls[0].headers.Prefer, 'return=minimal,resolution=merge-duplicates');
+  assert.deepEqual(calls[0].body, { igsid: '123', last_seen_at: '2026-10-31T00:00:00.000Z' });
+
+  const token = await state.issueLinkToken({ igsid: '123', username: 'tester.one' });
+  assert.match(token, /^[a-f0-9]{64}$/);
+  assert.equal(calls[1].body.username, 'tester.one');
+  const tokenRow = calls[2].body;
+  assert.equal(tokenRow.token_hash, createHash('sha256').update(token).digest('hex'));
+  assert.equal(tokenRow.expires_at, '2026-10-31T00:10:00.000Z');
+  assert.ok(!JSON.stringify(calls).includes(token), 'raw token must never be sent to the database');
+
+  await state.issueLinkToken({ igsid: '123', username: 'bad name<script>' });
+  assert.equal(calls[3].body.username, undefined, 'invalid handles are dropped');
+
+  await state.saveFactCheck('123', { status: 'done', verdict: 'refuted', reason: '근거와 다름',
+    extracted: { claim: '주장', topic: 'health' }, messages: ['private DM text'],
+    cited: [{ url: 'https://example.org/a', title: 't', source: 's', id: 'E1' }, { url: 'javascript:alert(1)', title: 'x' }] });
+  const row = calls.at(-1).body;
+  assert.deepEqual(row, { igsid: '123', status: 'done', verdict: 'refuted', claim: '주장', topic: 'health', reason: '근거와 다름',
+    sources: [{ url: 'https://example.org/a', title: 't', source: 's' }] });
+
+  await state.saveFactCheck('123', { status: 'failed', messages: ['x'] });
+  assert.deepEqual(calls.at(-1).body, { igsid: '123', status: 'failed', verdict: null, claim: null, topic: null, reason: null, sources: [] });
+
+  await assert.rejects(state.trackSender('../1'), /Invalid sender id/);
+  await assert.rejects(state.saveFactCheck('abc', {}), /Invalid sender id/);
 });

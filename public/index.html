@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>inthon2team 팩트체크</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/index.js"></script>
+</head>
+<body>
+<main>
+  <h1>Instagram DM 팩트체크</h1>
+  <p>궁금한 게시물이나 릴스를 <strong>@inthon2team</strong>에 DM으로 보내면 핵심 주장을 근거 링크와 함께 확인해 드려요. 로그인 없이 바로 쓸 수 있어요.</p>
+  <div class="card">
+    <h2>내 기록 보기</h2>
+    <p>구글로 로그인하고 Instagram 계정을 연결하면 웹에서 내 기록을 볼 수 있어요.</p>
+    <div class="row">
+      <button id="login" class="primary" hidden>구글로 로그인</button>
+      <a id="dashboard" class="button primary" href="/dashboard" hidden>내 대시보드</a>
+    </div>
+    <p id="inapp" class="muted" hidden>Instagram 등 앱 안에서는 구글 로그인이 막혀 있어요. 오른쪽 위 메뉴에서 <strong>외부 브라우저로 열기</strong>를 선택해 주세요.</p>
+    <p id="error" class="error" hidden></p>
+  </div>
+</main>
+</body>
+</html>
