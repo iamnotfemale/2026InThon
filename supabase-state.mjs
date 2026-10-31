@@ -11,7 +11,7 @@ const clip = (value, n) => (typeof value === 'string' && value ? value.slice(0, 
 
 // Stores DM webhook state in Supabase through its REST API (PostgREST). Server-side only:
 // the key must be a secret (sb_secret_...) or legacy service_role key, never a publishable one.
-export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 10000, now = Date.now }) {
+export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 10000, now = Date.now, embedIndex }) {
   if (!url || !key) throw new Error('Supabase URL and secret key are required');
   const base = url.replace(/\/+$/, '') + '/rest/v1';
   const headers = { apikey: key, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
@@ -97,6 +97,12 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       const exhibit = result.action === 'schedule' && result.exhibit ? validateExhibit(result.exhibit) : null;
       const contest = result.action === 'schedule' && !exhibit ? validateContest(result.contest) : null;
       const verdict = !recipe && !contest && !exhibit && VERDICTS.has(result.verdict) ? result.verdict : null;
+      const contentIndex = result.contentIndex;
+      if (contentIndex && embedIndex) {
+        try { contentIndex.embedding = await embedIndex(contentIndex.searchText); }
+        catch { /* Search can use the textual index if embedding is temporarily unavailable. */ }
+      }
+      const indexed = contentIndex ? { contentIndex } : {};
       const sources = (Array.isArray(result.cited) ? result.cited : []).slice(0, 3)
         .filter(s => typeof s?.url === 'string' && /^https?:\/\//.test(s.url))
         .map(s => ({ url: s.url.slice(0, 2000), title: clip(s.title, 300), source: clip(s.source, 200) }));
@@ -105,9 +111,10 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
           : clip(result.extracted?.claim, 1000),
         topic: recipe ? 'recipe' : contest ? 'contest' : exhibit ? 'exhibit' : clip(result.extracted?.topic, 50),
         // shortcut: keep v1 recipes, contests and exhibitions in the existing RLS-protected result table; move to a typed column when the shared content schema lands.
-        reason: recipe ? JSON.stringify({ recipe, sourceUrl: result.media?.sourceUrl ?? null })
-          : contest ? JSON.stringify({ contest, sourceUrl: result.media?.sourceUrl ?? null })
-          : exhibit ? JSON.stringify({ exhibit, sourceUrl: result.media?.sourceUrl ?? null }) : clip(result.reason, 2000) },
+        reason: recipe ? JSON.stringify({ recipe, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
+          : contest ? JSON.stringify({ contest, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
+          : exhibit ? JSON.stringify({ exhibit, sourceUrl: result.media?.sourceUrl ?? null, ...indexed })
+          : contentIndex ? JSON.stringify({ reason: clip(result.reason, 2000), sourceUrl: result.media?.sourceUrl ?? null, ...indexed }) : clip(result.reason, 2000) },
       undefined, true);
       return { id: Array.isArray(rows) ? rows[0]?.id ?? null : null };
     },

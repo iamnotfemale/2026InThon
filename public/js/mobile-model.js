@@ -102,8 +102,8 @@ export default class MobileModel extends DCLogic {
     const items = ITEMS.map(deco);
     const counts = { recipe: 0, news: 0, exhibit: 0, contest: 0 }; items.forEach(i => { if (counts[i.type] !== undefined) counts[i.type]++; });
     const q = s.query.trim().toLowerCase();
-    let lib = items.filter(i => (!q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF));
-    lib.sort((a, b) => s.sortNew ? b.ts - a.ts : a.ts - b.ts);
+    let lib = items.filter(i => (this.matchesContent ? this.matchesContent(i, s.query) : !q || (i.title + ' ' + i.key).toLowerCase().indexOf(q) >= 0) && (s.typeF === 'all' || i.type === s.typeF) && (s.statusF === 'all' || i.group === s.statusF));
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sortNew ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = !!q || s.typeF !== 'all' || s.statusF !== 'all';
     const tasteAll = items.filter(i => s.taste[i.id] && (i.type === 'recipe' || i.type === 'exhibit'));
     const tasteType = s.tab === 'taste' && s.tasteTab === 'exhibit' ? 'exhibit' : (s.tasteTab || 'recipe');
@@ -190,6 +190,7 @@ export default class MobileModel extends DCLogic {
       resetFilters: () => this.setState({ query: '', typeF: 'all', statusF: 'all' }),
       sortLabel: s.sortNew ? '최근순' : '오래된순', toggleSort: () => this.setState({ sortNew: !s.sortNew }),
       tasteTabs: [['recipe', '레시피', 'dot t-recipe'], ['exhibit', '전시·공간', 'dot t-exhibit']].map(([k, label, dot]) => ({ label, dot, count: tasteAll.filter(i => i.type === k).length, cls: tasteType === k ? 'on' : '', pressed: tasteType === k ? 'true' : 'false', pick: () => this.setState({ tasteTab: k }) })),
+      tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteCardLabel: '15분 안팎의 간단한 팬·면 요리', tasteCardDesc: '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
       tasteItems, tasteEmpty: tasteItems.length === 0, tasteSingle: tasteItems.length === 1, tasteShowCard: tasteType === 'recipe' && tasteItems.length >= 2 && !s.tasteRemoved,
       tasteBadge: tb[0], tasteBadgeCls: tb[1], tasteConfirmed: s.tasteState === 'confirmed',
       confirmTaste: () => { this.setState({ tasteState: 'confirmed' }); this.toast('취향을 확인했어요'); }, editTaste: () => { this.setState({ tasteState: 'edited' }); this.toast('수정 화면은 데스크톱 시안과 같아요 (데모)'); },

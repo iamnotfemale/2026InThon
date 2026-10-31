@@ -666,10 +666,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         </div>
       </div>
 
+      <sc-if value="{{isLive}}"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-sm" type="button" onClick="{{searchContents}}">의미로 찾기</button><span class="muted" role="status" style="font-size:12px">{{searchStatus}}</span></div></sc-if>
       <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
         <div style="position: relative; flex: 1 1 320px; max-width: 460px">
           <svg class="ico muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 11px; top: 10px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" style="padding-left: 34px; padding-right: 36px">
+          <input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200" style="padding-left: 34px; padding-right: 36px">
           <sc-if value="{{hasQuery}}" hint-placeholder-val="{{ false }}">
             <button type="button" class="btn btn-ghost btn-icon btn-sm" aria-label="검색어 지우기" onClick="{{clearQuery}}" style="position: absolute; right: 4px; top: 4px">
               <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -1380,7 +1381,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
         <div style="display: flex; flex-direction: column; gap: 6px">
           <h1 class="h1">내 취향</h1>
-          <p class="muted" style="font-size: 14px">마음에 든 레시피와 전시를 모아보세요.</p>
+          <p class="muted" style="font-size: 14px">{{tasteIntro}}</p>
         </div>
         <div class="seg" role="group" aria-label="취향 분야" style="margin-left: auto">
           <sc-for list="{{tasteTabs}}" as="t" hint-placeholder-count="2">
@@ -1397,20 +1398,20 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <span class="{{tasteBadgeCls}}">{{tasteBadge}}</span>
             </div>
             <p style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em">{{tasteCardLabel}}</p>
-            <p class="muted" style="font-size: 13.5px">{{tasteCardDesc}}</p>
+            <p class="muted" style="font-size: 13.5px">{{tasteCardDesc}}</p><sc-if value="{{isLive}}"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12px">다시 살펴볼 콘텐츠</span><sc-for list="{{tasteRecommendations}}" as="r"><button class="chip" type="button" onClick="{{r.open}}">{{r.title}}</button></sc-for></div></sc-if>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 2px">
               <span class="muted" style="font-size: 12px">근거</span>
-              <sc-for list="{{tasteItems}}" as="ti" hint-placeholder-count="2">
+              <sc-for list="{{tasteEvidence}}" as="ti" hint-placeholder-count="2">
                 <button type="button" class="chip" onClick="{{ti.open}}"><span class="{{ti.dot}}"></span>{{ti.title}}</button>
               </sc-for>
             </div>
           </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap">
-            <button type="button" class="btn" onClick="{{confirmTaste}}" disabled="{{tasteConfirmDisabled}}">
+            <sc-if value="{{tasteEditable}}"><button type="button" class="btn" onClick="{{confirmTaste}}" disabled="{{tasteConfirmDisabled}}">
               <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
               맞아요
             </button>
-            <button type="button" class="btn" onClick="{{openTasteEdit}}">수정하기</button>
+            <button type="button" class="btn" onClick="{{openTasteEdit}}">수정하기</button></sc-if>
             <button type="button" class="btn btn-ghost btn-danger" onClick="{{removeTasteCard}}">삭제</button>
           </div>
         </section>
@@ -1460,7 +1461,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         </sc-if>
       </section>
 
-      <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <sc-if value="{{tasteEditable}}"><section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
         <div style="display: flex; flex-direction: column; gap: 4px">
           <h2 class="h2">내 생활 조건</h2>
           <p class="muted" style="font-size: 13px">직접 입력한 조건만 사용해요. 언제든 비우거나 수정할 수 있고, 원래 레시피·정리 결과는 바뀌지 않아요.</p>
@@ -1494,7 +1495,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
             추가
           </button>
         </div>
-      </section>
+      </section></sc-if>
     </div>
   </sc-if>
 
@@ -2441,9 +2442,9 @@ class Component extends DCLogic {
 
     // library
     const q = s.query.trim().toLowerCase();
-    const matchQ = it => !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
+    const matchQ = it => this.matchesContent ? this.matchesContent(it, s.query) : !q || [it.title, it.key, it.summary, it.claim, it.intro, it.place].join(' ').toLowerCase().indexOf(q) >= 0;
     let lib = items.filter(it => matchQ(it) && (s.typeF === 'all' || it.type === s.typeF) && (s.statusF === 'all' || it.group === s.statusF) && (!s.favOnly || s.fav[it.id]));
-    lib.sort((a, b) => s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
+    lib.sort((a, b) => q && s.semanticSearch?.query === s.query.trim() ? s.semanticSearch.ids.indexOf(a.rowId || a.id) - s.semanticSearch.ids.indexOf(b.rowId || b.id) : s.sort === 'new' ? b.ts - a.ts : a.ts - b.ts);
     const isFiltered = s.typeF !== 'all' || s.statusF !== 'all' || s.favOnly || !!q;
     const libBlocked = s.libError || s.libLoading;
     const libFirst = items.length === 0;
@@ -2700,6 +2701,7 @@ class Component extends DCLogic {
       // taste
       isTaste: s.view === 'taste', tasteTabs, tasteItems, tasteTabCount: tasteItems.length,
       tasteHasItems: tasteItems.length > 0, tasteEmpty: tasteItems.length === 0,
+      tasteIntro: '마음에 든 레시피와 전시를 모아보세요.', tasteEditable: true, tasteEvidence: tasteItems,
       tasteShowCard: tasteCardEligible && !s.tasteRemoved, tasteCardGone: tasteCardEligible && s.tasteRemoved, tasteShowSingle: tasteItems.length === 1,
       tasteCardLabel: s.tasteLabel, tasteCardDesc: s.tasteState === 'edited' ? '직접 수정한 표현이에요.' : '짧은 조리 시간과 팬 하나로 만드는 레시피를 모았어요.',
       tasteBadge: tb[0], tasteBadgeCls: tb[1], tasteConfirmDisabled: s.tasteState === 'confirmed',

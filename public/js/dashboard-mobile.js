@@ -1,8 +1,10 @@
 import MobileModel from './mobile-model.js';
+import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 
 // The supplied mobile view shares the existing app's data, authentication and actions.
 export function createMobileDashboard(app) {
   const mobile = new MobileModel({ theme: 'light' });
+  mobile.matchesContent = (item, query) => matchesIndexedItem(item, query, app.state);
   const defaults = mobile.state;
   const sync = () => {
     const s = app.state;
@@ -74,6 +76,6 @@ export function createMobileDashboard(app) {
       v.d.cmp = [];
       v.d.oneLine = v.d.reason || v.d.oneLine;
     }
-    return v;
+    return applyIndexValues(v, s, app);
   };
 }

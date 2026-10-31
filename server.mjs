@@ -52,7 +52,7 @@ export function readReplyKeys(file) {
   } catch (error) { if (error.code === 'ENOENT') return new Set(); throw error; }
 }
 
-export const FACTCHECK_ACK = '받았어요. 핵심 주장과 근거를 확인한 뒤 답장할게요.';
+export const FACTCHECK_ACK = '디미가 핵심 주장과 근거를 살펴보고 정리해드릴게요!';
 export const FACTCHECK_FAILED = '지금은 근거 확인을 마치지 못했어요. 잠시 후 다시 보내주세요.';
 export const CHAT_FAILED = '지금은 답장을 만들지 못했어요. 잠시 후 다시 보내주세요.';
 // DMs that ask for a web login link instead of a fact-check.
@@ -173,7 +173,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           // A model or search outage must not be reported as a verdict; tell the user the check did not finish.
           try { result = await (respondToMessage ?? factCheck)(m.message, {
             senderId: sender, acknowledge: action => send(action === 'recipe'
-              ? '받았어요. 영상·이미지와 본문에서 재료와 조리 순서를 정리할게요.'
+              ? '디미가 금방 정리해드릴게요! 재료와 조리 순서까지 함께 살펴볼게요.'
               : action === 'schedule' ? CONTEST_ACK : FACTCHECK_ACK),
           }); }
           catch { stats.lastError = 'AI 처리 실패'; result = { status: 'failed', messages: [content ? FACTCHECK_FAILED : CHAT_FAILED] }; }
@@ -192,7 +192,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
           // Reached only if every message was confirmed; a failed send leaves the record 'pending' for the dashboard.
           if (savedId && markFactCheckSent) await quietly(() => markFactCheckSent(savedId), 'DM 발송 기록 실패');
           await backfill;
-        } else await send('안녕?');
+        } else await send('안녕, 디미예요!');
         await tracking;
         stats.replies++;
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
@@ -360,9 +360,9 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
       <form method="post" action="/subscribe">${hidden}<button>messages 구독하고 확인하기</button></form><p>${escape(stats.subscription)}</p></section>
       <section><h2>4. DM 수신 확인</h2><p>다른 테스트 계정에서 @dimi_in으로 DM을 보낸 뒤 <a href="/">수신 상태 새로고침</a>을 누르세요. Meta의 샘플 이벤트도 이 횟수에 포함되므로 실제 DM 테스트와 구분해서 확인하세요.</p>
       <p>이번 실행의 검증 요청: ${stats.verifications} · 서명 확인 이벤트: ${stats.signedEvents} · 수신 메시지: ${stats.messages}</p>
-      <p>자동 답장: ${config.accessToken && config.userId === IG_ID ? '켜짐 — 안녕?' : '토큰 연결 필요'} · 전송 확인: ${stats.replies} · 실패/결과 미확인: ${stats.replyFailures}</p>
+      <p>자동 답장: ${config.accessToken && config.userId === IG_ID ? '켜짐 — 안녕, 디미예요!' : '토큰 연결 필요'} · 전송 확인: ${stats.replies} · 실패/결과 미확인: ${stats.replyFailures}</p>
       <p>최근 이벤트: ${escape(stats.lastEventAt ? new Date(stats.lastEventAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) + ' (KST)' : '아직 없음')}</p><p>최근 오류: ${escape(stats.lastError || '없음')}</p>
-      <p>새 DM에 ‘안녕?’으로 답장합니다. 본문·발신자·토큰은 로그에 남기지 않으며, 중복 방지를 위한 메시지 ID의 해시만 보관합니다. 전송 실패나 결과 미확인 건은 자동 재전송하지 않습니다.</p></section>`), true);
+      <p>새 DM에 ‘안녕, 디미예요!’로 답장합니다. 본문·발신자·토큰은 로그에 남기지 않으며, 중복 방지를 위한 메시지 ID의 해시만 보관합니다. 전송 실패나 결과 미확인 건은 자동 재전송하지 않습니다.</p></section>`), true);
   }));
   for (const server of [publicServer, adminServer]) { server.requestTimeout = 30000; server.headersTimeout = 15000; }
   return { publicServer, adminServer, stats };

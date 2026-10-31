@@ -2,6 +2,7 @@ import { h, render } from './vendor/preact.module.js';
 import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
+import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { BOT_DM_URL, factcheckToItem, exhibitRowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 
 function routeState(path) {
@@ -99,6 +100,7 @@ class DashboardApp extends DashboardModel {
   componentDidUpdate(previousProps, previousState) {
     super.componentDidUpdate(previousProps);
     this.positionMenu();
+    if (this.state.mode === 'live' && previousState.view !== 'taste' && this.state.view === 'taste') this.loadInterests();
     if ((previousState.menuId || previousState.detailMenu) && !this.state.menuId && !this.state.detailMenu) this.menuOpener?.focus();
     if (!this.popping && (previousState.view !== this.state.view || previousState.detailId !== this.state.detailId)) {
       const path = this.state.view === 'detail' ? '/items/' + encodeURIComponent(this.state.detailId)
@@ -118,6 +120,7 @@ class DashboardApp extends DashboardModel {
     this.overlay = overlay;
   }
   componentWillUnmount() {
+    this.searchController?.abort();
     this.mobileMedia.removeEventListener('change', this.onMobileChange);
     super.componentWillUnmount();
     removeEventListener('popstate', this.onPop);
@@ -183,7 +186,8 @@ class DashboardApp extends DashboardModel {
     this.setState({ mode: 'live', user, demoOpen: false, name, nameDraft: name, email: user.email ?? '',
       dataset: 'empty', extra: [], over: {}, deleted: {}, shares: {}, simState: 'idle', flow: 'idle', liveGuide: false,
       fav: store.get('inthon-fav:' + user.id) ?? {}, taste: store.get('inthon-taste:' + user.id) ?? {},
-      conds: [], tasteRemoved: true, connected: false, account: '', connectedAt: '', libLoading: true, libError: false });
+      conds: [], tasteRemoved: false, connected: false, account: '', connectedAt: '', libLoading: true, libError: false,
+      semanticSearch: null, indexInterests: [], searchNote: '', searchBusy: false });
     await this.loadLive();
   }
 
@@ -216,6 +220,7 @@ class DashboardApp extends DashboardModel {
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
+    if (this.state.view === 'taste') this.loadInterests();
     return true;
   }
 
@@ -227,6 +232,42 @@ class DashboardApp extends DashboardModel {
     }, body: JSON.stringify({ action: 'preferences', ...update }) });
     if (!response.ok) throw new Error('Preferences unavailable');
     return response.json();
+  }
+
+  matchesContent(item, query) { return matchesIndexedItem(item, query, this.state); }
+
+  async indexRequest(body, signal) {
+    const { supabase } = await loadSupabase();
+    const { data } = await supabase.auth.getSession();
+    const response = await fetch('/api/content-search', { method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (data.session?.access_token || '') }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error('Index unavailable');
+    return response.json();
+  }
+
+  async searchContents() {
+    const query = this.state.query.trim();
+    if (!query || this.state.mode !== 'live' || this.state.searchBusy) return;
+    this.searchController?.abort(); this.searchController = new AbortController();
+    const uid = this.state.user?.id;
+    this.setState({ searchBusy: true, searchNote: '' });
+    try {
+      const result = await this.indexRequest({ action: 'search', query }, this.searchController.signal);
+      if (this.state.mode !== 'live' || this.state.user?.id !== uid || this.state.query.trim() !== query) return;
+      this.setState({ semanticSearch: { query, ids: result.ids }, indexInterests: result.interests,
+        searchNote: result.rankedBy === 'decisions' ? '콘텐츠의 의미를 살펴 정렬했어요.' : '저장된 색인으로 찾았어요. 의미 검색은 잠시 이용할 수 없어요.' });
+    } catch (error) { if (error.name !== 'AbortError') this.setState({ searchNote: '의미 검색을 마치지 못했어요. 저장된 텍스트로 검색하고 있어요.' }); }
+    finally { this.setState({ searchBusy: false }); }
+  }
+
+  async loadInterests() {
+    if (this.loadingInterests || this.state.mode !== 'live') return;
+    this.loadingInterests = true; const uid = this.state.user?.id;
+    try {
+      const result = await this.indexRequest({ action: 'interests' });
+      if (this.state.mode === 'live' && this.state.user?.id === uid) this.setState({ indexInterests: result.interests, interestIds: result.ids });
+    } catch { /* Existing collections remain usable if interest inference is unavailable. */ }
+    finally { this.loadingInterests = false; }
   }
 
   async changeDelivery(delivery) {
@@ -249,13 +290,15 @@ class DashboardApp extends DashboardModel {
       const resultPreferences = await this.resultSettings({ item: id, hidden });
       this.setState({ resultPreferences, modal: null, delTarget: null, ...(hidden && rowIdOf(this.state.detailId) === id ? { view: 'library', detailId: null } : {}) });
       this.toast(hidden ? '내 목록에서 삭제했어요' : '목록에 복원했어요', hidden ? '되돌리기' : null, hidden ? () => this.removeItem(id, false) : null);
+      this.loadInterests();
     } catch { this.toast('목록을 변경하지 못했어요. 다시 시도해 주세요.'); }
     finally { this.removingItem = false; }
   }
 
   leaveLive() {
+    this.searchController?.abort();
     store.set(MODE_KEY, 'demo');
-    this.setState({ mode: 'demo', liveItems: [], liveLoaded: false, liveGuide: false, libLoading: false, libError: false,
+    this.setState({ mode: 'demo', liveItems: [], liveLoaded: false, liveGuide: false, libLoading: false, libError: false, semanticSearch: null, indexInterests: [], interestIds: [],
       ...this.demoDefaults });
   }
 
@@ -319,7 +362,7 @@ class DashboardApp extends DashboardModel {
       dotCls: live ? 'live' : 'off',
       pick: () => (live ? this.setState({ demoOpen: false }) : this.enterLive()),
     }]);
-    return live ? applyLiveMode(v, s, this) : v;
+    return live ? applyIndexValues(applyLiveMode(v, s, this), s, this) : v;
   }
 }
 

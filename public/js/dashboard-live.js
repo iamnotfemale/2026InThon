@@ -1,6 +1,7 @@
 // Maps real Supabase rows onto the item shape the supplied dashboard design renders.
 // Pure functions only (no DOM, no network) so they can be tested in Node.
 import { validateRecipe } from './recipe-data.js';
+import { indexFromRow, storedContent } from './content-index.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 
@@ -49,6 +50,8 @@ export function firstSentence(text) {
 
 /** One public.factchecks row → one dashboard item (type 'news'). */
 export function factcheckToItem(row, now = new Date()) {
+  const stored = storedContent(row);
+  const reason = typeof stored.reason === 'string' ? stored.reason : row.reason;
   const at = new Date(row.created_at);
   const done = row.status === 'done';
   const verdict = VERDICT[row.verdict] ?? 'hold';
@@ -65,7 +68,7 @@ export function factcheckToItem(row, now = new Date()) {
     dm, dmAt: sentAt ? relative(sentAt, now) : '',
     received: relative(at, now), organized: relative(at, now), checkedAt: stamp(at) + ' KST', ts: at.getTime(),
     author: null, origin: null, thumb: true,
-    claim: row.claim || '', verdict, oneLine: firstSentence(row.reason), reason: row.reason || '',
+    claim: row.claim || '', verdict, oneLine: firstSentence(reason), reason: reason || '', contentIndex: indexFromRow(row),
     checks: [], same: [], diff: [], context: [], limits: [], needed: [], sources,
   };
   if (done && row.topic === 'recipe') {
@@ -123,7 +126,7 @@ export function exhibitRowItems(row, now = new Date()) {
   if (row.status !== 'done' || row.topic !== 'exhibit') return [];
   let stored; let exhibit;
   try { stored = JSON.parse(row.reason); exhibit = validateExhibit(stored.exhibit); } catch { return []; }
-  const base = factcheckToItem({ ...row, topic: null }, now);
+  const base = { ...factcheckToItem({ ...row, topic: null }, now), contentIndex: indexFromRow(row) };
   const origin = instagramOrigin(stored.sourceUrl);
   return exhibit.events.map((event, i) => {
     const view = exhibitView(event, now);

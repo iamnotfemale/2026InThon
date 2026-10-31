@@ -2,6 +2,7 @@
 // 외부 호출(fetch, DNS)은 모두 주입받아 테스트에서 실제 네트워크 없이 검증한다.
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { INDEX_INSTRUCTION, resultIndex } from './content-index.mjs';
 
 export const VERDICTS = {
   supported: '사실에 가까움',
@@ -292,7 +293,7 @@ const JUDGE_SYSTEM = `너는 팩트체크 판단 단계다. 주장과 수집된 
 초록만 있는 논문은 초록 기준임을 reason에 밝힌다. reason은 한국어 2문장 이내, 존댓말(~요).
 JSON 하나만 출력: {"verdict": "supported|refuted|context|unverified|not_checkable", "reason": "...", "evidence_ids": ["E1"]}`;
 
-export function createFactChecker({ model, search, fetchPage, fetchMedia, readVideo, now = () => new Date(), log = () => {} }) {
+export function createFactChecker({ model, search, fetchPage, fetchMedia, readVideo, includeVideo = false, now = () => new Date(), log = () => {} }) {
   async function collectEvidence(extracted) {
     const tasks = [];
     for (const q of (extracted.queries_ko ?? []).slice(0, 2)) tasks.push(search.bing(q, 'news'), search.bing(q, 'web'));
@@ -332,22 +333,24 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     const started = Date.now(); const timings = {};
     let step = Date.now();
     let input;
-    try { input = await gatherInput(message, { fetchMedia: preparedFetch ?? fetchMedia, readVideo, requireAllMedia, signal }); }
+    try { input = await gatherInput(message, { fetchMedia: preparedFetch ?? fetchMedia, readVideo, requireAllMedia, includeVideo, signal }); }
     catch (error) {
       if (!requireAllMedia) throw error;
       return { status: 'no_input', notes: [error.message], messages: [error.message], timings: { total: elapsed(started) } };
     }
     timings.input = elapsed(step);
-    if (!input.text && !input.captions.length && !input.images.length && !input.transcripts.length) {
+    if (!input.text && !input.captions.length && !input.images.length && !input.transcripts.length && !input.videos.length) {
       return { status: 'no_input', timings: { ...timings, total: elapsed(started) }, notes: input.notes,
         messages: ['보내주신 콘텐츠를 열지 못했어요. 확인하고 싶은 문장이나 화면 캡처를 보내주세요.'] };
     }
     step = Date.now();
     const content = [...input.images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.data } })),
+      ...input.videos.map(video => ({ type: 'video', source: { type: 'base64', media_type: video.mediaType, data: video.data } })),
       { type: 'text', text: `<content>\n${input.text ? `사용자 메시지: ${input.text}\n` : ''}${input.captions.map((c, i) => `공유된 게시물 캡션 ${i + 1}: ${clip(c, 2000)}\n`).join('')}`
         + `${input.transcripts.map((t, i) => `영상 ${i + 1} 전사: ${clip(t, 3000)}\n`).join('')}${input.images.length ? `이미지 ${input.images.length}장 첨부(순서대로)\n` : ''}</content>` }];
     signal?.throwIfAborted();
-    const extracted = parseJson(await model({ system: EXTRACT_SYSTEM, content, signal }));
+    const extracted = parseJson(await model({ system: EXTRACT_SYSTEM + '\n' + INDEX_INSTRUCTION, content, signal }));
+    input.images.length = 0; input.videos.length = 0;
     timings.extract = elapsed(step);
     const scope = [...input.scope, ...input.notes].join(', ');
     const today = now().toISOString().slice(0, 10);
@@ -377,6 +380,7 @@ export function createFactChecker({ model, search, fetchPage, fetchMedia, readVi
     const result = { status: 'done', verdict, reason, extracted, cited: cited.map(({ id, url, title, source, via }) => ({ id, url, title, source, via })),
       gathered: { evidence: gathered.evidence.length, searched: gathered.searched, unopened: gathered.unopened, failures: gathered.failures },
       notes: input.notes, timings: { ...timings, total: elapsed(started) }, messages };
+    result.contentIndex = resultIndex(extracted.content_index, result, input);
     log(result);
     return result;
   };
@@ -425,7 +429,7 @@ export function factCheckerFromEnv(env = process.env, { fetchImpl = fetch, resol
     : createAnthropicModel({ baseUrl: env.CONTINUUM_BASE_URL || 'https://api.console.lablup.ai/anthropic',
       apiKey: env.CONTINUUM_API_KEY, model: env.CONTINUUM_MODEL || 'DeepSeek-V4.1-Flash-B300', fetchImpl });
   const readVideo = env.GEMINI_API_KEY ? createGeminiVideoReader({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, fetchImpl }) : null;
-  return createFactChecker({ model, readVideo, log, search: createSearch({ fetchImpl, resolve }),
+  return createFactChecker({ model, readVideo, includeVideo: Boolean(env.GEMINI_API_KEY), log, search: createSearch({ fetchImpl, resolve }),
     fetchPage: url => safeFetch(url, { fetchImpl, resolve }),
     fetchMedia: fetchMedia ?? ((url, maxBytes) => safeFetch(url, { fetchImpl, resolve, maxBytes, timeout: 20000 })) });
 }

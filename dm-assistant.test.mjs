@@ -18,7 +18,7 @@ function storage() {
 test('ordinary text chats while media/Instagram links go to the content processor', async () => {
   const store = storage(); const calls = [];
   const reply = createDmAssistant({ history: store.history, choices: store.choices,
-    model: async args => { calls.push(args); return '안녕! 무엇을 도와줄까?'; },
+    model: async args => { calls.push(args); return '안녕, 디미예요! 무엇을 정리해드릴까요?'; },
     processContent: async () => ({ status: 'done', messages: ['콘텐츠 분석 결과'] }) });
   assert.equal((await reply({ text: '안녕' }, { senderId: '123' })).kind, 'chat');
   await reply({ text: '방금 한 말 영어로' }, { senderId: '123' });
