@@ -203,7 +203,7 @@ test('restaurant and space visits save, reload, filter and open the exact conten
   assert.deepEqual(reloaded.values().selEvents.map(e => e.title), ['두 번째 맛집']);
   reloaded.values().selEvents[0].view();
   assert.equal(reloaded.values().cvType, '맛집');
-  assert.ok(reloaded.values().cvFacts.some(f => f.k === '가격대' && f.v === '1만 원대'));
+  assert.deepEqual(reloaded.values().cvFacts.map(f => f.k).filter(k => ['가격대', '운영', '휴무', '예약'].includes(k)), []);
   reloaded.values().openFullContent();
   assert.equal(messages.at(-1), 'fc12-2');
   reloaded.values().filters[5].toggle();
