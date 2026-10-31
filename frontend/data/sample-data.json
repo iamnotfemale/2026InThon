@@ -27,6 +27,11 @@
       "dot": "dot t-restaurant",
       "orb": "o-restaurant"
     },
+    "space": {
+      "label": "취향공간",
+      "dot": "dot t-space",
+      "orb": "o-space"
+    },
     "unknown": {
       "label": "유형 미정",
       "dot": "dot t-unknown",
@@ -673,6 +678,38 @@
       "placeLinks": [],
       "checks": [
         "감자전 가격이 원본에 없어요."
+      ]
+    },
+    {
+      "id": "sp1",
+      "type": "space",
+      "title": "가상 그림책 서점",
+      "status": "done",
+      "dm": "sent",
+      "dmAt": "오늘 11:05",
+      "received": "오늘 11:02",
+      "ts": 10311102,
+      "key": "서점·책방 · 연남동 · 월요일 휴무",
+      "author": "@sample_bookshelf",
+      "origin": "https://example.com/instagram/p/sp1",
+      "organized": "오늘 11:05",
+      "checkedAt": "2026.10.31 11:05 KST",
+      "thumb": true,
+      "intro": "그림책과 독립출판물을 모아 둔 작은 서점이에요. 주말에는 그림책 낭독회를 열어요. (가상 데이터)",
+      "category": "서점·책방",
+      "hours": "화–일 12:00 – 20:00",
+      "closed": "월요일 휴무",
+      "address": "가상시 연남로 3",
+      "mapNaver": "https://map.naver.com/p/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203",
+      "mapKakao": "https://map.kakao.com/link/search/%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203",
+      "mapGoogle": "https://www.google.com/maps/search/?api=1&query=%EA%B0%80%EC%83%81%20%EA%B7%B8%EB%A6%BC%EC%B1%85%20%EC%84%9C%EC%A0%90%20%EA%B0%80%EC%83%81%EC%8B%9C%20%EC%97%B0%EB%82%A8%EB%A1%9C%203",
+      "reservation": "낭독회는 DM으로 신청",
+      "waiting": "대기 정보 미기재",
+      "parking": "주차 불가",
+      "phone": "전화번호 미기재",
+      "placeLinks": [],
+      "checks": [
+        "낭독회 날짜는 원본에 없어요."
       ]
     },
     {

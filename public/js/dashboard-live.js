@@ -5,6 +5,7 @@ import { indexFromRow, storedContent, indexedItems } from './content-index.js';
 import { validateContest, contestTimeline, calendarLink } from './contest-data.js';
 import { validateExhibit, exhibitView, visitCalendarLink, shownValue, webSources } from './exhibit-data.js';
 import { placesFromRows, mapLinks, priceLabel, placeKeyLine } from './restaurant-data.js';
+import { validateSpace, spaceKeyLine } from './space-data.js';
 
 export const BOT_DM_URL = 'https://ig.me/m/dimi_in';
 export const LIVE_ID = /^fc\d+$/;
@@ -117,6 +118,7 @@ export function factcheckToItem(row, now = new Date()) {
   }
   if (done && row.topic === 'exhibit') return exhibitRowItems(row, now)[0] ?? null;
   if (done && row.topic === 'restaurant') return restaurantRowItems(row, now)[0] ?? null;
+  if (done && row.topic === 'space') return spaceRowItems(row, now)[0] ?? null;
   return item;
 }
 
@@ -174,6 +176,29 @@ export function restaurantRowItems(row, now = new Date()) {
       mapNaver: maps.naver, mapKakao: maps.kakao, mapGoogle: maps.google,
       menus: place.menus.map(menu => ({ name: menu.name, price: priceLabel(menu) ?? '가격 미기재', note: menu.note, signature: menu.signature })),
       reservation: place.reservation ?? '예약 정보 미기재', waiting: place.waiting ?? '웨이팅 정보 미기재',
+      parking: place.parking ?? '주차 정보 미기재', phone: place.phone ?? '전화번호 미기재',
+      placeLinks: place.links.map(link => ({ label: link.label, url: link.url })), checks: place.checks, origin };
+  });
+}
+
+/**
+ * One stored 취향공간 row (v1 JSON in reason) → one dashboard item per place: 맛집 fields without menus and price range.
+ * Empty values use the design's "미기재" wording; nothing comes from outside the post.
+ */
+export function spaceRowItems(row, now = new Date()) {
+  if (row.status !== 'done' || row.topic !== 'space') return [];
+  let stored; let space;
+  try { stored = JSON.parse(row.reason); space = validateSpace(stored.space); } catch { return []; }
+  const base = { ...factcheckToItem({ ...row, topic: null }, now), contentIndex: indexFromRow(row) };
+  const origin = instagramOrigin(stored.sourceUrl);
+  return space.places.map((place, i) => {
+    const maps = mapLinks(place);
+    return { ...base, id: 'fc' + row.id + (i ? '-' + (i + 1) : ''), rowId: 'fc' + row.id, type: 'space', title: place.name,
+      key: spaceKeyLine(place), intro: place.intro ?? '원본에 소개 문구가 없어요.', category: place.category,
+      hours: place.hours ?? '운영 시간 미기재', closed: place.closed ?? '휴무일 미기재',
+      address: place.address ?? (place.area ? place.area + ' · 상세 주소 미기재' : '주소 미기재'),
+      mapNaver: maps.naver, mapKakao: maps.kakao, mapGoogle: maps.google,
+      reservation: place.reservation ?? '예약 정보 미기재', waiting: place.waiting ?? '대기 정보 미기재',
       parking: place.parking ?? '주차 정보 미기재', phone: place.phone ?? '전화번호 미기재',
       placeLinks: place.links.map(link => ({ label: link.label, url: link.url })), checks: place.checks, origin };
   });
