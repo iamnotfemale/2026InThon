@@ -62,10 +62,7 @@ button.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offs
 .pmap-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 16px;text-align:center;border:1px dashed var(--border-strong,#D4D4D4);border-radius:14px}
 @media(max-width:1023px){.pmap-body{grid-template-columns:minmax(0,1fr)}.pmap-side{max-height:none}.pmap-list{overflow:visible}}
 .m .pmap-page{padding:4px 20px 28px;gap:14px;max-width:none}
-.m .pmap-h1{display:none}
-.m .pmap-intro{flex-basis:100%}
-.m .pmap-intro p{font-size:13.5px}
-.m .pmap-taste{margin-left:0;width:100%;justify-content:center;height:40px}
+.m .pmap-head{display:none}
 .m .pmap-kinds{align-self:stretch;flex-wrap:nowrap;overflow-x:auto}
 .m .pmap-kinds button{flex:1 0 auto;padding:0 8px;font-size:13px;gap:4px}
 .m .pmap-box{height:min(58vh,520px);min-height:320px}

@@ -389,7 +389,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         <!-- TASTE -->
     <sc-if value="{{isTaste}}" hint-placeholder-val="{{ false }}">
       <div class="fadein mobile-taste" style="display: flex; flex-direction: column; gap: 16px; padding: 4px 20px 28px">
-        <p class="muted" style="font-size: 14.5px">마음에 든 콘텐츠를 분야별로 모아보세요.</p>
         <div class="taste-mobile-filter">
           <label for="mobile-taste-filter">분류</label>
           <select id="mobile-taste-filter" class="select" value="{{tasteFilter}}" onChange="{{filterTaste}}">
@@ -409,10 +408,8 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
                     <svg class="ico-sm muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                   </button>
                 </sc-for>
-                <sc-if value="{{g.empty}}" hint-placeholder-val="{{ false }}"><span class="muted" style="font-size: 13px; padding: 8px 4px">아직 이 분야에 모은 콘텐츠가 없어요.</span></sc-if>
               </div>
             </sc-for>
-            <p class="muted" style="font-size: 12px; line-height: 1.6">직접 모은 콘텐츠만 보여요. 취향에서 빼도 정리 결과는 그대로 남아요.</p>
           </section>
         </sc-if>
         <sc-if value="{{tasteNone}}" hint-placeholder-val="{{ false }}">
