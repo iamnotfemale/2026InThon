@@ -98,6 +98,9 @@ def compile_page(source_path, name, model_name, output):
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="디미">
   <meta name="referrer" content="no-referrer">
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48 64x64">
   <link rel="icon" href="/assets/dimi-icon-32.png" type="image/png" sizes="32x32">
