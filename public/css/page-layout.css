@@ -7,6 +7,14 @@
 .library-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .library-controls .select,.library-controls .chip{height:36px}
 .library-types{align-self:flex-start;max-width:100%;overflow-x:auto}
+.filter-dropdown{position:relative}
+.filter-dropdown summary{display:flex;align-items:center;gap:18px;cursor:pointer;list-style:none;user-select:none}
+.filter-dropdown summary::-webkit-details-marker{display:none}
+.filter-dropdown .filter-menu{top:calc(100% + 6px);right:0;min-width:100%;width:max-content;max-width:240px}
+.filter-dropdown .menu-item{min-height:36px;white-space:nowrap}
+.filter-dropdown .menu-item[aria-checked="true"]{background:var(--surface-2);color:var(--text);font-weight:600}
+.filter-dropdown .menu-item[aria-checked="true"]::after{content:'✓';margin-left:auto;padding-left:16px}
+.filter-dropdown summary:focus-visible,.filter-dropdown .menu-item:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 .m .library-search{flex:none}
 .m .library-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
 .m .library-controls .input{padding:0 8px;font-size:16px;height:40px;min-width:0}

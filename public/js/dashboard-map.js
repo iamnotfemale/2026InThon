@@ -57,6 +57,7 @@ export function placeMapValues(app, s) {
   };
   return {
     showIntro: !s.mobile,
+    showMapShell: !s.mobile || places.length > 0, showStandaloneEmpty: !!s.mobile && places.length === 0,
     kinds: [['all', '전체', ''], ...MAP_KINDS.map(([key, label]) => [key, label, 'dot t-' + key])].map(([key, label, dot]) => ({
       label, dot, count: key === 'all' ? counted.length : counted.filter(place => place.kind === key).length,
       cls: kind === key ? 'on' : '', pressed: String(kind === key), pick: () => app.setState({ mapKind: key, mapSel: null }) })),
