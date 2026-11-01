@@ -66,6 +66,12 @@ export function createSupabaseState({ url, key, fetchImpl = fetch, timeoutMs = 1
       await request('PATCH', `/dm_replies?key=eq.${key}`, { status, sent_at: at });
     },
 
+    // Time of a person's real message to the bot (signed webhook only): the 24-hour window for calendar reminders.
+    async noteInbound(igsid, at) {
+      checkSender(igsid);
+      if (!Number.isFinite(Date.parse(at))) throw new Error('Invalid message time');
+      await request('POST', '/rpc/note_inbound_dm', { p_igsid: igsid, p_message_at: at });
+    },
     // Every Instagram account that DMs the bot, keyed by its Instagram-scoped ID. Resolves to { username }.
     async trackSender(igsid) {
       checkSender(igsid);

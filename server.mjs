@@ -68,7 +68,7 @@ export const linkMessage = url => '아래 링크를 열고 구글로 로그인�
 
 export function createServers({ config, persist, record, apiFetch = fetch, now = Date.now,
   handledReplies = new Set(), replyRecord = () => {}, reserveReply, background = task => task, loadAccessToken, loadProfileToken, factCheck,
-  observeMessages, trackSender, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode,
+  observeMessages, trackSender, noteInbound, issueLinkToken, saveFactCheck, markFactCheckSent, recordUsernameLookup, respondToMessage, verifyInstagramCode, getDeliveryMode,
   logTiming = data => console.info('DM_TIMING', JSON.stringify(data)) }) {
   const csrf = random(); const launches = new Map(); const states = new Map();
   const stats = { verifications: 0, signedEvents: 0, messages: 0, replies: 0, replyFailures: 0, lastEventAt: null,
@@ -117,12 +117,17 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     }
     if (!accessToken || config.userId !== IG_ID) return;
     const tokenMs = Math.round(performance.now() - tokenStarted);
+    const inbound = [];
     for (const { accountId, event: m } of deliveries) {
       const age = now() - Number(m.timestamp);
       if (accountId !== IG_ID || m.recipient?.id !== IG_ID || m.sender?.id === IG_ID
         || typeof m.sender?.id !== 'string' || !/^\d+$/.test(m.sender.id)
         || typeof m.message.mid !== 'string' || !m.message.mid || m.message.mid.length > 2048
         || m.message.is_self || m.message.is_deleted || !Number.isFinite(age) || age < -300000 || age > 86400000) continue;
+      // A signed message from a person to the bot opens the 24-hour reply window used by calendar reminders.
+      // Its own timestamp counts, never later than now; the database never moves the stored time backwards.
+      if (noteInbound) inbound.push(Promise.resolve().then(() => noteInbound(m.sender.id, new Date(Math.min(Number(m.timestamp), now())).toISOString()))
+        .catch(() => { stats.lastError = '수신 시각 기록 실패'; }));
       const key = createHash('sha256').update(`${IG_ID}:${m.message.mid}`).digest('hex');
       if (handledReplies.has(key)) continue;
       handledReplies.add(key);
@@ -256,6 +261,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         try { logTiming(timing); } catch { /* Diagnostics must never change delivery. */ }
       }
     }
+    await Promise.all(inbound);
   }
   const protect = handler => async (req, res) => {
     try { await handler(req, res); }

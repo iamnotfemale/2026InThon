@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCalendarDashboard, calendarContent, validCalendarDate, serverEvent } from './public/js/dashboard-calendar.js';
 import { MemberApiError } from './public/js/member-sync.js';
+import { reminderAt, reminderText } from './public/js/reminder-rules.js';
 
 const now = () => new Date(2026, 10, 1, 10);
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setTimeout(resolve, 0)); };
@@ -9,21 +10,26 @@ const recipe = { id:'fc1',type:'recipe',status:'done',title:'오늘의 요리',k
 const exhibit = { id:'fc9-2',type:'exhibit',status:'done',title:'두 번째 전시',exhibitEvent:{start:'2026-11-04',end:'2026-11-12'} };
 
 /** In-memory stand-in for /api/calendar: per-member rows, revisions and idempotency keys. */
-function fakeServer() {
+function fakeServer({ reminders = false, eligibility = null } = {}) {
   const rows = new Map(); const keys = new Map(); const calls = []; let n = 0; const fail = {};
+  // With reminders on, the server answers with this revision's jobs (the database trigger's work).
+  const view = ({ owner, ...e }) => !reminders ? e : { ...e, reminders: e.reminders ?? [],
+    reminder_jobs: e.jobStatus ? e.jobStatus : (e.reminders ?? []).flatMap(key => { const at = reminderAt(key, e.date, e.time ?? null);
+      return at ? [{ key, scheduled_at: at.toISOString(), status: 'scheduled', reason: null, sent_at: null }] : []; }) };
   const uuid = () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`;
   const api = member => ({
     async listEvents(from, to) { calls.push(['list', member(), from, to]); if (fail.list) throw fail.list;
-      return { events: [...rows.values()].filter(r => r.owner === member() && r.date >= from && r.date <= to).map(({ owner, ...e }) => e), reminders_available: false }; },
+      return { events: [...rows.values()].filter(r => r.owner === member() && r.date >= from && r.date <= to).map(view),
+        reminders_available: reminders, dm_eligibility: eligibility }; },
     async createEvent(body, key) { calls.push(['create', member(), body, key]); if (fail.create) throw fail.create;
       const seen = keys.get(member() + key); if (seen) return seen;
       const { import: _, ...fields } = body;
       const row = { id: uuid(), ...fields, revision: 1, owner: member() }; rows.set(row.id, row);
-      const { owner, ...e } = row; keys.set(member() + key, e); return e; },
+      const e = view(row); keys.set(member() + key, e); return e; },
     async updateEvent(id, body) { calls.push(['update', member(), id, body]); if (fail.update) throw fail.update;
       const row = rows.get(id); if (!row || row.owner !== member()) throw new MemberApiError(404);
       if (row.revision !== body.revision) throw new MemberApiError(409, '다른 화면에서 이 일정이 바뀌었어요.');
-      const { revision, ...fields } = body; Object.assign(row, fields, { revision: revision + 1 }); const { owner, ...e } = row; return e; },
+      const { revision, ...fields } = body; Object.assign(row, fields, { revision: revision + 1 }); return view(row); },
     async deleteEvent(id) { calls.push(['delete', member(), id]); if (fail.delete) throw fail.delete; rows.delete(id); return null; },
   });
   return { rows, calls, fail, api };
@@ -266,7 +272,11 @@ test('restaurant and space visits save, reload, filter and open the exact conten
 
 test('server events are checked before they render', () => {
   const ok = { id: '00000000-0000-4000-8000-000000000001', content_id: 'fc42-2', kind: 'visit', date: '2026-11-07', time: null, timezone: 'Asia/Seoul', revision: 3 };
-  assert.deepEqual(serverEvent(ok), { id: ok.id, item: 'fc42-2', kind: 'visit', date: '2026-11-07', time: null, revision: 3, dm: false, rem: [] });
+  assert.deepEqual(serverEvent(ok), { id: ok.id, item: 'fc42-2', kind: 'visit', date: '2026-11-07', time: null, revision: 3, dm: false, rem: [], jobs: [] });
+  const withJobs = serverEvent({ ...ok, time: '14:00', reminders: ['eve', 'h1', 'bogus'], reminder_jobs: [
+    { key: 'h1', scheduled_at: '2026-11-07T04:00:00Z', status: 'sent', reason: null }, { key: 'eve', scheduled_at: 'soon', status: 'scheduled' },
+    { key: 'day9', scheduled_at: '2026-11-07T00:00:00Z', status: 'made-up' }] });
+  assert.deepEqual([withJobs.dm, withJobs.rem, withJobs.jobs.map(j => j.key)], [true, ['h1', 'eve'], ['h1']], 'unknown keys, states and times are dropped');
   for (const bad of [{ ...ok, id: 1 }, { ...ok, content_id: 'x' }, { ...ok, kind: 'party' }, { ...ok, date: '2026-02-30' }, { ...ok, time: '24:00' }]) {
     assert.throws(() => serverEvent(bad));
   }
@@ -288,4 +298,74 @@ test('the mobile calendar shares stored schedules and actions with desktop and r
   assert.equal(calendar.values(true).weekCols.filter(c=>c.pressed==='true').length,1);
   assert.match(calendar.values().cells[0].cls,/^mc/);
   calendar.values(true).selEvents[0].remove(); await settle(); assert.equal(calendar.values().filters[0].count,0);
+});
+
+test('with reminders on, PC and mobile use the real options, server send states, upcoming jobs and the exact DM preview', async () => {
+  const ends = new Date(Date.now() + 3 * 3600000).toISOString();
+  const server = fakeServer({ reminders: true, eligibility: { eligible_now: true, reason: null, window_ends_at: ends } });
+  const { calendar, messages } = fixture(server);
+  calendar.values(); await settle();
+  let v = calendar.values();
+  assert.equal(v.dmUnavailable, false); assert.equal(v.upcomingTitle, '다가오는 DM 리마인드');
+  assert.match(v.reminderNote, /24시간 안에만/); assert.match(v.reminderNote, /까지 보낼 수 있어요/);
+  draft(calendar);
+  assert.equal(calendar.model.state.modal.dm, false, 'opt-in: a new schedule starts without DM');
+  assert.equal(calendar.values().showPreview, false);
+  calendar.values().toggleDraftDm();
+  v = calendar.values();
+  assert.ok(v.remOpts.some(option => !option.disabled && option.pressed === 'true'), '"당일 오전 9시" is ready');
+  assert.equal(v.showPreview, true);
+  assert.equal(v.previewText, reminderText({ kind: 'cook', date: '2026-11-07', time: '18:30', title: '오늘의 요리', contentId: 'fc1',
+    now: reminderAt('day9', '2026-11-07', '18:30') }), 'the preview is the text the worker sends');
+  assert.match(v.previewAt, /11\/7 \(토\) 09:00/);
+  v.save(); await settle();
+  const [, , body] = server.calls.find(c => c[0] === 'create');
+  assert.deepEqual(body.reminders, ['day9']);
+  assert.ok(messages.some(msg => /DM 알림 1개 예약/.test(msg)));
+
+  calendar.model.setState({ sel: '2026-11-07' });
+  for (const [values, mobile] of [[calendar.values(), false], [calendar.values(true), true]]) {
+    const card = values.selEvents[0];
+    assert.equal(card.rems.length, 1); assert.equal(card.rems[0].at, '11/7 (토) 09:00');
+    assert.equal(card.rems[0].st, '예약됨');
+    if (mobile) assert.match(card.rems[0].label, /당일 오전 9시 · 예약됨/);
+    assert.equal(values.upCount, 1); assert.equal(values.upcoming[0].at, '11/7 (토) 09:00');
+  }
+
+  // The worker skipped it: the next load shows the server's wording, not a time-based "보냄".
+  const [row] = server.rows.values();
+  row.jobStatus = [{ key: 'day9', scheduled_at: '2026-11-07T00:00:00Z', status: 'skipped', reason: 'window_closed', sent_at: null }];
+  const reloaded = fixture(server).calendar; reloaded.values(); await settle(); reloaded.model.setState({ sel: '2026-11-07' });
+  assert.match(reloaded.values().selEvents[0].rems[0].label, /메시지를 보낼 수 있는 시간이 지나 DM 알림을 보내지 못했어요/);
+  assert.equal(reloaded.values().selEvents[0].rems[0].st, '보낼 수 없음'); assert.equal(reloaded.values().upCount, 0);
+  row.jobStatus = [{ key: 'day9', scheduled_at: '2026-11-07T00:00:00Z', status: 'unknown', reason: 'timeout', sent_at: null }];
+  const again = fixture(server).calendar; again.values(); await settle(); again.model.setState({ sel: '2026-11-07' });
+  assert.match(again.values(true).selEvents[0].rems[0].label, /전송 여부를 확인하고 있어요/);
+  delete row.jobStatus;
+
+  // The card switch turns reminders off with one PATCH, and the design's instant toast waits for the server.
+  messages.length = 0;
+  calendar.values().selEvents[0].toggleDm();
+  assert.ok(!messages.includes('DM 리마인드를 껐어요'), 'no success message before the server answers');
+  await settle();
+  const update = server.calls.filter(c => c[0] === 'update').at(-1);
+  assert.deepEqual(update[3].reminders, []); assert.equal(update[3].revision, 1);
+  assert.deepEqual(messages, ['DM 리마인드를 껐어요']);
+  assert.equal(calendar.values().selEvents[0].rems.length, 0); assert.equal(calendar.values().upCount, 0);
+});
+
+test('reminders stay off when the server does not offer them, and the window note covers unlinked members', async () => {
+  const { calendar, server, messages } = fixture(fakeServer({ reminders: false }));
+  calendar.values(); await settle();
+  draft(calendar); calendar.model.setDraft({ dm: true, rem: ['day9'] }); calendar.values().save(); await settle();
+  const [, , body] = server.calls.find(c => c[0] === 'create');
+  assert.equal('reminders' in body, false, 'nothing is sent while unavailable');
+  calendar.model.setState({ sel: '2026-11-07' });
+  messages.length = 0; calendar.values().selEvents[0].toggleDm(); await settle();
+  assert.deepEqual(messages, ['DM 리마인드는 아직 준비 중이에요.']);
+  assert.equal(server.calls.filter(c => c[0] === 'update').length, 0);
+
+  const unlinked = fixture(fakeServer({ reminders: true, eligibility: { eligible_now: false, reason: 'not_linked', window_ends_at: null } }));
+  unlinked.calendar.values(); await settle();
+  assert.match(unlinked.calendar.values().reminderNote, /Instagram 계정을 연결해야/);
 });

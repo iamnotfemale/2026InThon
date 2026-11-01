@@ -5,12 +5,16 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './public/js/supabase-config.js';
 import { ROW_SELECT, rowItems } from './public/js/dashboard-live.js';
 import { calendarContent, contentIdOf, koreaDay, parseContentId, scheduleProblem, validCalendarDate, TASTE_TYPES } from './public/js/calendar-rules.js';
+import { normalizeReminders } from './public/js/reminder-rules.js';
+import { remindersConfigured } from './reminder-config.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDEMPOTENCY_KEY = /^[\w:.-]{8,120}$/;
 const MAX_RANGE_DAYS = 1100;
 const PAGE = 1000;
-const EVENT_SELECT = 'id,factcheck_id,item_index,kind,date,time,timezone,revision';
+// Jobs are created by the database (trigger) and their status is changed only by the server worker; members read them.
+const EVENT_SELECT = 'id,factcheck_id,item_index,kind,date,time,timezone,revision,reminders,'
+  + 'calendar_reminder_jobs(reminder_key,scheduled_at,status,reason,sent_at,event_revision)';
 const PROBLEM_TEXT = {
   content: '일정을 등록할 수 없는 콘텐츠예요.', kind: '이 콘텐츠에 맞지 않는 일정 종류예요.', date: '날짜를 확인해 주세요.',
   time: '시간을 확인해 주세요.', past: '지난 날짜에는 새 일정을 등록할 수 없어요.', period: '확인된 전시 기간 밖의 날짜예요.',
@@ -22,12 +26,16 @@ class HttpError extends Error {
 }
 
 export const eventView = row => ({ id: row.id, content_id: contentIdOf(row.factcheck_id, row.item_index), kind: row.kind,
-  date: row.date, time: row.time ?? null, timezone: row.timezone, revision: row.revision });
+  date: row.date, time: row.time ?? null, timezone: row.timezone, revision: row.revision, reminders: row.reminders ?? [],
+  // Only the current revision's jobs: older ones were cancelled when the schedule changed.
+  reminder_jobs: (row.calendar_reminder_jobs ?? []).filter(job => job.event_revision === row.revision)
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+    .map(job => ({ key: job.reminder_key, scheduled_at: job.scheduled_at, status: job.status, reason: job.reason ?? null, sent_at: job.sent_at ?? null })) });
 
 const dayDiff = (from, to) => (Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000;
 
 export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://inthon.yeoziphab.com', now = () => new Date(),
-  supabaseUrl = SUPABASE_URL, publishableKey = SUPABASE_PUBLISHABLE_KEY } = {}) {
+  supabaseUrl = SUPABASE_URL, publishableKey = SUPABASE_PUBLISHABLE_KEY, remindersAvailable = false } = {}) {
   const reply = (res, status, value) => {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
     res.end(value === undefined ? '' : JSON.stringify(value));
@@ -82,6 +90,27 @@ export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://
     if (body.timezone !== undefined && body.timezone !== 'Asia/Seoul') throw new HttpError(422, '한국 시간(Asia/Seoul) 일정만 등록할 수 있어요.');
     return { kind: body.kind, date: body.date, time };
   }
+  /** The member's reminder options: undefined when not sent (PATCH keeps the current ones). */
+  function reminderField(value, time) {
+    if (value === undefined) return undefined;
+    let list;
+    try { list = normalizeReminders(value, time); }
+    catch (error) {
+      throw new HttpError(422, error.message === 'h1' ? '종일 일정에는 1시간 전 알림을 쓸 수 없어요.' : 'DM 알림 옵션을 확인해 주세요.');
+    }
+    if (list.length && !remindersAvailable) throw new HttpError(422, 'DM 리마인드는 아직 준비 중이에요. 일정만 저장할 수 있어요.');
+    return list;
+  }
+  /** Whether the bot may message this member right now (last real DM within 24 hours). Never fails the request. */
+  async function dmEligibility(db) {
+    try {
+      const [window] = await db('/rest/v1/rpc/my_dm_window', { method: 'POST', payload: {} }) ?? [];
+      if (!window?.linked) return { eligible_now: false, reason: 'not_linked', window_ends_at: null };
+      const ends = window.window_ends_at;
+      const open = Boolean(ends) && Date.parse(ends) > now().getTime();
+      return { eligible_now: open, reason: open ? null : 'window_closed', window_ends_at: open ? ends : null };
+    } catch { return null; }
+  }
   function checkSchedule(item, fields, options) {
     const problem = scheduleProblem(calendarContent(item), fields, { today: koreaDay(now()), ...options });
     if (problem) throw new HttpError(422, PROBLEM_TEXT[problem]);
@@ -103,7 +132,8 @@ export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://
           events.push(...page.map(eventView));
           if (page.length < PAGE) break;
         }
-        return reply(res, 200, { events, reminders_available: false });
+        return reply(res, 200, { events, reminders_available: remindersAvailable,
+          dm_eligibility: remindersAvailable ? await dmEligibility(db) : null });
       }
       if (method === 'POST') {
         if (id) throw new HttpError(405, '지원하지 않는 요청이에요.');
@@ -113,7 +143,8 @@ export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://
         const { ref, item } = await loadCard(db, body.content_id);
         // Imported browser records keep their original (possibly past) dates; new schedules may not start in the past.
         checkSchedule(item, fields, { allowPast: body.import === true });
-        const payload = { factcheck_id: ref.factcheckId, item_index: ref.index, ...fields, timezone: 'Asia/Seoul', idempotency_key: key };
+        const reminders = reminderField(body.reminders, fields.time) ?? [];
+        const payload = { factcheck_id: ref.factcheckId, item_index: ref.index, ...fields, reminders, timezone: 'Asia/Seoul', idempotency_key: key };
         const created = await db(`/rest/v1/calendar_events?on_conflict=user_id,idempotency_key&select=${EVENT_SELECT}`,
           { method: 'POST', payload, prefer: 'return=representation,resolution=ignore-duplicates' });
         if (created?.length) return reply(res, 201, eventView(created[0]));
@@ -137,8 +168,11 @@ export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://
       const { ref, item } = await loadCard(db, contentId);
       const sameDay = fields.date === current.date && ref.factcheckId === current.factcheck_id && ref.index === current.item_index;
       checkSchedule(item, fields, { allowPast: sameDay });
+      // Omitted: keep the current options (an all-day schedule simply loses "1시간 전").
+      const reminders = reminderField(body.reminders, fields.time)
+        ?? (current.reminders ?? []).filter(key => !(key === 'h1' && fields.time === null));
       const updated = await db(`/rest/v1/calendar_events?id=eq.${id}&revision=eq.${body.revision}&select=${EVENT_SELECT}`, { method: 'PATCH',
-        payload: { factcheck_id: ref.factcheckId, item_index: ref.index, ...fields, revision: body.revision + 1, updated_at: now().toISOString() },
+        payload: { factcheck_id: ref.factcheckId, item_index: ref.index, ...fields, reminders, revision: body.revision + 1, updated_at: now().toISOString() },
         prefer: 'return=representation' });
       if (!updated?.length) throw new HttpError(409, '다른 화면에서 이 일정이 바뀌었어요. 새로고침한 뒤 다시 수정해 주세요.');
       return reply(res, 200, eventView(updated[0]));
@@ -182,4 +216,5 @@ export function createMemberDataHandlers({ fetchImpl = fetch, origin = 'https://
 }
 
 let handlers;
-export const memberDataHandlers = () => (handlers ??= createMemberDataHandlers({ origin: process.env.PUBLIC_URL || 'https://inthon.yeoziphab.com' }));
+export const memberDataHandlers = () => (handlers ??= createMemberDataHandlers({ origin: process.env.PUBLIC_URL || 'https://inthon.yeoziphab.com',
+  remindersAvailable: remindersConfigured() }));

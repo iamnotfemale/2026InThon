@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createMemberDataHandlers } from './member-data.mjs';
 import { scheduleProblem, parseContentId, contentIdOf, calendarContent } from './public/js/calendar-rules.js';
+import { reminderAt } from './public/js/reminder-rules.js';
 
 const ORIGIN = 'https://inthon.yeoziphab.com';
 const TOKEN = 'Bearer member-a-token-0123456789';
@@ -16,8 +17,13 @@ const ROWS = {
 };
 
 /** A tiny PostgREST stand-in: the member sees rows 5 and 6 (row 7 belongs to someone else). */
-function fakeDb() {
+function fakeDb({ window = null } = {}) {
   const events = []; const taste = []; const requests = []; let n = 0;
+  // Stand-in for the database trigger: this revision's jobs, computed from the stored schedule.
+  const withJobs = row => ({ ...row, calendar_reminder_jobs: (row.reminders ?? []).flatMap(key => {
+    const at = reminderAt(key, row.date, row.time ?? null);
+    return at ? [{ reminder_key: key, scheduled_at: at.toISOString(), status: 'scheduled', reason: null, sent_at: null, event_revision: row.revision }] : [];
+  }) });
   const json = (status, value) => new Response(value === undefined ? null : JSON.stringify(value), { status });
   const fetchImpl = async (url, init = {}) => {
     const u = new URL(url); const q = u.searchParams; const method = init.method ?? 'GET';
@@ -26,21 +32,22 @@ function fakeDb() {
     if (u.pathname === '/auth/v1/user') return json(200, { id: UID });
     const eq = name => q.get(name)?.replace(/^eq\./, '');
     if (u.pathname === '/rest/v1/factchecks') return json(200, ROWS[eq('id')] ? [ROWS[eq('id')]] : []);
+    if (u.pathname === '/rest/v1/rpc/my_dm_window') return window ? json(200, [window]) : json(404, {});
     if (u.pathname === '/rest/v1/calendar_events') {
       const body = init.body ? JSON.parse(init.body) : null;
       if (method === 'POST') {
         if (body.factcheck_id === 7) return json(403, {});
         if (events.some(e => e.idempotency_key === body.idempotency_key)) return json(201, []);
-        const row = { id: `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`, revision: 1, ...body }; events.push(row); return json(201, [row]);
+        const row = { id: `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`, revision: 1, ...body }; events.push(row); return json(201, [withJobs(row)]);
       }
       if (method === 'DELETE') { const i = events.findIndex(e => e.id === eq('id')); if (i >= 0) events.splice(i, 1); return json(204); }
       let list = events.filter(e => (!eq('id') || e.id === eq('id')) && (!eq('idempotency_key') || e.idempotency_key === decodeURIComponent(eq('idempotency_key'))));
       if (method === 'PATCH') {
-        list = list.filter(e => String(e.revision) === eq('revision')); list.forEach(e => Object.assign(e, body)); return json(200, list);
+        list = list.filter(e => String(e.revision) === eq('revision')); list.forEach(e => Object.assign(e, body)); return json(200, list.map(withJobs));
       }
       const dates = q.getAll('date');
       if (dates.length) list = list.filter(e => e.date >= dates[0].slice(4) && e.date <= dates[1].slice(4));
-      return json(200, list.slice(Number(q.get('offset') ?? 0)));
+      return json(200, list.slice(Number(q.get('offset') ?? 0)).map(withJobs));
     }
     if (u.pathname === '/rest/v1/taste_collections') {
       if (method === 'POST') { const body = JSON.parse(init.body);
@@ -62,8 +69,8 @@ function call(handler, { method = 'GET', url = '/', body, headers = {} }) {
     handler(req, res);
   });
 }
-const setup = () => { const db = fakeDb(); return { db, ...createMemberDataHandlers({ fetchImpl: db.fetchImpl, origin: ORIGIN,
-  now: () => new Date('2026-11-01T01:00:00Z'), supabaseUrl: 'https://db.test', publishableKey: 'pk' }) }; };
+const setup = (options = {}) => { const db = fakeDb(options); return { db, ...createMemberDataHandlers({ fetchImpl: db.fetchImpl, origin: ORIGIN,
+  now: () => new Date('2026-11-01T01:00:00Z'), supabaseUrl: 'https://db.test', publishableKey: 'pk', remindersAvailable: Boolean(options.reminders) }) }; };
 const create = (calendar, body, key = 'ev:first-key') => call(calendar, { method: 'POST', url: '/api/calendar', body, headers: { 'idempotency-key': key } });
 
 test('content IDs name one card; schedule rules match the browser', () => {
@@ -108,7 +115,8 @@ test('calendar API: two places of one post stay separate; retries, edits, confli
   const { calendar, db } = setup();
   const first = await create(calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', user_id: 'someone-else' });
   assert.equal(first.status, 201);
-  assert.deepEqual(first.body, { id: first.body.id, content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', timezone: 'Asia/Seoul', revision: 1 });
+  assert.deepEqual(first.body, { id: first.body.id, content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', timezone: 'Asia/Seoul', revision: 1,
+    reminders: [], reminder_jobs: [] });
   assert.equal(db.events[0].user_id, undefined, 'the database fills user_id from the JWT');
   const second = await create(calendar, { content_id: 'fc5-2', kind: 'visit', date: '2026-11-07', time: null }, 'ev:second-key');
   assert.equal(second.body.content_id, 'fc5-2'); assert.deepEqual([db.events[1].factcheck_id, db.events[1].item_index], [5, 2]);
@@ -148,4 +156,52 @@ test('taste API: idempotent add per card, removal keeps everything else, news ca
   assert.equal((await call(taste, { method: 'DELETE', url: '/api/taste?id=fc5-2' })).status, 204);
   assert.equal(db.taste.length, 0); assert.equal(db.events.length, 1, 'the schedule stays');
   assert.equal((await call(taste, { method: 'POST', url: '/api/taste' })).status, 405);
+});
+
+test('reminder options: refused until the feature is on; then canonical, KST-scheduled, kept or replaced on edit', async () => {
+  const off = setup();
+  const refused = await create(off.calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', reminders: ['day9'] });
+  assert.equal(refused.status, 422); assert.match(refused.body.error, /준비 중/); assert.equal(off.db.events.length, 0);
+  assert.equal((await create(off.calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', reminders: [] })).status, 201,
+    'turning reminders off is always allowed');
+
+  const ends = '2026-11-02T00:30:00Z';
+  const { calendar, db } = setup({ reminders: true, window: { linked: true, window_ends_at: ends } });
+  for (const [reminders, why] of [[['soon'], 'unknown key'], ['day9', 'not a list'], [[{ key: 'day9' }], 'not a key'], [Array(9).fill('day9'), 'too long']]) {
+    assert.equal((await create(calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '12:00', reminders })).status, 422, why);
+  }
+  const allDay = await create(calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: null, reminders: ['h1'] });
+  assert.equal(allDay.status, 422); assert.match(allDay.body.error, /종일/);
+  const created = await create(calendar, { content_id: 'fc5', kind: 'visit', date: '2026-11-07', time: '00:30',
+    reminders: ['eve', 'h1', 'day9', 'h1', 'd3'], status: 'sent', scheduled_at: '2026-11-01T00:00:00Z', igsid: '123' });
+  assert.equal(created.status, 201);
+  assert.deepEqual(created.body.reminders, ['day9', 'h1', 'eve', 'd3'], 'deduplicated, display order');
+  assert.deepEqual(Object.keys(db.events[0]).sort(), ['date', 'factcheck_id', 'id', 'idempotency_key', 'item_index', 'kind', 'reminders', 'revision', 'time', 'timezone'],
+    'status, send time and recipient are never taken from the request');
+  assert.deepEqual(Object.fromEntries(created.body.reminder_jobs.map(job => [job.key, job.scheduled_at])), {
+    h1: '2026-11-06T14:30:00.000Z',     // 00:30 KST on the 7th → 23:30 KST on the 6th
+    day9: '2026-11-07T00:00:00.000Z', eve: '2026-11-06T11:00:00.000Z', d3: '2026-11-04T00:00:00.000Z' });
+  assert.ok(created.body.reminder_jobs.every(job => job.status === 'scheduled' && !('igsid' in job)));
+
+  const id = created.body.id;
+  const kept = await call(calendar, { method: 'PATCH', url: '/api/calendar?id=' + id, body: { kind: 'visit', date: '2026-11-08', time: '10:00', revision: 1 } });
+  assert.deepEqual(kept.body.reminders, ['day9', 'h1', 'eve', 'd3'], 'omitted on edit: the options stay');
+  assert.equal(kept.body.reminder_jobs.find(job => job.key === 'day9').scheduled_at, '2026-11-08T00:00:00.000Z', 'jobs follow the new date');
+  const toAllDay = await call(calendar, { method: 'PATCH', url: '/api/calendar?id=' + id, body: { kind: 'visit', date: '2026-11-08', time: null, revision: 2 } });
+  assert.deepEqual(toAllDay.body.reminders, ['day9', 'eve', 'd3'], 'an all-day schedule drops "1시간 전"');
+  const offAgain = await call(calendar, { method: 'PATCH', url: '/api/calendar?id=' + id, body: { kind: 'visit', date: '2026-11-08', time: null, revision: 3, reminders: [] } });
+  assert.deepEqual(offAgain.body.reminders, []); assert.deepEqual(offAgain.body.reminder_jobs, []);
+
+  const list = await call(calendar, { url: '/api/calendar?from=2026-11-01&to=2026-11-30' });
+  assert.equal(list.body.reminders_available, true);
+  assert.deepEqual(list.body.dm_eligibility, { eligible_now: true, reason: null, window_ends_at: ends });
+  const closed = setup({ reminders: true, window: { linked: true, window_ends_at: '2026-11-01T00:59:00Z' } });
+  assert.deepEqual((await call(closed.calendar, { url: '/api/calendar?from=2026-11-01&to=2026-11-30' })).body.dm_eligibility,
+    { eligible_now: false, reason: 'window_closed', window_ends_at: null });
+  const unlinked = setup({ reminders: true, window: { linked: false, window_ends_at: null } });
+  assert.equal((await call(unlinked.calendar, { url: '/api/calendar?from=2026-11-01&to=2026-11-30' })).body.dm_eligibility.reason, 'not_linked');
+  const broken = setup({ reminders: true });
+  const fallback = await call(broken.calendar, { url: '/api/calendar?from=2026-11-01&to=2026-11-30' });
+  assert.equal(fallback.status, 200, 'the schedule list never fails because of the window lookup');
+  assert.equal(fallback.body.dm_eligibility, null);
 });

@@ -4,6 +4,35 @@
 
 구현 요청: [GitHub 이슈 #15](https://github.com/iamnotfemale/2026InThon/issues/15).
 
+## 구현 상태 (2026-11-01)
+
+코드와 마이그레이션은 작성됐고 가짜 API 테스트를 통과했다. **실제 발송은 아직 검증되지 않았다.** 아래 설정 전에는 `reminders_available=false`이고, 알림 옵션 저장도 서버가 거절한다.
+
+| 범위 | 구현 |
+| --- | --- |
+| DB | `supabase/migrations/20261101012148_calendar_reminders.sql`: `calendar_events.reminders`, `calendar_reminder_jobs`, `dm_inbound`, 예약 트리거(`schedule_event_reminders`), 연결 해제 취소 트리거, `claim_reminder_jobs`(SKIP LOCKED), `my_dm_window`, `note_inbound_dm`, 매분 `run_reminder_worker` |
+| 예약 계산 | DB `reminder_at()`과 `public/js/reminder-rules.js`의 `reminderAt()`이 같은 KST 규칙. 지난 시각은 `skipped/past`, 미연결은 `skipped/not_linked` |
+| API | `member-data.mjs`: `reminders` 검증·정렬·중복 제거, 종일 `h1` 거부, PATCH 생략 시 유지. 응답에 `reminders`, 현재 revision의 `reminder_jobs`, `dm_eligibility` |
+| 수신 창 | `server.mjs`가 서명·수신 대상 검증을 통과한 사람의 메시지만 `note_inbound_dm`으로 기록. 미래 시각은 수신 시각으로 제한, 값은 뒤로 가지 않음, 2일 뒤 파기 |
+| 작업자 | `reminder-worker.mjs`, `api/reminders.mjs`(`/api/reminders/run`, `CRON_SECRET` Bearer). 발송 직전 revision·옵션·연결·콘텐츠 소유·24시간 창(1분 여유)을 다시 확인. 메시지 ID를 받아야 `sent`, 요청 후 응답 유실은 `unknown` |
+| 프론트 | `dashboard-calendar.js`: PC·모바일 스위치·옵션·미리보기(작업자와 같은 문구)·카드별 실제 상태·다가오는 알림 목록. 새 일정은 꺼진 상태로 시작(opt-in) |
+
+### 명세와 다르게 한 부분
+
+- **매분 실행은 Vercel Cron이 아니라 Supabase `pg_cron`이 호출한다.** Vercel Hobby 플랜은 하루 1회보다 잦은 Cron을 허용하지 않아 배포가 실패한다. `pg_cron`은 이미 보관 기간 삭제에 쓰고 있다. 실행할 작업이 있을 때만 `pg_net`으로 작업자를 부르므로 함수 호출도 적다. 인증은 같은 `CRON_SECRET` Bearer다.
+- 예약 저장 시에는 창이 닫혀 있어도 `skipped`로 끝내지 않고 예약해 둔다. 알림 시각 전에 사용자가 DM을 보내면 보낼 수 있기 때문이다. 저장 시점의 창 상태는 `dm_eligibility`로 화면에 안내하고, 실제 판정은 발송 직전에 한다.
+
+### 켜는 순서
+
+1. 마이그레이션 적용.
+2. Supabase Vault에 두 값 저장(SQL 편집기):
+   `select vault.create_secret('https://<배포 주소>/api/reminders/run', 'reminder_worker_url');`
+   `select vault.create_secret('<CRON_SECRET 값>', 'reminder_worker_secret');`
+3. Vercel 환경변수 `CRON_SECRET`(위와 같은 값), `DM_REMINDERS=on` 설정 후 재배포.
+4. 테스트 계정이 @dimi_in에 DM → 대시보드에서 몇 분 뒤 `1시간 전` 알림 일정 1건 → 수신·메시지 ID 확인 → 다른 일정 1건 예약 후 삭제해 `cancelled` 확인.
+
+끄려면 `DM_REMINDERS`를 지우고 재배포한다(작업자 503, 옵션 저장 거절).
+
 ## 목표와 현재 연결점
 
 사용자가 캘린더에 등록한 일정의 알림 시각에 `@dimi_in`이 DM을 보낸다. 일정 저장 성공과 DM 전송 성공을 구분하고, 수정·삭제·계정 변경 뒤 잘못된 사람에게 보내지 않아야 한다.
