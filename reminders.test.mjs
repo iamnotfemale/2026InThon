@@ -197,10 +197,11 @@ test('the worker endpoint needs the exact cron secret and the feature switch', a
   assert.deepEqual(await run({ secret: 's3cret', enabled: true }, { authorization: 'Bearer s3cret' }, 'POST'), { status: 401, ran: false });
   assert.deepEqual(await run({ secret: 's3cret', enabled: false }, { authorization: 'Bearer s3cret' }), { status: 503, ran: false });
   assert.deepEqual(await run({ secret: 's3cret', enabled: true }, { authorization: 'Bearer s3cret' }), { status: 200, ran: true });
-  const env = { DM_REMINDERS: 'on', CRON_SECRET: 'x', SUPABASE_URL: 'x', SUPABASE_SECRET_KEY: 'x', META_APP_SECRET: 'x', BLOB_READ_WRITE_TOKEN: 'x', PUBLIC_URL: 'x' };
+  const env = { DM_REMINDERS: 'on', REMINDER_WORKER_SECRET: 'x', SUPABASE_URL: 'x', SUPABASE_SECRET_KEY: 'x', META_APP_SECRET: 'x', BLOB_READ_WRITE_TOKEN: 'x', PUBLIC_URL: 'x' };
   assert.equal(remindersConfigured(env), true);
   assert.equal(remindersConfigured({ ...env, DM_REMINDERS: 'true' }), false, 'only an explicit "on"');
-  assert.equal(remindersConfigured({ ...env, CRON_SECRET: '' }), false);
+  assert.equal(remindersConfigured({ ...env, REMINDER_WORKER_SECRET: '' }), false);
+  assert.equal(remindersConfigured({ ...env, REMINDER_WORKER_SECRET: undefined, CRON_SECRET: 'x' }), false, 'the cleanup secret is not reused');
 });
 
 test('only signed messages from a person to the bot record the reply window, never later than receipt', async () => {

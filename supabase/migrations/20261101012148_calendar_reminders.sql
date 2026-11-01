@@ -214,7 +214,7 @@ $$;
 revoke all on function public.claim_reminder_jobs(integer) from public, anon, authenticated;
 
 -- 5. Minute trigger --------------------------------------------------------------------------------------------------
--- Calls the worker only when something is due. The URL and the bearer secret (= CRON_SECRET on Vercel) live in
+-- Calls the worker only when something is due. The URL and the bearer secret (= REMINDER_WORKER_SECRET on Vercel) live in
 -- Supabase Vault as 'reminder_worker_url' and 'reminder_worker_secret'; until both exist this does nothing.
 create function public.run_reminder_worker()
 returns bigint
