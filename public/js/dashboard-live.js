@@ -176,6 +176,36 @@ export function rowItems(row, now = new Date()) {
   return items.filter(Boolean);
 }
 
+/** Same Instagram post (or, without a link, same topic and title) → one key, so repeated shares list once. */
+export function sentKey(row) {
+  const origin = instagramOrigin(storedContent(row).sourceUrl);
+  if (origin) return 'url:' + origin.replace('/reels/', '/reel/');
+  const claim = typeof row?.claim === 'string' ? row.claim.normalize('NFKC').replace(/\s+/g, ' ').trim() : '';
+  return claim ? `claim:${row.topic ?? 'news'}:${claim}` : 'row:' + row?.id;
+}
+
+/**
+ * Rows (newest first) → list items with repeated shares of the same content collapsed onto the newest result.
+ * The kept item says how many times it was sent; `hiddenRows` are the older duplicates' ids.
+ */
+export function listItems(rows, now = new Date()) {
+  const groups = new Map();
+  for (const row of rows ?? []) {
+    if (row?.status !== 'done') continue;
+    const key = sentKey(row);
+    const group = groups.get(key);
+    if (group) group.older.push(row.id); else groups.set(key, { row, older: [] });
+  }
+  const items = []; const hiddenRows = [];
+  for (const { row, older } of groups.values()) {
+    hiddenRows.push(...older);
+    const sentCount = older.length + 1;
+    items.push(...rowItems(row, now).map(item => sentCount > 1
+      ? { ...item, sentCount, received: `${item.received} (${sentCount}번 보냄)` } : item));
+  }
+  return { items, hiddenRows };
+}
+
 /**
  * One 맛집 result row (with its restaurants and menus) → one dashboard item per place, mapped onto the design's
  * restaurant fields. Empty values use the design's "미기재" wording; nothing comes from outside the post.
