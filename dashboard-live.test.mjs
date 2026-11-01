@@ -167,3 +167,22 @@ test('recipe timers distinguish exact cooking duration from ranges, decimals and
   assert.equal(model.secsOf('약불 · 30초'),30);
   for(const meta of ['3~5분','1.5분','영상 00:12','시간 미기재']) assert.equal(model.secsOf(meta),0,meta);
 });
+
+test('the same shared post sent several times lists once with how many times it was sent', async () => {
+  const { listItems } = await import('./public/js/dashboard-live.js');
+  const post = url => JSON.stringify({ reason: '근거가 있어요.', sourceUrl: url });
+  const rows = [
+    row({ id: 9, created_at: '2026-10-31T08:00:00Z', reason: post('https://www.instagram.com/p/AbC123/') }),
+    row({ id: 8, created_at: '2026-10-31T07:00:00Z', claim: '다른 주장', reason: post('https://www.instagram.com/p/Other1/') }),
+    row({ id: 6, created_at: '2026-10-31T06:00:00Z', claim: '옛 제목', reason: post('https://www.instagram.com/p/AbC123/') }),
+    row({ id: 5, created_at: '2026-10-31T05:00:00Z', reason: post('https://www.instagram.com/p/AbC123/') }),
+    row({ id: 4, created_at: '2026-10-31T04:00:00Z', claim: '링크 없는 공유' }),
+    row({ id: 3, created_at: '2026-10-31T03:00:00Z', claim: '링크 없는  공유' }),
+  ];
+  const { items, hiddenRows } = listItems(rows, NOW);
+  assert.deepEqual(items.map(item => item.id), ['fc9', 'fc8', 'fc4']);
+  assert.deepEqual(items.map(item => item.sentCount ?? 1), [3, 1, 2]);
+  assert.match(items[0].received, /\(3번 보냄\)$/);
+  assert.doesNotMatch(items[1].received, /보냄/);
+  assert.deepEqual(hiddenRows, [6, 5, 3]);
+});

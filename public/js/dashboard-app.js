@@ -9,7 +9,7 @@ import { applyTasteOrbitValues } from './dashboard-taste.js';
 import { createCalendarDashboard } from './dashboard-calendar.js';
 import { placeMapValues, syncDashboardPlaceMap } from './dashboard-map.js';
 import { applyDmPreview } from './dm-preview.js';
-import { BOT_DM_URL, ROW_SELECT, rowItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
+import { BOT_DM_URL, ROW_SELECT, rowItems, listItems, rowIdOf, displayName, linkState, applyLiveMode } from './dashboard-live.js';
 import { createMemberApi, createTasteSync } from './member-sync.js';
 import { parseContentId } from './calendar-rules.js';
 
@@ -271,8 +271,10 @@ class DashboardApp extends DashboardModel {
   async ensureReferences(ids) {
     if (this.state.mode !== 'live') return;
     const known = new Set([...this.state.liveItems, ...(this.state.refItems || [])].map(item => item.id));
+    // Older repeats of a listed share stay collapsed into it instead of coming back as separate items.
+    const repeats = new Set((this.state.repeatRows || []).map(String));
     const rows = [...new Set(ids.filter(id => !known.has(id)).map(id => parseContentId(id)?.factcheckId).filter(Boolean))]
-      .filter(row => !this.referenceRequests.has(row));
+      .filter(row => !this.referenceRequests.has(row) && !repeats.has(String(row)));
     if (!rows.length) return;
     rows.forEach(row => this.referenceRequests.add(row));
     const uid = this.state.user?.id;
@@ -314,9 +316,11 @@ class DashboardApp extends DashboardModel {
     const next = linkState(link.data);
     const newlyLinked = next.connected && next.connectedAt !== this.state.connectedAt && this.state.liveLoaded;
     const now = new Date();
-    const liveItems = rows.data.flatMap(row => rowItems(row, now));
+    const { items: liveItems, hiddenRows } = listItems(rows.data, now);
     const listed = new Set(liveItems.map(item => item.id));
-    this.setState({ ...next, liveItems, refItems: (this.state.refItems || []).filter(item => !listed.has(item.id)), resultPreferences: preferences,
+    const repeats = new Set(hiddenRows.map(id => 'fc' + id));
+    this.setState({ ...next, liveItems, repeatRows: hiddenRows,
+      refItems: (this.state.refItems || []).filter(item => !listed.has(item.id) && !repeats.has(item.rowId ?? rowIdOf(item.id))), resultPreferences: preferences,
       dmMode: preferences.delivery, libLoading: false, libError: false,
       liveLoaded: true, ...(newlyLinked ? { liveGuide: false } : {}) });
     if (newlyLinked) this.toast(LINK_DONE);
@@ -409,7 +413,7 @@ class DashboardApp extends DashboardModel {
     this.searchController?.abort();
     this.tasteSync.reset(); this.referenceRequests.clear();
     store.set(MODE_KEY, 'demo');
-    this.setState({ mode: 'demo', liveItems: [], refItems: [], tasteLoaded: false, liveLoaded: false, liveGuide: false, libLoading: false, libError: false, semanticSearch: null, indexInterests: [], interestIds: [],
+    this.setState({ mode: 'demo', liveItems: [], refItems: [], repeatRows: [], tasteLoaded: false, liveLoaded: false, liveGuide: false, libLoading: false, libError: false, semanticSearch: null, indexInterests: [], interestIds: [],
       ...this.demoDefaults });
   }
 
