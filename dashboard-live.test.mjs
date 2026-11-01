@@ -186,3 +186,16 @@ test('the same shared post sent several times lists once with how many times it 
   assert.doesNotMatch(items[1].received, /보냄/);
   assert.deepEqual(hiddenRows, [6, 5, 3]);
 });
+
+test('several recipes from one reel stay separate items, and only a re-sent recipe is counted', async () => {
+  const { listItems } = await import('./public/js/dashboard-live.js');
+  const recipe = title => JSON.stringify({ recipe: { version: 1, title }, sourceUrl: 'https://www.instagram.com/reel/Rcp123/' });
+  const rows = [
+    row({ id: 22, topic: 'recipe', claim: '김치볶음밥', reason: recipe('김치볶음밥') }),
+    row({ id: 21, topic: 'recipe', claim: '계란국', reason: recipe('계란국') }),
+    row({ id: 12, topic: 'recipe', claim: '김치볶음밥', reason: recipe('김치볶음밥') }),
+    row({ id: 11, topic: 'recipe', claim: '계란국', reason: recipe('계란국') }),
+  ];
+  const { hiddenRows } = listItems(rows, NOW);
+  assert.deepEqual(hiddenRows, [12, 11]);
+});
