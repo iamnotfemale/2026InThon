@@ -40,12 +40,17 @@ test('mobile taste uses a category dropdown, filters the saved list and opens a 
   Object.assign(app.state, { view: 'taste', taste: { fc1: true, fc2: true, fc3: true }, tasteTab: 'all' });
   assert.equal(values().tasteFilter, 'all');
   assert.deepEqual(values().tasteTabs.map(t => [t.value, t.count]), [['all', 3], ['recipe', 1], ['exhibit', 2], ['contest', 0], ['restaurant', 0]]);
+  assert.deepEqual(values().tasteGroups.map(g => g.type), ['recipe', 'exhibit']);
   assert.ok(values().tasteGroups.every(g => !g.label.includes('궤도')));
+  values().filterTaste({ currentTarget: { value: 'contest' } });
+  assert.deepEqual(values().tasteGroups, []);
   values().filterTaste({ currentTarget: { value: 'exhibit' } });
   assert.equal(values().tasteFilter, 'exhibit');
   assert.deepEqual(values().tasteGroups.map(g => g.type), ['exhibit']);
   assert.deepEqual(values().tasteGroups[0].items.map(i => i.id), ['fc2', 'fc3']);
   values().tasteGroups[0].items[0].open(); assert.equal(app.state.view, 'detail'); assert.equal(app.state.detailId, 'fc2');
+  app.state.taste = {};
+  assert.deepEqual(values().tasteGroups, []); assert.equal(values().tasteNone, true);
   const template = readFileSync('public/data/mobile-template.json', 'utf8');
   assert.doesNotMatch(template, /궤도|mo-stage|tasteOrbits|tasteSelection/);
   assert.match(template, /mobile-taste-filter/); assert.match(template, /\{\{ti.open\}\}/);
