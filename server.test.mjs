@@ -745,3 +745,15 @@ test('a recipe collection saves each recipe as its own record and always sends o
   await deliver(f, [incoming({ message: { mid: 'collection-partial', text: '레시피' } })]); await eventually(() => f.stats.replies === 1);
   assert.equal(saves, 2); assert.deepEqual(sent.slice(1), ['레시피 2개', 'A 정리', 'B 정리']);
 });
+
+
+test('Meta code4 pauses further sends for15minutes without reserving new messages or sender actions', async t => {
+  let clock=Date.now(), calls=0; const timings=[];
+  const f=await fixture(t,{now:()=>clock,config:{accessToken:'test-token',userId:IG_ID,senderActions:false},
+    logTiming:data=>timings.push(data),apiFetch:async()=>{calls++;return new Response(JSON.stringify({error:{code:4}}),{status:403});}});
+  await deliver(f,[incoming()]);await eventually(()=>f.stats.replyFailures===1);
+  await deliver(f,[incoming({message:{mid:'second',text:'hello'}})]);await eventually(()=>timings.length===2);
+  assert.equal(calls,1);assert.equal(f.actions.length,0);assert.equal(timings[1].delivery_error,'rate_limit_cooldown');
+  clock+=15*60*1000+1;
+  await deliver(f,[incoming({timestamp:clock,message:{mid:'third',text:'hello'}})]);await eventually(()=>calls===2);
+});

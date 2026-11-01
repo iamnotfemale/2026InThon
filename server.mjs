@@ -76,12 +76,16 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
   const callback = () => `${config.publicUrl}/auth/instagram/callback`;
   const expire = map => { for (const [key, item] of map) if (item.expires < now()) map.delete(key); };
   const save = updates => { const next = { ...config, ...updates }; persist(next); Object.assign(config, updates); };
+  // shortcut: cooldown is per warm instance; use shared state before scaling concurrent senders.
+  let sendPausedUntil = 0;
   async function api(url, options = {}) {
+    if (String(url).endsWith('/messages') && now() < sendPausedUntil) throw new Error('Meta send cooldown');
     const response = await apiFetch(url, { ...options, signal: options.signal ?? AbortSignal.timeout(15000), redirect: 'error' });
     const data = await response.json();
     if (!response.ok || data.error || data.error_type) {
       // API errors can echo credentials, so expose only numeric codes.
       // Subcode and type (e.g. OAuthException) are fixed identifiers, safe to log; error text can contain user IDs.
+      if (Number(data.error?.code) === 4) sendPausedUntil = now() + 15 * 60 * 1000;
       const subcode = Number(data.error?.error_subcode) || 0;
       const type = /^\w{1,64}$/.test(data.error?.type ?? '') ? data.error.type : '';
       throw new Error(`Meta API 요청 실패 (HTTP ${response.status}, code ${Number(data.error?.code) || 0}`
@@ -109,6 +113,10 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
     return target;
   }
   async function autoReply(deliveries) {
+    if (now() < sendPausedUntil) {
+      logTiming({ delivery: 'not_sent', delivery_error: 'rate_limit_cooldown', retry_after_ms: sendPausedUntil - now() });
+      return;
+    }
     const tokenStarted = performance.now();
     let accessToken = config.accessToken;
     if (loadAccessToken) {
@@ -139,7 +147,7 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         if (reserveReply) {
           if (!await reserveReply(key)) continue;
         } else replyRecord({ key, status: 'sending', at: new Date(now()).toISOString() });
-        activity = beginActivity(m.sender.id, accessToken);
+        activity = config.senderActions === false ? { typing() {}, async finish() {} } : beginActivity(m.sender.id, accessToken);
         const send = async message => {
           const result = await api(`${GRAPH}/${IG_ID}/messages`, { method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },

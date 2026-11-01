@@ -41,6 +41,7 @@ export default function handler(req, res) {
   publicHandler ??= createServers({
     config: { publicUrl: process.env.PUBLIC_URL, appSecret: process.env.META_APP_SECRET,
       webhookSecret: process.env.META_APP_SECRET, accessToken: process.env.META_ACCESS_TOKEN,
+      senderActions: false, // Reduce Meta calls during the code-4 rate-limit incident.
       verifyToken: process.env.META_VERIFY_TOKEN, userId: '17841414630453998' },
     persist: () => { throw new Error('Cloud credentials are managed in Vercel'); },
     // Gemini 일반 대화와 콘텐츠 처리를 분기하며, Continuum-only 구성도 유지한다.
