@@ -37,6 +37,9 @@ button.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offs
 .pmap-body{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
 .pmap-box{position:relative;height:clamp(420px,calc(100vh - 260px),760px);border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--surface-2)}
 .pmap{position:absolute;inset:0}
+.pmap{background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:32px 32px}
+.pmap-empty-side{min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px 16px;text-align:center;font-size:14px}
+.pmap-empty-side img{object-fit:contain}.pmap-empty-side p{font-size:13px;line-height:1.6}
 .pmap .kmap-canvas{position:absolute;inset:0;width:100%;height:100%}
 .pmap-card{position:absolute;left:12px;bottom:12px;z-index:4;width:min(340px,calc(100% - 24px));box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:0 8px 24px -8px rgba(0,0,0,.25)}
 .pmap-card-head{display:flex;align-items:center;gap:6px;font-size:12px}

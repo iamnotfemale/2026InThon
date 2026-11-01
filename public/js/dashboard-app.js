@@ -63,9 +63,19 @@ class DashboardApp extends DashboardModel {
     this.onKey = event => {
       document.documentElement.removeAttribute('data-pointer-focus');
       if (this.state.privateAuthRequired) return;
+      const dropdown = document.activeElement?.closest('.filter-dropdown');
+      if (dropdown && event.key === 'Escape') {
+        event.preventDefault(); dropdown.open = false; dropdown.querySelector('summary').focus({ preventScroll: true }); return;
+      }
+      if (dropdown && event.key === 'Tab') { dropdown.open = false; dropdown.querySelector('summary').focus({ preventScroll: true }); }
+      if (dropdown && document.activeElement === dropdown.querySelector('summary') && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+        event.preventDefault(); dropdown.open = true;
+        const items = [...dropdown.querySelectorAll('[role="menuitemradio"]')];
+        (event.key === 'ArrowUp' ? items.at(-1) : items[0])?.focus(); return;
+      }
       const menu = document.activeElement?.closest('.menu[role="menu"]');
       if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-        const items = [...menu.querySelectorAll('[role="menuitem"]')];
+        const items = [...menu.querySelectorAll('[role^="menuitem"]')];
         const index = items.indexOf(document.activeElement);
         const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
         event.preventDefault(); items[next]?.focus(); return;
@@ -89,6 +99,7 @@ class DashboardApp extends DashboardModel {
     this.onVisible = () => { if (document.visibilityState === 'visible' && this.state.mode === 'live') this.loadLive(); };
     this.onOutsideMenu = event => {
       document.documentElement.setAttribute('data-pointer-focus', '');
+      for (const dropdown of document.querySelectorAll('.filter-dropdown[open]')) if (!dropdown.contains(event.target)) dropdown.open = false;
       if ((this.state.menuId || this.state.detailMenu) && !event.target.closest('.menu,[aria-label="더보기"]')) this.setState({ menuId: null, detailMenu: false });
     };
     this.positionMenu = () => {

@@ -65,6 +65,16 @@ test('mobile map rows expand only their own place and open the exact child conte
   assert.equal(v.rows[0].expanded,undefined);
 });
 
+test('empty desktop filters retain the map shell while mobile keeps its empty layout', () => {
+  const state={mode:'live',mobile:false,mapKind:'restaurant',taste:{}};
+  const app={state,allItems:()=>items.filter(item=>item.type==='exhibit'),setState:patch=>Object.assign(state,patch)};
+  let v=placeMapValues(app,state);
+  assert.equal(v.noPlaces,true); assert.equal(v.showMapShell,true); assert.equal(v.showStandaloneEmpty,false);
+  assert.deepEqual(v._places,[]); assert.equal(v.emptyTitle,'이 유형의 장소가 없어요');
+  state.mobile=true; v=placeMapValues(app,state);
+  assert.equal(v.showMapShell,false); assert.equal(v.showStandaloneEmpty,true);
+});
+
 function fakeKakao() {
   const overlays = [];
   class LatLng { constructor(lat, lng) { this.lat = lat; this.lng = lng; } }

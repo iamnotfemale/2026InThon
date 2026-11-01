@@ -396,6 +396,14 @@ export default class DashboardModel extends DCLogic {
     const TYPE_GROUPS = [['가볼 곳', [['exhibit', '전시·팝업'], ['space', '취향공간'], ['restaurant', '맛집']]], ['챙길 정보', [['news', '뉴스·정보'], ['contest', '공모전·대외활동']]], ['생활', [['recipe', '레시피'], ['beauty', '미용']]]];
     const typeTabs = [['all', '전체', null, items.length, false, '']].concat(TYPE_GROUPS.flatMap(([group, list]) => list.map(([k, label], i) => [k, label, 'dot t-' + k, counts[k], i === 0, group]))).map(([k, label, dot, count, groupStart, group]) => ({ label, dot, hasDot: !!dot, count, group, groupStart, cls: s.typeF === k ? 'on' : '', pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k, menuId: null }) }));
     const statusChips = [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k, menuId: null }) }));
+    const chooseFilter = pick => event => {
+      pick();
+      const dropdown = event.currentTarget.closest('details');
+      if (dropdown) { dropdown.open = false; dropdown.querySelector('summary')?.focus({ preventScroll: true }); }
+    };
+    const statusOptions = statusChips.map(option => ({ ...option, choose: chooseFilter(option.pick) }));
+    const sortOptions = [['new', '최근 보낸 순'], ['old', '오래된 순']].map(([value, label]) => ({ label,
+      pressed: String(s.sort === value), choose: chooseFilter(() => this.setState({ sort: value })) }));
     const sideGroups = TYPE_GROUPS.map(([name, list]) => ({ name, types: list.map(([k, label]) => ({ label, dot: 'dot t-' + k, count: counts[k], pick: () => this.go('library', { typeF: k, statusF: 'all', query: '', favOnly: false }) })) }));
     const sideTypes = sideGroups.flatMap(g => g.types);
 
@@ -625,6 +633,8 @@ export default class DashboardModel extends DCLogic {
       query: s.query, onQuery: e => this.setState({ query: e.target.value, menuId: null }), hasQuery: !!s.query, clearQuery: () => this.setState({ query: '' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       typeTabs, statusChips,
+      statusOptions, statusMenuLabel: statusOptions.find(option => option.pressed === 'true')?.label || '전체 상태',
+      sortOptions, sortMenuLabel: sortOptions.find(option => option.pressed === 'true')?.label || '최근 보낸 순',
       libShowError: s.libError && !s.libLoading, libShowLoading: s.libLoading,
       skeletonRows: [1, 2, 3, 4, 5],
       reloadLib: () => { this.setState({ libLoading: true, libError: false }); clearTimeout(this._fl); this._fl = setTimeout(() => this.setState({ libLoading: false }), 1100); },

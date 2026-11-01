@@ -18,7 +18,7 @@
           </sc-for>
         </div>
 
-        <sc-if value="{{hasPlaces}}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{showMapShell}}" hint-placeholder-val="{{ true }}">
           <div class="pmap-body">
             <div class="pmap-box">
               <div class="pmap" data-placemap="1"></div>
@@ -69,10 +69,14 @@
                   </li>
                 </sc-for>
               </ul>
+              <sc-if value="{{noPlaces}}"><div class="pmap-empty-side">
+                <img src="/assets/mascot.png" alt="" width="104" height="104">
+                <strong>{{emptyTitle}}</strong><p class="muted">{{emptyDesc}}</p>
+              </div></sc-if>
             </div>
           </div>
         </sc-if>
-        <sc-if value="{{noPlaces}}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{showStandaloneEmpty}}" hint-placeholder-val="{{ false }}">
           <div class="pmap-empty">
             <span class="orb o-unknown" style="width: 44px; height: 44px"></span>
             <span style="font-weight: 600">{{emptyTitle}}</span>
