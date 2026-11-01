@@ -282,7 +282,6 @@
             </div>
           </div>
         </sc-if>
-        <p class="muted" style="font-size: 12px">내 콘텐츠로 직접 등록한 일정만 보여요. 예약·지원 완료를 뜻하지 않아요.</p>
       </section>
 
       <!-- side panel -->
@@ -345,7 +344,7 @@
         </section>
       </aside>
     </div>
-    <p class="calendar-note" role="status">{{storageNote}}</p>
+    <sc-if value="{{showStorageStatus}}"><p class="calendar-note" role="status">{{storageNote}}</p></sc-if>
 
   <!-- CONTENT VIEW MODAL -->
   <sc-if value="{{cvOpen}}" hint-placeholder-val="{{ false }}">
