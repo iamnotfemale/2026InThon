@@ -250,9 +250,12 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
         } else await send('안녕, 디미예요!');
         await track();
         stats.replies++;
+        timing.delivery = 'sent';
         await replyRecord({ key, status: 'sent', at: new Date(now()).toISOString() });
       } catch (error) {
         stats.replyFailures++;
+        timing.delivery = 'failed';
+        timing.delivery_error = /^Meta API 요청 실패 \(HTTP \d+, code \d+(?:, subcode \d+)?(?:, \w{1,64})?\)$/.test(error.message) ? error.message : 'unconfirmed';
         stats.lastError = '자동 답장: ' + (error.message.startsWith('Meta API') ? error.message : '전송 결과를 확인하지 못했습니다.');
         // shortcut: failed or uncertain sends are not retried; add a durable outbox before using this beyond a local test.
       } finally {

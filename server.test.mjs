@@ -170,13 +170,16 @@ test('auto reply ignores echoes, self-messages, wrong accounts, stale events, mi
   assert.equal(calls, 0); assert.equal(f.stats.replies, 0);
 });
 test('auto reply handles changes envelopes and reports send failures without leaking or resending', async t => {
-  let calls = 0; const journal = [];
-  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID }, replyRecord: entry => journal.push(entry),
+  let calls = 0; const journal = []; const timings = [];
+  const f = await fixture(t, { config: { accessToken: 'test-token', userId: IG_ID }, replyRecord: entry => journal.push(entry), logTiming: data => timings.push(data),
     apiFetch: async () => { calls++; return new Response(JSON.stringify({ error: { code: 10, message: 'private-token' } }), { status: 403 }); } });
   const raw = JSON.stringify({ object: 'instagram', entry: [{ id: IG_ID, changes: [{ field: 'messages', value: incoming() }] }] });
   const send = () => fetch(f.publicUrl + '/webhooks/instagram', { method: 'POST', body: raw, headers: { 'X-Hub-Signature-256': f.sign(raw) } });
   assert.equal((await send()).status, 200); await eventually(() => f.stats.replyFailures === 1);
   await send(); assert.equal(calls, 1); assert.equal(journal.length, 1);
+  await eventually(() => timings.length === 1);
+  assert.equal(timings[0].delivery, 'failed'); assert.match(timings[0].delivery_error, /403, code 10/);
+  assert.doesNotMatch(JSON.stringify(timings), /private-token|test-token|private-message/);
   assert.match(f.stats.lastError, /403, code 10/); assert.doesNotMatch(f.stats.lastError, /private-token/);
 });
 test('auto reply fails closed when its durable reservation cannot be written', async t => {
