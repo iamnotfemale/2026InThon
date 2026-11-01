@@ -176,11 +176,14 @@ export function rowItems(row, now = new Date()) {
   return items.filter(Boolean);
 }
 
-/** Same Instagram post (or, without a link, same topic and title) → one key, so repeated shares list once. */
+/**
+ * Same Instagram post (or, without a link, same topic and title) → one key, so repeated shares list once.
+ * A post with several recipes is saved as one row per recipe, so a recipe's key also carries its title.
+ */
 export function sentKey(row) {
   const origin = instagramOrigin(storedContent(row).sourceUrl);
-  if (origin) return 'url:' + origin.replace('/reels/', '/reel/');
   const claim = typeof row?.claim === 'string' ? row.claim.normalize('NFKC').replace(/\s+/g, ' ').trim() : '';
+  if (origin) return 'url:' + origin.replace('/reels/', '/reel/') + (row.topic === 'recipe' ? ':' + claim : '');
   return claim ? `claim:${row.topic ?? 'news'}:${claim}` : 'row:' + row?.id;
 }
 
