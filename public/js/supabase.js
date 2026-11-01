@@ -11,7 +11,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 export const signInWithGoogle = next => startGoogleLogin(next, { location, oauth: options => supabase.auth.signInWithOAuth(options) });
 
 export async function currentUser() {
-  const { data } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
   return data.session?.user ?? null;
 }
 

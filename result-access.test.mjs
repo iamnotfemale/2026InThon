@@ -6,12 +6,15 @@ import { h } from './public/js/vendor/preact.module.js';
 
 const source = readFileSync('public/js/dashboard-app.js', 'utf8');
 const classSource = source.slice(source.indexOf('class DashboardApp'), source.indexOf('const [response, mobileResponse]'));
-function fixture(auth) {
-  class Model { render() { return 'regular dashboard'; } }
+function fixture(auth, path = '/items/fc15-2', initialize = false) {
+  class Model { constructor() { this.state = {}; } render() { return 'regular dashboard'; } }
   const App = runInNewContext(classSource + '\nDashboardApp', { DashboardModel: Model, h,
-    loadSupabase: async () => auth, location: { pathname: '/items/fc15-2' }, store: { get: () => 'demo' }, MODE_KEY: 'mode' });
-  const app = Object.create(App.prototype);
-  app.state = { privateAuthRequired: true, privateAuthChecking: false };
+    loadSupabase: async () => auth, location: { pathname: path }, store: { get: () => 'demo' }, MODE_KEY: 'mode',
+    DEMO_KEYS: [], routeState: () => ({}), createMemberApi: () => ({}), createCalendarDashboard: () => ({}),
+    createTasteSync: () => ({}), localStore: null, createMobileDashboard: () => ({}), createHomeChat: () => ({}),
+    matchMedia: () => ({ matches: true }) });
+  const app = initialize ? new App({}) : Object.create(App.prototype);
+  if (!initialize) app.state = { privateAuthRequired: true, privateAuthChecking: false };
   app.setState = patch => Object.assign(app.state, patch);
   return app;
 }
@@ -30,6 +33,33 @@ test('a private result has a full-page login and never mounts a modal or underly
   assert.equal(nodes(app.render()).find(n => n.type === 'button').props.disabled, true);
   app.state.privateAuthRequired = false;
   assert.equal(app.render(), 'regular dashboard');
+});
+
+test('every app entry starts behind the login check and guests never see the demo account', async () => {
+  for (const path of ['/dashboard', '/chat', '/library', '/taste', '/calendar', '/map', '/settings', '/items/fc15-2']) {
+    const app = fixture({ currentUser: async () => null }, path, true);
+    assert.equal(app.state.privateAuthRequired, true, path);
+    assert.equal(app.state.privateAuthChecking, true, path);
+    assert.match(app.render().props.class, /result-access-page/);
+    await app.restoreSession();
+    assert.equal(app.state.privateAuthChecking, false);
+    assert.equal(app.state.privateAuthRequired, true);
+    const button = nodes(app.render()).find(n => n.type === 'button');
+    assert.ok(!button.props.disabled);
+  }
+});
+
+test('logout returns to login, while a failed logout preserves the active member', async () => {
+  for (const error of [null, new Error('offline')]) {
+    const app = fixture({ supabase: { auth: { signOut: async () => ({ error }) } } });
+    app.state = { user: { id: 'member' }, mode: 'live', privateAuthRequired: false };
+    let cleared = false;
+    app.leaveLive = () => { cleared = true; }; app.go = () => {}; app.toast = () => {};
+    await app.signOut();
+    assert.equal(cleared, !error);
+    assert.equal(app.state.privateAuthRequired, !error);
+    assert.equal(Boolean(app.state.user), Boolean(error));
+  }
 });
 
 test('login preserves the exact result destination, blocks double submission and exposes retryable errors', async () => {

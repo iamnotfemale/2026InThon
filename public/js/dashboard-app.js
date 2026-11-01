@@ -44,8 +44,9 @@ class DashboardApp extends DashboardModel {
     this.state = { ...this.state, ...routeState(location.pathname), mode: 'demo', user: null, liveItems: [],
       liveGuide: false, liveLoaded: false };
     this.state.resultPreferences = { delivery: 'full', hidden: [] };
-    this.state.privateAuthRequired = /^\/items\/fc[1-9]\d*(-\d+)?\/?$/.test(location.pathname);
-    this.state.privateAuthChecking = this.state.privateAuthRequired;
+    // A newly installed web app has its own session storage; never show sample accounts while signed out.
+    this.state.privateAuthRequired = true;
+    this.state.privateAuthChecking = true;
     // Schedules (/api/calendar) and hand-picked taste (/api/taste) live on the server per member.
     this.memberApi = createMemberApi({ token: async () => (await (await loadSupabase()).supabase.auth.getSession()).data.session?.access_token });
     this.calendar = createCalendarDashboard(this, { api: this.memberApi, storage: localStore });
@@ -99,7 +100,11 @@ class DashboardApp extends DashboardModel {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     // Coming back from Instagram (e.g. after linking on the phone) refreshes the real data.
-    this.onVisible = () => { if (document.visibilityState === 'visible' && this.state.mode === 'live') this.loadLive(); };
+    this.onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (this.state.privateAuthRequired) this.restoreSession();
+      else if (this.state.mode === 'live') this.loadLive();
+    };
     this.onOutsideMenu = event => {
       document.documentElement.setAttribute('data-pointer-focus', '');
       for (const dropdown of document.querySelectorAll('.filter-dropdown[open]')) if (!dropdown.contains(event.target)) dropdown.open = false;
@@ -173,16 +178,19 @@ class DashboardApp extends DashboardModel {
 
   /** Signed-in visitors always land on their own data. */
   async restoreSession() {
+    if (this.restoringSession) return;
+    this.restoringSession = true;
     try {
       const user = await (await loadSupabase()).currentUser();
       this.setState({ user });
       if (user) {
         await this.enterLive();
-        this.setState({ privateAuthRequired: false });
+        if (this.state.mode === 'live') this.setState({ privateAuthRequired: false, privateLoginBusy: false, privateLoginHint: '' });
       }
     } catch {
       if (this.state.privateAuthRequired) this.setState({ privateLoginHint: '로그인 상태를 확인하지 못했어요. 새로고침 후 다시 시도해 주세요.' });
     } finally {
+      this.restoringSession = false;
       if (this.state.privateAuthChecking) this.setState({ privateAuthChecking: false });
     }
   }
@@ -208,8 +216,8 @@ class DashboardApp extends DashboardModel {
       h('main', { class: 'result-access-main' },
         h('section', { class: 'result-access-content', 'aria-labelledby': 'result-access-title' },
           h('img', { class: 'result-access-orb', src: '/assets/dimi-icon.svg', alt: '', width: 64, height: 64 }),
-          h('h1', { id: 'result-access-title' }, '정리한 콘텐츠를 이어서 보세요'),
-          h('p', { class: 'result-access-description' }, '콘텐츠를 보낸 계정으로 로그인하면', h('br'), '디미가 정리한 내용을 확인할 수 있어요.'),
+          h('h1', { id: 'result-access-title' }, '내 디미에 로그인하세요'),
+          h('p', { class: 'result-access-description' }, '사용하던 Google 계정으로 로그인하면', h('br'), '내 콘텐츠와 취향, 일정을 이어서 볼 수 있어요.'),
           h('button', { type: 'button', class: 'result-access-google', disabled: busy, 'aria-busy': !!busy, onClick: () => this.loginForResult() },
             h('svg', { viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true', focusable: 'false' },
               h('path', { fill: '#4285F4', d: 'M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z' }),
@@ -425,11 +433,11 @@ class DashboardApp extends DashboardModel {
 
   async signOut() {
     const { supabase } = await loadSupabase();
-    await supabase.auth.signOut();
-    this.setState({ user: null });
+    const { error } = await supabase.auth.signOut();
+    if (error) return this.toast('로그아웃하지 못했어요. 다시 시도해 주세요.');
+    this.setState({ user: null, privateAuthRequired: true, privateAuthChecking: false, privateLoginBusy: false, privateLoginHint: '' });
     this.leaveLive();
     this.go('home');
-    this.toast('로그아웃했어요. 데모 화면으로 돌아왔어요.');
   }
 
   openBotDm() { open(BOT_DM_URL, '_blank', 'noopener'); }
