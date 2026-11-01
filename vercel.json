@@ -8,6 +8,7 @@
     "api/instagram.mjs": { "maxDuration": 300 },
     "api/instagram-link.mjs": { "maxDuration": 60 },
     "api/content-search.mjs": { "maxDuration": 60 },
+    "api/dashboard-chat.mjs": { "maxDuration": 60 },
     "api/media.py": { "maxDuration": 120, "excludeFiles": "{node_modules/**,public/**,**/*_test.py,**/*.test.mjs}" },
     "api/cleanup.mjs": { "maxDuration": 120 },
     "api/calendar.mjs": { "maxDuration": 30 },
@@ -24,6 +25,7 @@
     { "source": "/auth/start", "destination": "/api/instagram" },
     { "source": "/auth/instagram/callback", "destination": "/api/instagram" },
     { "source": "/auth/result", "destination": "/api/instagram" },
+    { "source": "/chat", "destination": "/dashboard" },
     { "source": "/home", "destination": "/dashboard" },
     { "source": "/library", "destination": "/dashboard" },
     { "source": "/taste", "destination": "/dashboard" },
@@ -34,7 +36,7 @@
   ],
   "headers": [
     {
-      "source": "/((?!api/|health|webhooks/|auth/|(?:dashboard|home|library|taste|calendar|map|settings)/?$|items/[^/]+/?$).*)",
+      "source": "/((?!api/|health|webhooks/|auth/|(?:dashboard|home|chat|library|taste|calendar|map|settings)/?$|items/[^/]+/?$).*)",
       "headers": [
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "Referrer-Policy", "value": "no-referrer" },
@@ -42,7 +44,7 @@
       ]
     },
     {
-      "source": "/((?:dashboard|home|library|taste|calendar|map|settings)/?|items/[^/]+/?)",
+      "source": "/((?:dashboard|home|chat|library|taste|calendar|map|settings)/?|items/[^/]+/?)",
       "headers": [
         { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.daumcdn.net https://*.kakaocdn.net; connect-src 'self' https://epokaecxlgymchtqnjkn.supabase.co https://cdn.jsdelivr.net https://dapi.kakao.com https://*.kakaocdn.net; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.daumcdn.net https://*.kakaocdn.net; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },

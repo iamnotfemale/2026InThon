@@ -8,11 +8,11 @@
               <span class="glow"></span>
               <img src="/assets/home-chat-mascot.png" alt="디미">
               <h1>{{greeting}}</h1>
-              <p>보냈던 콘텐츠를 말로 찾아보세요. 디미가 바로 골라 드릴게요.</p>
+              <p>보낸 콘텐츠를 찾거나, 디미에게 편하게 물어보세요.</p>
               <div class="sw">
               <form class="big" onSubmit="{{submit}}">
                 <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#A3A3A3" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
-                <input value="{{query}}" onChange="{{onChange}}" onKeyDown="{{inputKey}}" maxlength="200" disabled="{{inputDisabled}}" placeholder="‘지난번 매콤한 레시피’, ‘마감 임박 공모전’처럼 물어보세요" aria-label="디미에게 물어보기">
+                <input value="{{query}}" onChange="{{onChange}}" onKeyDown="{{inputKey}}" maxlength="1000" disabled="{{inputDisabled}}" placeholder="‘지난번 매콤한 레시피’, ‘마감 임박 공모전’처럼 물어보세요" aria-label="디미에게 물어보기">
                 <button class="send" type="submit" disabled="{{sendDisabled}}" aria-label="보내기"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
               </form>
               <sc-if value="{{showSug}}" hint-placeholder-val="{{ false }}">
@@ -49,7 +49,7 @@
             </section>
           </sc-if>
           <sc-if value="{{chatting}}" hint-placeholder-val="{{ false }}">
-            <div class="thread" role="log" aria-label="콘텐츠 검색 대화" aria-live="polite">
+            <div class="thread" role="log" aria-label="디미와 대화" aria-live="polite">
               <sc-for list="{{msgs}}" as="m" hint-placeholder-count="2">
                 <sc-if value="{{m.me}}" hint-placeholder-val="{{ true }}"><div class="me">{{m.text}}</div></sc-if>
                 <sc-if value="{{m.bot}}" hint-placeholder-val="{{ false }}">
@@ -57,7 +57,7 @@
                     <span class="ava"><img src="/assets/home-chat-mascot.png" alt=""></span>
                     <div class="bd">
                       <span class="nm">디미</span>
-                      <sc-if value="{{m.typing}}" hint-placeholder-val="{{ false }}"><span class="typing" aria-label="디미가 찾는 중"><i></i><i></i><i></i></span></sc-if>
+                      <sc-if value="{{m.typing}}" hint-placeholder-val="{{ false }}"><span class="typing" role="status" aria-label="디미가 입력 중"><i></i><i></i><i></i></span></sc-if>
                       <sc-if value="{{m.ready}}" hint-placeholder-val="{{ true }}">
                         <p class="msg">{{m.text}}</p>
                         <sc-if value="{{m.hasRes}}" hint-placeholder-val="{{ true }}">
@@ -88,10 +88,10 @@
       <sc-if value="{{chatting}}" hint-placeholder-val="{{ false }}">
         <div class="composer">
           <form class="big" onSubmit="{{submit}}" style="max-width:860px">
-            <input value="{{query}}" onChange="{{onChange}}" onKeyDown="{{inputKey}}" maxlength="200" disabled="{{inputDisabled}}" placeholder="디미에게 더 물어보기" aria-label="디미에게 물어보기">
+            <input value="{{query}}" onChange="{{onChange}}" onKeyDown="{{inputKey}}" maxlength="1000" disabled="{{inputDisabled}}" placeholder="디미에게 더 물어보기" aria-label="디미에게 물어보기">
             <button class="send" type="submit" disabled="{{sendDisabled}}" aria-label="보내기"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
           </form>
-          <p class="hint">디미는 내가 보낸 콘텐츠 안에서만 찾아요.</p>
+          <p class="hint">디미와 편하게 이야기하고, 보낸 콘텐츠도 찾아보세요.</p>
         </div>
       </sc-if>
     </section>

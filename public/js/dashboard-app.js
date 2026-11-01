@@ -14,8 +14,8 @@ import { createMemberApi, createTasteSync } from './member-sync.js';
 import { parseContentId } from './calendar-rules.js';
 
 function routeState(path) {
-  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/map': 'map', '/settings': 'settings' }[path];
-  if (view) return { view, cook: null, timer: null, modal: null };
+  const view = { '/': 'home', '/home': 'home', '/dashboard': 'home', '/chat': 'home', '/library': 'library', '/taste': 'taste', '/calendar': 'calendar', '/map': 'map', '/settings': 'settings' }[path];
+  if (view) return { view, homeChatActive: path === '/chat', cook: null, timer: null, modal: null };
   const item = /^\/items\/([\w-]+)\/?$/.exec(path);
   return item ? { view: 'detail', detailId: item[1], from: 'library', cook: null, timer: null, modal: null } : { view: 'home' };
 }
@@ -138,9 +138,9 @@ class DashboardApp extends DashboardModel {
     this.positionMenu();
     if (this.state.mode === 'live' && previousState.view !== 'taste' && this.state.view === 'taste') this.loadInterests();
     if ((previousState.menuId || previousState.detailMenu) && !this.state.menuId && !this.state.detailMenu) this.menuOpener?.focus();
-    if (!this.popping && (previousState.view !== this.state.view || previousState.detailId !== this.state.detailId)) {
+    if (!this.popping && (previousState.view !== this.state.view || previousState.detailId !== this.state.detailId || previousState.homeChatActive !== this.state.homeChatActive)) {
       const path = this.state.view === 'detail' ? '/items/' + encodeURIComponent(this.state.detailId)
-        : this.state.view === 'home' ? '/dashboard' : '/' + this.state.view;
+        : this.state.view === 'home' ? (this.state.homeChatActive ? '/chat' : '/dashboard') : '/' + this.state.view;
       if (location.pathname !== path) history.pushState(null, '', path);
     }
     // Favourites have no table yet (kept per user in this browser); taste picks are mirrored to the server card by card.
@@ -337,6 +337,15 @@ class DashboardApp extends DashboardModel {
     return response.json();
   }
 
+  async chatRequest(body, signal) {
+    const { supabase } = await loadSupabase();
+    const { data } = await supabase.auth.getSession();
+    const response = await fetch('/api/dashboard-chat', { method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (data.session?.access_token || '') }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error('Chat unavailable');
+    return response.json();
+  }
+
   async searchContents() {
     const query = this.state.query.trim();
     if (!query || this.state.mode !== 'live' || this.state.searchBusy) return;
@@ -469,9 +478,13 @@ class DashboardApp extends DashboardModel {
     const isMap = this.state.view === 'map' || (this.state.mobile && fromMap);
     this.mapValues = isMap ? placeMapValues(this, this.state) : null;
     const tab = this.state.mobile ? 'tab' : 'nav-item';
-    return { isCalendar, notCalendar: !isCalendar, navCalendar: tab + (active ? ' on' : ''),
+    return { navChat: 'nav-item' + (this.state.view === 'home' && this.state.homeChatActive ? ' on' : ''),
+      goChat: () => this.go('home', { homeChatActive: true }),
+      ...(!this.state.mobile ? { goHome: () => this.go('home', { homeChatActive: false }),
+        navHome: 'nav-item' + (this.state.view === 'home' && !this.state.homeChatActive ? ' on' : '') } : {}),
+      isCalendar, notCalendar: !isCalendar, navCalendar: tab + (active ? ' on' : ''),
       goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
-      ...(this.state.view === 'home' ? { ...this.calendar.homeValues(), ...(!this.state.mobile ? { homeChat: this.homeChat.values(), crumbRoot: '디미와 대화' } : {}) } : {}),
+      ...(this.state.view === 'home' ? { ...this.calendar.homeValues(), ...(!this.state.mobile ? { homeChat: this.homeChat.values(), crumbRoot: this.state.homeChatActive ? '디미와 대화' : '홈' } : {}) } : {}),
       isMap, navMap: tab + (isMap || fromMap ? ' on' : ''), goMap: () => this.go('map'), placeMap: this.mapValues ?? {},
       ...(active || fromMap ? { navLib: 'nav-item' } : {}),
       ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}),
