@@ -3,6 +3,10 @@ body{margin:0}
 .m{--bg:#FAFAFA;--surface:#FFFFFF;--surface-2:#F5F5F5;--surface-3:#EBEBEB;--border:#EAEAEA;--border-strong:#D4D4D4;--text:#0A0A0A;--text-2:#404040;--muted:#666666;--accent:#0A0A0A;--accent-fg:#FFFFFF;--ring:rgba(10,10,10,.08);--flag-bg:#FBF5E9;--shadow-lg:0 -12px 40px -12px rgba(0,0,0,.18);font-family:'Geist','Noto Sans KR',system-ui,sans-serif;font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
 .m.dark{--bg:#0A0A0A;--surface:#141414;--surface-2:#1B1B1B;--surface-3:#262626;--border:#242424;--border-strong:#333333;--text:#EDEDED;--text-2:#C9C9C9;--muted:#A1A1A1;--accent:#EDEDED;--accent-fg:#0A0A0A;--ring:rgba(255,255,255,.08);--flag-bg:rgba(250,204,21,.07);--shadow-lg:0 -12px 40px -12px rgba(0,0,0,.7)}
 .m *,.m *::before,.m *::after{box-sizing:border-box}
+.m{contain:layout;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+html[data-pointer-focus] .m :focus-visible{outline:none}
+.m :is(button,a,[role="button"],input,select,textarea){touch-action:manipulation}
+.m :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){font-size:16px}
 :where(.m) :where(button,input){font:inherit;color:inherit;letter-spacing:inherit}
 .m h1,.m h2,.m p{margin:0}
 .m :focus-visible{outline:2px solid #5E6AD2;outline-offset:2px;border-radius:10px}
