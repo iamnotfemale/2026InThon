@@ -59,6 +59,18 @@ button.kmap-pin:focus-visible{outline:2px solid var(--text,#171717);outline-offs
 .pmap-row-title{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pmap-row-sub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pmap-row-note{font-size:11.5px;color:var(--muted)}.pmap-row-note.warn{color:#B45309}
+.pmap-row-chevron{display:none}
+.m .pmap-row-chevron{display:block;flex:none;margin-left:auto;transition:transform .15s}
+.m .pmap-row[aria-expanded="true"] .pmap-row-chevron{transform:rotate(180deg)}
+.m .pmap-accordion{margin:4px 0 10px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.m .pmap-accordion article{display:flex;flex-direction:column;gap:10px;min-width:0}
+.m .pmap-accordion article+article{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.m .pmap-accordion h3{margin:0;font-size:14px;font-weight:600}
+.m .pmap-accordion p{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.m .pmap-accordion dl{display:flex;flex-direction:column;gap:6px;margin:0;font-size:12px}
+.m .pmap-accordion dl>div{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px}
+.m .pmap-accordion dt{color:var(--muted)}.m .pmap-accordion dd{margin:0;overflow-wrap:anywhere}
+.m .pmap-accordion .btn{align-self:flex-start}
 .pmap-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 16px;text-align:center;border:1px dashed var(--border-strong,#D4D4D4);border-radius:14px}
 @media(max-width:1023px){.pmap-body{grid-template-columns:minmax(0,1fr)}.pmap-side{max-height:none}.pmap-list{overflow:visible}}
 .m .pmap-page{padding:4px 20px 28px;gap:14px;max-width:none}

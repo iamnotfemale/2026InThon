@@ -249,6 +249,11 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .mobile-taste .taste-mobile-filter{display:flex;align-items:center;gap:12px}
 .mobile-taste .taste-mobile-filter label{flex:none;font-size:13px;font-weight:500;color:var(--muted)}
 .mobile-taste .taste-mobile-filter .select{flex:1;min-width:0;width:100%;height:44px;font-size:16px}
+.mobile-taste .taste-mobile-filter .select{color:var(--text);-webkit-text-fill-color:var(--text)}
+.mobile-library [aria-label="유형 필터"] .chip{height:30px;padding-inline:10px;font-size:12.5px;gap:5px}
+.mobile-calendar .calendar-month-toolbar{flex-wrap:wrap;row-gap:8px!important}
+.mobile-calendar .calendar-view-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.mobile-calendar .calendar-view-actions .today-btn{height:32px;padding-inline:8px;font-size:12.5px}
 </style>
 </helmet>
 <div class="{{rootCls}}" style="width: 100%; height: 100dvh; position: fixed; inset: 0; overflow: hidden; display: flex; flex-direction: column">
@@ -339,7 +344,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 
     <!-- LIBRARY -->
     <sc-if value="{{isLibrary}}" hint-placeholder-val="{{ false }}">
-      <div class="fadein" style="display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 28px">
+      <div class="fadein mobile-library" style="display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 28px">
         <div class="library-search"><button type="button" class="library-search-button" aria-label="검색" onClick="{{searchContents}}"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button><input class="input" type="search" aria-label="보낸 콘텐츠에서 검색" placeholder="보낸 콘텐츠에서 검색" value="{{query}}" onChange="{{onQuery}}" onKeyDown="{{searchKey}}" maxlength="200"></div>
         <sc-if value="{{isLive}}"><span class="screen-reader-only" role="status">{{searchStatus}}</span></sc-if>
         <div class="hscroll" role="group" aria-label="유형 필터">
@@ -744,12 +749,13 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           </button>
         </div>
       </sc-if>
-      <sc-if value="{{d.isExhibit}}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{d.isLocation}}" hint-placeholder-val="{{ false }}">
         <div class="bottombar">
           <button type="button" class="{{d.tasteBtnCls}}" aria-pressed="{{d.tastePressed}}" onClick="{{d.toggleTaste}}" aria-label="{{d.tasteLabel}}" style="width: 52px; padding: 0">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path></svg>
           </button>
-          <sc-if value="{{d.hasReserve}}"><a class="btn btn-primary" href="{{d.reserveUrl}}" target="_blank" rel="noopener" style="flex: 1; height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600">예약 페이지 열기 ↗</a></sc-if>
+          <sc-if value="{{d.hasDirections}}"><a class="btn btn-primary" href="{{d.directionsHref}}" target="_blank" rel="noopener noreferrer" style="flex: 1; height: 52px; border-radius: 14px; font-size: 16px; font-weight: 600">길찾기 ↗</a></sc-if>
+          <sc-if value="{{d.hasReserve}}"><a class="btn" href="{{d.reserveUrl}}" target="_blank" rel="noopener" style="height: 52px; border-radius: 14px">예약 ↗</a></sc-if>
         </div>
       </sc-if>
       <sc-if value="{{d.isContest}}" hint-placeholder-val="{{ false }}">

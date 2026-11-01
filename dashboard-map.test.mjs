@@ -46,6 +46,25 @@ test('the taste toggle and kind filter drive the template values', () => {
   assert.match(placeMapValues({ state: demo, allItems: () => [items[6]], setState() {} }, demo).emptyTitle, /데모/);
 });
 
+test('mobile map rows expand only their own place and open the exact child content', () => {
+  const state={mode:'live',mobile:true,mapTasteOnly:true,taste:{fc3:true}};
+  const app={state,allItems:()=>items,setState:patch=>Object.assign(state,patch),openDetail:id=>(app.opened=id)};
+  let v=placeMapValues(app,state);
+  assert.equal(v.showIntro,false); assert.equal(v.tasteOnly,false); assert.equal(v.rows.length,3);
+  assert.ok(v.rows.every(row=>!row.mobileOpen));
+  v.rows[0].pick(); v=placeMapValues(app,state);
+  assert.equal(v.rows[0].expanded,'true'); assert.equal(v.rows[0].panelId,'mobile-map-place-0');
+  assert.deepEqual(v.rows[0].details.map(d=>d.id),['fc1','fc1-2']);
+  assert.deepEqual(v.rows[0].details[0].facts,[{label:'지역',value:'성수동'}]);
+  v.rows[0].details[1].open(); assert.equal(app.opened,'fc1-2');
+  v.rows[1].pick(); v=placeMapValues(app,state);
+  assert.equal(v.rows[0].mobileOpen,false); assert.equal(v.rows[1].mobileOpen,true);
+  v.rows[1].pick(); assert.ok(placeMapValues(app,state).rows.every(row=>!row.mobileOpen));
+  state.mobile=false; v=placeMapValues(app,state);
+  assert.equal(v.showIntro,true); assert.equal(v.tasteOnly,true); assert.equal(v.rows.length,1);
+  assert.equal(v.rows[0].expanded,undefined);
+});
+
 function fakeKakao() {
   const overlays = [];
   class LatLng { constructor(lat, lng) { this.lat = lat; this.lng = lng; } }
