@@ -41,11 +41,15 @@ export function createMobileDashboard(app) {
     applyTasteOrbitValues(v, s, app);
     v.tasteFilter = v.tasteTabs.find(tab => tab.pressed === 'true')?.value || 'all';
     v.filterTaste = event => app.setState({ tasteTab: event.currentTarget.value, tasteSel: null });
-    v.tasteGroups = v.tasteGroups.filter(group => v.tasteFilter === 'all' || group.type === v.tasteFilter);
+    v.tasteGroups = v.tasteGroups.filter(group => !group.empty && (v.tasteFilter === 'all' || group.type === v.tasteFilter));
     applyDmPreview(v, s, app);
     v.d.hasTips = Array.isArray(v.d.tips) && v.d.tips.length > 0;
     v.d.hasComparisons = Array.isArray(v.d.cmp) && v.d.cmp.length > 0;
-    v.d.showExtraTasteAction = v.d.tasteable && (v.d.isContest || v.d.isRestaurant || v.d.isSpace);
+    v.d.isLocation = v.d.isExhibit || v.d.isRestaurant || v.d.isSpace;
+    v.d.hasDirections = v.d.isLocation && !!(v.d.mapName || v.d.mapAddress);
+    const destination = [v.d.mapName, v.d.mapAddress || v.d.mapArea].filter(Boolean).join(' ');
+    v.d.directionsHref = v.d.hasDirections ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(destination) : undefined;
+    v.d.showExtraTasteAction = v.d.tasteable && v.d.isContest;
     Object.assign(v, {
       isLive: live, isDemo: !live, notCalendar: s.view !== 'calendar', modeLabel: live ? '내 데이터' : 'DEMO', modeAction: live ? '내 데이터 새로고침' : '로그인하고 내 기록 보기',
       toggleDataMode: () => live ? app.loadLive() : app.enterLive(),

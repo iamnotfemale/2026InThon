@@ -45,6 +45,7 @@ function draft(calendar, date = '2026-11-07') {
 test('schedules are saved on the server only after it confirms, shared across devices and kept per member', async () => {
   const { app, server, messages, make, calendar } = fixture();
   assert.match(calendar.values().storageNote, /불러오고/);
+  assert.equal(calendar.values(true).showStorageStatus, true);
   await settle();
   assert.equal(calendar.values().filters[0].count, 0);
   assert.deepEqual(server.calls[0], ['list', 'member-a', '2025-11-01', '2028-10-31'], 'one year back, two years ahead');
@@ -160,6 +161,7 @@ test('a failed load says so instead of showing an empty calendar as saved, and a
   const { app, calendar } = fixture(server);
   calendar.values(); await settle();
   assert.match(calendar.values().storageNote, /불러오지 못했어요/); assert.equal(calendar.values().saveDisabled, true);
+  assert.equal(calendar.values(true).showStorageStatus, true);
 
   const slow = fakeServer(); const pending = [];
   slow.rows.set('x', { id: '00000000-0000-4000-8000-000000000099', content_id: 'fc1', kind: 'cook', date: '2026-11-07', time: null, revision: 1, owner: 'member-a' });

@@ -61,6 +61,7 @@ class DashboardApp extends DashboardModel {
       this.setState(routeState(location.pathname), () => { this.popping = false; });
     };
     this.onKey = event => {
+      document.documentElement.removeAttribute('data-pointer-focus');
       if (this.state.privateAuthRequired) return;
       const menu = document.activeElement?.closest('.menu[role="menu"]');
       if (menu && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
@@ -87,6 +88,7 @@ class DashboardApp extends DashboardModel {
     // Coming back from Instagram (e.g. after linking on the phone) refreshes the real data.
     this.onVisible = () => { if (document.visibilityState === 'visible' && this.state.mode === 'live') this.loadLive(); };
     this.onOutsideMenu = event => {
+      document.documentElement.setAttribute('data-pointer-focus', '');
       if ((this.state.menuId || this.state.detailMenu) && !event.target.closest('.menu,[aria-label="더보기"]')) this.setState({ menuId: null, detailMenu: false });
     };
     this.positionMenu = () => {
@@ -147,6 +149,7 @@ class DashboardApp extends DashboardModel {
     removeEventListener('keydown', this.onKey);
     document.removeEventListener('visibilitychange', this.onVisible);
     document.removeEventListener('pointerdown', this.onOutsideMenu);
+    document.documentElement.removeAttribute('data-pointer-focus');
     document.removeEventListener('scroll', this.positionMenu, true);
     removeEventListener('resize', this.positionMenu);
   }

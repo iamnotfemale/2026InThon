@@ -40,12 +40,17 @@ test('mobile taste uses a category dropdown, filters the saved list and opens a 
   Object.assign(app.state, { view: 'taste', taste: { fc1: true, fc2: true, fc3: true }, tasteTab: 'all' });
   assert.equal(values().tasteFilter, 'all');
   assert.deepEqual(values().tasteTabs.map(t => [t.value, t.count]), [['all', 3], ['recipe', 1], ['exhibit', 2], ['contest', 0], ['restaurant', 0]]);
+  assert.deepEqual(values().tasteGroups.map(g => g.type), ['recipe', 'exhibit']);
   assert.ok(values().tasteGroups.every(g => !g.label.includes('궤도')));
+  values().filterTaste({ currentTarget: { value: 'contest' } });
+  assert.deepEqual(values().tasteGroups, []);
   values().filterTaste({ currentTarget: { value: 'exhibit' } });
   assert.equal(values().tasteFilter, 'exhibit');
   assert.deepEqual(values().tasteGroups.map(g => g.type), ['exhibit']);
   assert.deepEqual(values().tasteGroups[0].items.map(i => i.id), ['fc2', 'fc3']);
   values().tasteGroups[0].items[0].open(); assert.equal(app.state.view, 'detail'); assert.equal(app.state.detailId, 'fc2');
+  app.state.taste = {};
+  assert.deepEqual(values().tasteGroups, []); assert.equal(values().tasteNone, true);
   const template = readFileSync('public/data/mobile-template.json', 'utf8');
   assert.doesNotMatch(template, /궤도|mo-stage|tasteOrbits|tasteSelection/);
   assert.match(template, /mobile-taste-filter/); assert.match(template, /\{\{ti.open\}\}/);
@@ -75,11 +80,32 @@ test('mobile contest and restaurant details can be collected into taste without 
   const {app,values}=fixture();
   for(const id of ['c1','m1']){
     Object.assign(app.state,{view:'detail',detailId:id});
-    assert.equal(values().d.showExtraTasteAction,true);
+    assert.equal(values().d.showExtraTasteAction,id==='c1');
+    assert.equal(values().d.isLocation,id==='m1');
     const before=!!app.state.taste[id];
     values().d.toggleTaste(); assert.equal(app.state.taste[id],!before);
   }
   app.state.detailId='n1'; assert.equal(values().d.showExtraTasteAction,false);
+});
+
+test('mobile location details link to directions using only their known destination',()=>{
+  const {app,values}=fixture();
+  const items=app.allItems(); app.allItems=()=>items;
+  for(const type of ['exhibit','restaurant','space']){
+    const item=items.find(i=>i.type===type);
+    Object.assign(item,{mapName:'장소 & 이름',mapAddress:'서울 종로구 테스트 1'});
+    Object.assign(app.state,{view:'detail',detailId:item.id});
+    let d=values().d;
+    assert.equal(d.isLocation,true); assert.equal(d.hasDirections,true);
+    const url=new URL(d.directionsHref);
+    assert.equal(url.origin,'https://www.google.com'); assert.equal(url.pathname,'/maps/dir/');
+    assert.equal(url.searchParams.get('api'),'1'); assert.equal(url.searchParams.get('destination'),'장소 & 이름 서울 종로구 테스트 1');
+    item.mapAddress=undefined; item.mapArea='서울';
+    assert.equal(new URL(values().d.directionsHref).searchParams.get('destination'),'장소 & 이름 서울');
+    item.mapName=undefined;
+    d=values().d; assert.equal(d.hasDirections,false); assert.equal(d.directionsHref,undefined);
+  }
+  app.state.detailId=items.find(i=>i.type==='recipe').id; assert.equal(values().d.hasDirections,false);
 });
 
 test('mobile fact-check sources preserve long titles and show a safe empty-source state',()=>{

@@ -182,6 +182,7 @@ export function createCalendarDashboard(app, { api, storage, now = koreaNow } = 
       const v = calendar.renderVals();
       v.noContentOptions = !v.contentOpts.length;
       v.themeClass = app.state.dark ? 'dark' : '';
+      v.showStorageStatus = live() && ['loading', 'error'].includes(loadState);
       v.storageNote = !live() ? '예시 일정이에요. 데모의 DM 리마인드는 실제로 전송되지 않아요.'
         : loadState === 'loading' ? '내 일정을 불러오고 있어요…'
           : loadState === 'error' ? '일정을 불러오지 못했어요. 새로고침하거나 잠시 후 다시 열어 주세요.'

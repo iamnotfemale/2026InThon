@@ -29,7 +29,8 @@ const STATUS_NOTE = { name: '이름으로 찾은 위치', ambiguous: '같은 이
 export function placeMapValues(app, s) {
   const all = app.allItems();
   const kind = s.mapKind || 'all';
-  const counted = mapPlaces(all, { tasteOnly: !!s.mapTasteOnly, taste: s.taste || {} });
+  const tasteOnly = !s.mobile && !!s.mapTasteOnly;
+  const counted = mapPlaces(all, { tasteOnly, taste: s.taste || {} });
   const places = kind === 'all' ? counted : counted.filter(place => place.kind === kind);
   const located = app.mapLocated || {};
   const failed = !!located.failed;
@@ -39,15 +40,23 @@ export function placeMapValues(app, s) {
   const live = s.mode === 'live';
   const anyPlace = mapPlaces(all).length > 0;
   const select = key => app.setState({ mapSel: s.mapSel === key ? null : key });
-  const row = place => {
+  const row = (place, index) => {
     const state = located[place.key];
+    const expanded = s.mapSel === place.key;
     return { id: place.key, title: place.items.map(item => item.title).join(' · '), sub: place.items[0].address || place.name || '',
       dot: 'dot t-' + place.kind, kindLabel: LABEL[place.kind], note: STATUS_NOTE[state] ?? '', hasNote: !!STATUS_NOTE[state], noteCls: 'pmap-row-note' + (state === 'name' ? '' : ' warn'),
       cls: 'pmap-row' + (s.mapSel === place.key ? ' on' : ''), pressed: String(s.mapSel === place.key), pick: () => select(place.key),
+      expanded: s.mobile ? String(expanded) : undefined, panelId: s.mobile ? 'mobile-map-place-' + index : undefined,
+      mobileOpen: !!s.mobile && expanded,
+      details: s.mobile && expanded ? place.items.map(item => ({ id: item.id, title: item.title,
+        summary: item.intro || item.summary || '', hasSummary: !!(item.intro || item.summary),
+        facts: [[item.mapAddress ? '주소' : '지역', item.mapAddress || item.mapArea], ['기간', item.period], ['운영', item.hours], ['가격', item.fee || item.priceRange]]
+          .filter(([, value]) => value && !/미기재$/.test(value)).map(([label, value]) => ({ label, value })),
+        open: () => app.openDetail(item.id) })) : [],
       tasted: place.items.some(item => s.taste?.[item.id]) };
   };
-  const tasteOnly = !!s.mapTasteOnly;
   return {
+    showIntro: !s.mobile,
     kinds: [['all', '전체', ''], ...MAP_KINDS.map(([key, label]) => [key, label, 'dot t-' + key])].map(([key, label, dot]) => ({
       label, dot, count: key === 'all' ? counted.length : counted.filter(place => place.kind === key).length,
       cls: kind === key ? 'on' : '', pressed: String(kind === key), pick: () => app.setState({ mapKind: key, mapSel: null }) })),

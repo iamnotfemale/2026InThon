@@ -6,6 +6,8 @@
 
 1~4순위를 구현했다. DM 리마인드(후속)는 그대로 비활성이다.
 
+DM 리마인드의 새 구현 요청은 [발송 작업자·API·실패 처리 명세](dm-reminders-backend-handoff.md)를 따른다. 이 링크 추가만으로 실제 예약 발송이 켜진 것은 아니다.
+
 | 항목 | 구현 위치 |
 | --- | --- |
 | 테이블·RLS | `supabase/migrations/20261031180518_calendar_and_taste.sql`: `calendar_events`, `taste_collections`, `member_can_see_result()`. 읽기·추가·수정은 본인 UID + 현재 연결 계정으로 볼 수 있는 정리 완료 결과일 때만, 삭제는 본인 UID면 항상 가능. 회원(`auth.users`)·결과(`factchecks`) 삭제 시 함께 삭제 |

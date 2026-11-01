@@ -2,7 +2,7 @@
   <sc-if value="{{isMap}}" hint-placeholder-val="{{ false }}">
     <sc-scope value="{{placeMap}}">
       <div class="pmap-page">
-        <div class="pmap-head">
+        <sc-if value="{{showIntro}}"><div class="pmap-head">
           <div class="pmap-intro">
             <h1 class="pmap-h1">장소 지도</h1>
             <p class="muted">보낸 전시·팝업, 맛집, 취향공간을 한 지도에서 봐요. 핀 색으로 유형을 구분해요.</p>
@@ -11,7 +11,7 @@
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
             <span>취향에 모은 것만</span>
           </button>
-        </div>
+        </div></sc-if>
         <div class="seg pmap-kinds" role="group" aria-label="장소 유형">
           <sc-for list="{{kinds}}" as="k" hint-placeholder-count="4">
             <button type="button" class="{{k.cls}}" aria-pressed="{{k.pressed}}" onClick="{{k.pick}}"><span class="{{k.dot}}"></span>{{k.label}}<span class="n">{{k.count}}</span></button>
@@ -45,14 +45,27 @@
               <ul class="pmap-list" aria-label="장소 목록">
                 <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
                   <li>
-                    <button type="button" class="{{r.cls}}" aria-pressed="{{r.pressed}}" onClick="{{r.pick}}">
+                    <button type="button" class="{{r.cls}}" aria-pressed="{{r.pressed}}" aria-expanded="{{r.expanded}}" aria-controls="{{r.panelId}}" onClick="{{r.pick}}">
                       <span class="{{r.dot}}"></span>
                       <span class="pmap-row-text">
                         <span class="pmap-row-title">{{r.title}}</span>
                         <span class="pmap-row-sub">{{r.kindLabel}} · {{r.sub}}</span>
                         <sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><span class="{{r.noteCls}}">{{r.note}}</span></sc-if>
                       </span>
+                      <svg class="pmap-row-chevron ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                     </button>
+                    <sc-if value="{{r.mobileOpen}}">
+                      <div class="pmap-accordion" id="{{r.panelId}}" role="region" aria-label="{{r.title}}">
+                        <sc-for list="{{r.details}}" as="detail">
+                          <article>
+                            <h3>{{detail.title}}</h3>
+                            <sc-if value="{{detail.hasSummary}}"><p>{{detail.summary}}</p></sc-if>
+                            <dl><sc-for list="{{detail.facts}}" as="fact"><div><dt>{{fact.label}}</dt><dd>{{fact.value}}</dd></div></sc-for></dl>
+                            <button type="button" class="btn btn-sm" onClick="{{detail.open}}">자세히 보기 ↗</button>
+                          </article>
+                        </sc-for>
+                      </div>
+                    </sc-if>
                   </li>
                 </sc-for>
               </ul>
