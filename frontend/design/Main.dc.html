@@ -472,163 +472,18 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         <span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px">{{crumbLeaf}}</span>
       </sc-if>
     </div>
+    <sc-if value="{{isHome}}">
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button type="button" class="btn btn-ghost" onClick="{{homeChat.reset}}">새 대화</button>
+        <button type="button" class="btn" onClick="{{goLibrary}}"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>목록으로 보기</button>
+      </div>
+    </sc-if>
     <sc-if value="{{notConnected}}" hint-placeholder-val="{{ false }}">
       <button type="button" class="btn btn-primary" onClick="{{goConnect}}" style="margin-left: auto">Instagram 연결하기</button>
     </sc-if>
   </header>
 
-  <!-- ============ HOME ============ -->
-  <sc-if value="{{isHome}}" hint-placeholder-val="{{ true }}">
-    <div class="enter pad" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 36px 40px 72px; display: flex; flex-direction: column; gap: 28px">
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <h1 class="h1">안녕하세요, {{name}}님</h1>
-        <p class="muted" style="font-size: 14.5px">{{homeSub}}</p>
-      </div>
-
-      <sc-if value="{{homeDisconnected}}" hint-placeholder-val="{{ false }}">
-        <section class="card" style="padding: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px; overflow: hidden">
-          <div style="flex: 999 1 380px; display: flex; flex-direction: column; gap: 14px">
-            <span class="badge s-neutral" style="align-self: flex-start">연결 전</span>
-            <h2 style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.3">Instagram을 연결하고 첫 콘텐츠를 보내보세요.</h2>
-            <p class="muted" style="font-size: 14px; max-width: 520px">{{connectDesc}}</p>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px">
-              <button type="button" class="btn btn-primary btn-lg" onClick="{{goConnect}}">Instagram 연결하기</button>
-            </div>
-          </div>
-          <div aria-hidden="true" style="flex: 1 1 220px; height: 160px; position: relative; min-width: 220px">
-            <span class="orb o-recipe" style="position: absolute; width: 96px; height: 96px; left: 8%; top: 18%"></span>
-            <span class="orb o-news" style="position: absolute; width: 72px; height: 72px; left: 42%; top: 0"></span>
-            <span class="orb o-exhibit" style="position: absolute; width: 84px; height: 84px; left: 56%; top: 46%"></span>
-            <span class="orb o-contest" style="position: absolute; width: 56px; height: 56px; left: 30%; top: 64%"></span>
-          </div>
-        </section>
-      </sc-if>
-
-      <sc-if value="{{homeEmpty}}" hint-placeholder-val="{{ false }}">
-        <section class="card" style="padding: 28px; display: flex; flex-direction: column; gap: 14px">
-          <div style="display: flex; align-items: center; gap: 8px"><span class="live"></span><span style="font-size: 13px; font-weight: 500">{{account}} 연결됨</span></div>
-          <h2 style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em">아직 보낸 콘텐츠가 없어요.</h2>
-          <p class="muted" style="font-size: 14px">Instagram에서 게시물이나 릴스를 <b style="color: var(--text); font-weight: 500">@inthon2team</b>에 공유해 보세요. 종류에 맞게 정리해 DM으로 알려드려요.</p>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px">
-            <button type="button" class="btn btn-primary btn-lg" onClick="{{sendFromIg}}">Instagram에서 보내기</button>
-            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn btn-lg" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button></sc-if>
-          </div>
-        </section>
-      </sc-if>
-
-      <sc-if value="{{showExamples}}" hint-placeholder-val="{{ false }}">
-        <section style="display: flex; flex-direction: column; gap: 12px">
-          <div style="display: flex; align-items: baseline; gap: 8px"><h2 class="h2">이런 결과를 받아요</h2><span class="muted" style="font-size: 12.5px">예시 · 실제 콘텐츠가 아니에요</span></div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px">
-            <div class="ex-card rise"><span class="tag"><span class="dot t-recipe"></span>레시피</span><ul><li>재료·분량</li><li>조리 순서와 시간</li><li>주의사항·원본 링크</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-news"></span>뉴스·정보</span><ul><li>확인한 주장과 판단</li><li>근거·출처 링크</li><li>확인 시점</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-exhibit"></span>전시·팝업</span><ul><li>장소·지도</li><li>일정·운영 시간·비용</li><li>예약·신청 링크</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-contest"></span>공모전·대외활동</span><ul><li>지원 조건·마감일</li><li>준비물·제출 방법</li><li>공식 공고 링크</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-restaurant"></span>맛집</span><ul><li>위치·지도</li><li>메뉴·가격</li><li>영업 시간·예약·웨이팅</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-space"></span>취향공간</span><ul><li>위치·지도</li><li>운영 시간·휴무일</li><li>예약·대기·주차</li></ul></div>
-            <div class="ex-card rise"><span class="tag"><span class="dot t-beauty"></span>미용</span><ul><li>시술·제품 정보와 가격</li><li>게시물에서 말한 포인트</li><li>예약·구매 링크</li></ul></div>
-          </div>
-        </section>
-      </sc-if>
-
-      <sc-if value="{{homeFull}}" hint-placeholder-val="{{ true }}">
-        <section class="card" style="padding: 20px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 20px; position: relative; overflow: hidden">
-          <img class="mascot" src="/_blob/3651456fa0784f684fd353c526fe36bf" alt="" width="76" height="76" style="width: 76px; height: 76px; flex: none; object-fit: contain; margin: -6px -2px">
-          <div style="flex: 999 1 320px; display: flex; flex-direction: column; gap: 4px; min-width: 0">
-            <div style="display: flex; align-items: center; gap: 8px"><span class="live"></span><span style="font-size: 13px; font-weight: 500">{{account}} 연결됨</span><span class="muted" style="font-size: 12.5px">· DM으로 확인된 계정</span></div>
-            <p style="font-size: 15px; font-weight: 500; letter-spacing: -0.01em">보던 게시물·릴스를 <span class="mono" style="font-size: 14px">@inthon2team</span>에 DM으로 공유하세요</p>
-          </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap">
-            <sc-if value="{{isDemo}}" hint-placeholder-val="{{ true }}"><button type="button" class="btn" onClick="{{simulateDm}}" disabled="{{simDisabled}}">DM 전송 시뮬레이션<span class="badge nodot s-info" style="height: 18px; font-size: 10.5px; padding: 0 6px">데모</span></button></sc-if>
-            <button type="button" class="btn btn-primary" onClick="{{sendFromIg}}">Instagram에서 보내기</button>
-          </div>
-        </section>
-      </sc-if>
-
-      <sc-if value="{{hasActiveWork}}" hint-placeholder-val="{{ true }}">
-        <section style="display: flex; flex-direction: column; gap: 12px">
-          <div style="display: flex; align-items: center; gap: 8px"><h2 class="h2">처리 중인 콘텐츠</h2><span class="mono muted" style="font-size: 12px">{{activeCount}}</span></div>
-          <div class="card" style="overflow: hidden">
-            <sc-for list="{{activeItems}}" as="it" hint-placeholder-count="2">
-              <div class="rise" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--border); margin-top: -1px">
-                <span class="{{it.orbCls}}" style="width: 36px; height: 36px"></span>
-                <div style="flex: 999 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-                  <span style="font-weight: 500; font-size: 14px">{{it.title}}</span>
-                  <span class="muted" style="font-size: 12.5px">{{it.received}} 접수 · {{it.key}}</span>
-                </div>
-                <sc-if value="{{it.isProc}}" hint-placeholder-val="{{ true }}">
-                  <span class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
-                </sc-if>
-                <sc-if value="{{it.showBadge}}" hint-placeholder-val="{{ true }}"><span class="{{it.statusCls}}">{{it.statusLabel}}</span></sc-if>
-                <button type="button" class="btn btn-sm" onClick="{{it.open}}">{{it.cta}}</button>
-              </div>
-            </sc-for>
-          </div>
-        </section>
-      </sc-if>
-
-      <sc-if value="{{homeHasRecent}}" hint-placeholder-val="{{ true }}">
-        <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start">
-          <section style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-            <div style="display: flex; align-items: center; gap: 8px">
-              <h2 class="h2">최근 정리된 콘텐츠</h2>
-              <button type="button" class="btn btn-ghost btn-sm" onClick="{{goLibraryNew}}" style="margin-left: auto; color: var(--muted)">전체 보기
-                <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-              </button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px">
-              <sc-for list="{{recentItems}}" as="it" hint-placeholder-count="4">
-                <button type="button" class="rcard orb-hover rise" onClick="{{it.open}}">
-                  <span style="display: flex; align-items: center; justify-content: center; height: 112px; width: 100%; background: var(--surface-2); border-bottom: 1px solid var(--border)">
-                    <span class="{{it.orbCls}}" style="width: 68px; height: 68px"></span>
-                  </span>
-                  <span style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; width: 100%">
-                    <span class="tag"><span class="{{it.dot}}"></span>{{it.typeLabel}}</span>
-                    <span class="clamp2" style="font-size: 14px; font-weight: 500; line-height: 1.4; min-height: 39px">{{it.title}}</span>
-                    <span class="muted" style="font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{it.key}}</span>
-                  </span>
-                </button>
-              </sc-for>
-            </div>
-          </section>
-          <aside style="flex: 1 1 300px; max-width: 380px; display: flex; flex-direction: column; gap: 16px">
-            <sc-if value="{{hasSchedule}}" hint-placeholder-val="{{ true }}">
-              <section class="card" style="padding: 8px">
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 4px">
-                  <svg class="ico muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-                  <h2 class="h2">가까운 일정</h2>
-                </div>
-                <sc-for list="{{schedule}}" as="sc" hint-placeholder-count="3">
-                  <button type="button" class="scard" onClick="{{sc.open}}">
-                    <span class="datebox"><span class="muted" style="font-size: 10.5px; font-weight: 500">{{sc.mon}}</span><span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">{{sc.day}}</span></span>
-                    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-                      <span style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{sc.title}}</span>
-                      <span class="muted" style="font-size: 12px">{{sc.what}}</span>
-                    </span>
-                    <span class="{{sc.badgeCls}}">{{sc.badge}}</span>
-                  </button>
-                </sc-for>
-                <p class="muted" style="font-size: 11.5px; padding: 6px 12px 8px; line-height: 1.5">{{scheduleNote}}</p>
-              </section>
-            </sc-if>
-            <sc-if value="{{hasTaste}}" hint-placeholder-val="{{ true }}">
-              <button type="button" class="rcard orb-hover" onClick="{{goTaste}}" style="padding: 16px; flex-direction: row; align-items: center; gap: 14px">
-                <span aria-hidden="true" style="display: flex">
-                  <span class="orb o-recipe" style="width: 30px; height: 30px; box-shadow: 0 0 0 2px var(--surface)"></span>
-                  <span class="orb o-exhibit" style="width: 30px; height: 30px; margin-left: -10px; box-shadow: 0 0 0 2px var(--surface)"></span>
-                </span>
-                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
-                  <span style="font-size: 14px; font-weight: 500">내 취향 살펴보기</span>
-                  <span class="muted" style="font-size: 12.5px">취향으로 모은 콘텐츠 {{tasteCount}}개</span>
-                </span>
-                <svg class="ico muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-              </button>
-            </sc-if>
-          </aside>
-        </div>
-      </sc-if>
-    </div>
-  </sc-if>
+  <design-include name="home-chat"></design-include>
 
   <!-- ============ LIBRARY ============ -->
   <sc-if value="{{isLibrary}}" hint-placeholder-val="{{ false }}">
@@ -2357,7 +2212,7 @@ class Component extends DCLogic {
       d.isBeauty = done && raw.type === 'beauty';
       d.bFacts = []; d.points = []; d.bLinks = [];
       if (d.isBeauty) {
-        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.bFacts = raw.bFacts.filter(([k]) => !/예약/.test(k)).slice(0, 4).map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
         d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.hasPlace = !!raw.place;
         d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
@@ -2369,7 +2224,7 @@ class Component extends DCLogic {
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
-      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant','beauty'].includes(raw.type);
       const tOn = !!s.taste[raw.id];
       d.tasteBtnCls = 'btn' + (tOn ? ' btn-primary' : ''); d.tasteLabel = tOn ? '취향에 모음' : '취향으로 모으기'; d.tastePressed = tOn ? 'true' : 'false';
       d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type }); }); };

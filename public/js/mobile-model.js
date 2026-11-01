@@ -128,7 +128,7 @@ export default class MobileModel extends DCLogic {
       d.isBeauty = done && raw.type === 'beauty';
       d.bFacts = []; d.points = []; d.bLinks = [];
       if (d.isBeauty) {
-        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.bFacts = raw.bFacts.filter(([k]) => !/예약/.test(k)).slice(0, 4).map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
         d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.hasPlace = !!raw.place;
         d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
@@ -136,7 +136,7 @@ export default class MobileModel extends DCLogic {
         d.shareIncludes = raw.sub === 'salon' ? ['미용실·시술·가격', '운영 시간·위치', '예약 링크와 원본 링크'] : ['제품명·브랜드·용량·가격', '게시물에서 말한 사용법', '판매처 링크와 원본 링크'];
       }
 
-      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant','beauty'].includes(raw.type);
       d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isSpace = done && raw.type === 'space'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase; d.shareDisabled = !done;

@@ -1,6 +1,6 @@
 // Desktop orbits and the mobile list share the same saved picks.
 const CATEGORIES = [['recipe','레시피','A',30], ['exhibit','전시·공간','B',105],
-  ['contest','공모전·대외활동','C',195], ['restaurant','맛집','D',285]];
+  ['contest','공모전·대외활동','C',195], ['restaurant','맛집','D',285], ['beauty','미용','E',240]];
 const categoryOf = item => item.type === 'space' ? 'exhibit' : item.type;
 export function applyTasteOrbitValues(v, s, app) {
   const items = app.allItems().filter(item => s.taste[item.id] && item.status === 'done' && CATEGORIES.some(([type]) => type === categoryOf(item)));

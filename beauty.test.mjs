@@ -15,7 +15,7 @@ const samples=JSON.parse(readFileSync('frontend/data/sample-data.json','utf8')).
 const stored=sample=>({id:31,created_at:'2026-11-01T01:00:00Z',status:'done',topic:'beauty',claim:sample.title,
   reason:JSON.stringify({beauty:{version:1,...sample,sponsored:sample.sub==='product'},sourceUrl:'https://www.instagram.com/p/Example/'})});
 
-test('beauty salon and product details filter and render through both layouts without joining taste or calendar categories',()=>{
+test('beauty details render through both layouts and join taste while keeping calendar categories separate',()=>{
   const app=new DashboardModel({theme:'light'});
   app.setState=patch=>Object.assign(app.state,patch); app.toast=()=>{};
   const mobile=createMobileDashboard(app);
@@ -23,7 +23,7 @@ test('beauty salon and product details filter and render through both layouts wi
   for(const sample of samples){
     app.state.view='detail';app.state.detailId=sample.id;
     for(const v of [app.renderVals(),mobile()]){
-      assert.equal(v.d.isBeauty,true);assert.equal(v.d.tasteable,false);
+      assert.equal(v.d.isBeauty,true);assert.equal(v.d.tasteable,true);
       assert.equal(v.d.bFacts.length,4);assert.equal(v.d.points.length,3);assert.equal(v.d.bLinks.length,2);
       assert.equal(v.d.bSectionTitle,sample.sub==='salon'?'장소·예약':'구매처');
     }
@@ -33,8 +33,19 @@ test('beauty salon and product details filter and render through both layouts wi
   assert.equal(mobile().libItems.length,2);
   assert.equal(app.renderVals().sideTypes.find(t=>t.label==='미용').count,2);
   const taste=applyTasteOrbitValues({}, {taste:{fc31:true}}, {allItems:()=>items,setState:()=>{}});
-  assert.equal(taste.tasteCount,0);
+  assert.equal(taste.tasteCount,2);
   assert.equal(items[1].phase,'협찬 표시 있음');assert.equal(items[0].phase,null);
+});
+
+test('beauty summary shows at most four facts, omits booking method and preserves the stored facts and links',()=>{
+  const app=new DashboardModel({theme:'light'});app.setState=p=>Object.assign(app.state,p);app.toast=()=>{};
+  const sample={...samples[0],bFacts:[['스타일','레이어드'],['예약 방법','DM'],['가격','미기재'],['기장','중장발'],['시술','펌'],['기타','추가 정보']]};
+  app._data={...app.data(),ITEMS:[sample]};app.state.view='detail';app.state.detailId=sample.id;
+  for(const v of [app.renderVals(),createMobileDashboard(app)()]){
+    assert.equal(v.d.bFacts.length,4);assert.ok(v.d.bFacts.every(f=>!f.k.includes('예약')));
+    assert.equal(v.d.bLinks.length,2);assert.ok(v.d.bFacts.some(f=>f.v==='미기재'));
+  }
+  assert.equal(sample.bFacts.length,6);
 });
 
 test('stored beauty data keeps unrecorded fields unknown, preserves the category and rejects unsafe links or malformed data',()=>{

@@ -39,7 +39,7 @@ test('mobile taste uses a category dropdown, filters the saved list and opens a 
   app.allItems = () => items;
   Object.assign(app.state, { view: 'taste', taste: { fc1: true, fc2: true, fc3: true }, tasteTab: 'all' });
   assert.equal(values().tasteFilter, 'all');
-  assert.deepEqual(values().tasteTabs.map(t => [t.value, t.count]), [['all', 3], ['recipe', 1], ['exhibit', 2], ['contest', 0], ['restaurant', 0]]);
+  assert.deepEqual(values().tasteTabs.map(t => [t.value, t.count]), [['all', 3], ['recipe', 1], ['exhibit', 2], ['contest', 0], ['restaurant', 0], ['beauty', 0]]);
   assert.deepEqual(values().tasteGroups.map(g => g.type), ['recipe', 'exhibit']);
   assert.ok(values().tasteGroups.every(g => !g.label.includes('궤도')));
   values().filterTaste({ currentTarget: { value: 'contest' } });

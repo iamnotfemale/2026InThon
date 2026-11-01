@@ -6,7 +6,7 @@ export const VALID_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 export const KINDS_BY_TYPE = { recipe: ['cook'], exhibit: ['visit'], contest: ['deadline', 'prep', 'result'], restaurant: ['visit'], space: ['visit'] };
 export const SCHEDULE_TYPES = Object.keys(KINDS_BY_TYPE);
 /** Types that can be collected into 내 취향 (space is shown with exhibitions but stays 'space'). */
-export const TASTE_TYPES = SCHEDULE_TYPES;
+export const TASTE_TYPES = [...SCHEDULE_TYPES, 'beauty'];
 
 export function validCalendarDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;

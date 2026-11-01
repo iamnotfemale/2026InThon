@@ -465,6 +465,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         <span class="tag" style="font-size: 13.5px"><span class="{{d.dot}}"></span>{{d.typeLabel}}</span>
         <span style="margin-left: auto; display: flex">
           <sc-if value="{{isLive}}"><button type="button" class="icon-btn" aria-label="내 목록에서 삭제" onClick="{{removeCurrent}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"></path></svg></button></sc-if>
+          <sc-if value="{{d.tasteable}}"><button type="button" class="icon-btn" aria-label="{{d.tasteLabel}}" aria-pressed="{{d.tastePressed}}" onClick="{{d.toggleTaste}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></button></sc-if>
           <button type="button" class="{{d.favCls}}" aria-label="{{d.favLabel}}" aria-pressed="{{d.favPressed}}" onClick="{{d.toggleFav}}">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"></path></svg>
           </button>
@@ -602,7 +603,6 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
               <div class="info"><span class="k">운영 시간</span><span class="v">{{d.hours}}</span></div>
               <div class="info"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
               <div class="info"><span class="k">입장료</span><span class="v">{{d.fee}}</span></div>
-              <div class="info"><span class="k">예약</span><span class="{{d.bookingCls}}">{{d.booking}}</span></div>
             </section>
             <section class="card" style="overflow: hidden">
               <div style="position: relative; height: 140px; background-color: var(--surface-2); background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 22px 22px" aria-hidden="true">
@@ -1097,7 +1097,7 @@ class Component extends DCLogic {
       d.isBeauty = done && raw.type === 'beauty';
       d.bFacts = []; d.points = []; d.bLinks = [];
       if (d.isBeauty) {
-        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.bFacts = raw.bFacts.filter(([k]) => !/예약/.test(k)).slice(0, 4).map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
         d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.hasPlace = !!raw.place;
         d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
@@ -1105,7 +1105,7 @@ class Component extends DCLogic {
         d.shareIncludes = raw.sub === 'salon' ? ['미용실·시술·가격', '운영 시간·위치', '예약 링크와 원본 링크'] : ['제품명·브랜드·용량·가격', '게시물에서 말한 사용법', '판매처 링크와 원본 링크'];
       }
 
-      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant','beauty'].includes(raw.type);
       d.isDone = done; d.isRecipe = done && raw.type === 'recipe'; d.isNews = done && raw.type === 'news'; d.isExhibit = done && raw.type === 'exhibit'; d.isRestaurant = done && raw.type === 'restaurant'; d.isSpace = done && raw.type === 'space'; d.isContest = done && raw.type === 'contest';
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase; d.shareDisabled = !done;

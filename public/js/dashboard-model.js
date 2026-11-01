@@ -424,7 +424,7 @@ export default class DashboardModel extends DCLogic {
       d.isBeauty = done && raw.type === 'beauty';
       d.bFacts = []; d.points = []; d.bLinks = [];
       if (d.isBeauty) {
-        d.bFacts = raw.bFacts.map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
+        d.bFacts = raw.bFacts.filter(([k]) => !/예약/.test(k)).slice(0, 4).map(([k, v]) => ({ k, v, cls: /미기재/.test(v) ? 'v miss' : 'v' }));
         d.points = raw.points.map((t, i) => ({ n: String(i + 1).padStart(2, '0'), t }));
         d.hasPlace = !!raw.place;
         d.bLinks = raw.links.map(([label, url, primary]) => ({ label, url, cls: 'btn' + (primary ? ' btn-primary' : '') }));
@@ -436,7 +436,7 @@ export default class DashboardModel extends DCLogic {
       d.isProc = raw.status === 'processing'; d.isNeedType = raw.status === 'needtype'; d.isInsufficient = raw.status === 'insufficient';
       d.hasAuthor = !!raw.author; d.hasPhase = !!raw.phase && done;
       d.thumbNote = raw.thumb ? '유형별 대체 이미지' : '원본 썸네일 없음';
-      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant'].includes(raw.type);
+      d.tasteable = done && ['recipe','exhibit','space','contest','restaurant','beauty'].includes(raw.type);
       const tOn = !!s.taste[raw.id];
       d.tasteBtnCls = 'btn' + (tOn ? ' btn-primary' : ''); d.tasteLabel = tOn ? '취향에 모음' : '취향으로 모으기'; d.tastePressed = tOn ? 'true' : 'false';
       d.toggleTaste = () => { this.setState({ taste: Object.assign({}, s.taste, { [raw.id]: !tOn }) }); this.toast(tOn ? '취향에서 뺐어요. 정리 결과는 그대로 있어요.' : '내 취향에 모았어요', tOn ? null : '내 취향 보기', tOn ? null : () => { this.setState({ toast: null }); this.go('taste', { tasteTab: raw.type }); }); };

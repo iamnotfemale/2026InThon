@@ -118,14 +118,10 @@
 .taste-page .taste-legend,.taste-page .orbit-stage{min-width:0}
 @media(max-width:1100px){.taste-page .taste-wrap{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){.taste-page .orbit,.taste-page .pl-spin,.taste-page .os-wave{animation:none!important}}
-.taste-page .os-line.l-a{width:35cqw;height:35cqw;margin:-17.5cqw}
-.taste-page .os-line.l-b{width:51.6667cqw;height:51.6667cqw;margin:-25.8333cqw}
-.taste-page .os-line.l-c{width:68.3333cqw;height:68.3333cqw;margin:-34.1667cqw;border-style:solid;opacity:1}
-.taste-page .os-line.l-d{width:85cqw;height:85cqw;margin:-42.5cqw}
 .taste-page .os-line.l-outer{width:96.6667cqw;height:96.6667cqw;margin:-48.3333cqw;border-style:dashed;opacity:.5}
-.taste-page .rA{--r:17.5cqw}.taste-page .rB{--r:25.8333cqw}.taste-page .rC{--r:34.1667cqw}.taste-page .rD{--r:42.5cqw}
-.taste-page .os-ring-label.ra{top:32.5%}.taste-page .os-ring-label.rb{top:24.1667%}
-.taste-page .os-ring-label.rc{top:15.8333%}.taste-page .os-ring-label.rd{top:7.5%}
+
+
+
 .taste-page .os-core{width:18cqw;height:18cqw;margin:-9cqw}
 .taste-page .pl-orb{width:clamp(20px,5.3333cqw,32px);height:clamp(20px,5.3333cqw,32px)}
 .taste-page .pl-btn{transform:translate(-50%,-2.6667cqw)}
@@ -134,3 +130,10 @@
 .taste-page .orbit-c{animation-duration:160s;z-index:2}.taste-page .orbit-c .pl-spin{animation:taste-page-orbitSpin 160s linear infinite reverse}
 .taste-page .orbit-d{animation:taste-page-orbitSpin 210s linear infinite reverse}.taste-page .orbit-d .pl-spin{animation:taste-page-orbitSpin 210s linear infinite}
 .m .taste-page .seg{flex-wrap:wrap;gap:2px}.m .taste-page .os-ring-label{font-size:9px;height:19px;padding-inline:5px}
+
+.taste-page .os-line.l-a{width:30cqw;height:30cqw;margin:-15cqw;border-style:solid;opacity:1}.taste-page .rA{--r:15cqw}.taste-page .os-ring-label.ra{top:35%}
+.taste-page .os-line.l-b{width:44cqw;height:44cqw;margin:-22cqw;border-style:solid;opacity:1}.taste-page .rB{--r:22cqw}.taste-page .os-ring-label.rb{top:28%}
+.taste-page .os-line.l-c{width:58cqw;height:58cqw;margin:-29cqw;border-style:solid;opacity:1}.taste-page .rC{--r:29cqw}.taste-page .os-ring-label.rc{top:21%}
+.taste-page .os-line.l-d{width:72cqw;height:72cqw;margin:-36cqw;border-style:solid;opacity:1}.taste-page .rD{--r:36cqw}.taste-page .os-ring-label.rd{top:14%}
+.taste-page .os-line.l-e{width:86cqw;height:86cqw;margin:-43cqw;border-style:solid;opacity:1}.taste-page .rE{--r:43cqw}.taste-page .os-ring-label.re{top:7%}
+.taste-page .orbit-e{animation:taste-page-orbitSpin 240s linear infinite}.taste-page .orbit-e .pl-spin{animation:taste-page-orbitSpin 240s linear infinite reverse}

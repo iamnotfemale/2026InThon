@@ -2,6 +2,7 @@ import { h, render } from './vendor/preact.module.js';
 import { watchMaps } from './kakao-map.js';
 import DashboardModel from './dashboard-model.js';
 import { renderNodes } from './dashboard-runtime.js';
+import { createHomeChat } from './dashboard-home-chat.js';
 import { createMobileDashboard } from './dashboard-mobile.js';
 import { applyIndexValues, matchesIndexedItem } from './dashboard-index.js';
 import { applyTasteOrbitValues } from './dashboard-taste.js';
@@ -53,6 +54,7 @@ class DashboardApp extends DashboardModel {
     this.mobileMedia = matchMedia('(max-width: 767px)');
     this.state.mobile = this.mobileMedia.matches;
     this.mobileValues = createMobileDashboard(this);
+    this.homeChat = createHomeChat(this);
     this.onMobileChange = event => this.setState({ mobile: event.matches });
     if (this.state.detailId === 'r3') this.state.extra = [this.data().R3];
     this.onPop = () => {
@@ -81,6 +83,7 @@ class DashboardApp extends DashboardModel {
         event.preventDefault(); items[next]?.focus(); return;
       }
       if (event.key === 'Escape') {
+        if (!this.state.mobile && this.state.view === 'home' && this.homeChat.escape()) return;
         if (this.state.view === 'calendar' && (this.calendar.model.state.modal || this.calendar.model.state.viewItem)) this.calendar.close();
         else if (this.state.cook) this.renderVals().closeCook();
         else if (this.state.mobile && ['detail', 'settings'].includes(this.state.view)) this.go(this.state.from || 'library', { liveGuide: false });
@@ -154,6 +157,7 @@ class DashboardApp extends DashboardModel {
   }
   componentWillUnmount() {
     this.searchController?.abort();
+    this.homeChat.destroy();
     this.mobileMedia.removeEventListener('change', this.onMobileChange);
     super.componentWillUnmount();
     removeEventListener('popstate', this.onPop);
@@ -467,7 +471,7 @@ class DashboardApp extends DashboardModel {
     const tab = this.state.mobile ? 'tab' : 'nav-item';
     return { isCalendar, notCalendar: !isCalendar, navCalendar: tab + (active ? ' on' : ''),
       goCalendar: () => this.go('calendar'), calendar: isCalendar ? this.calendar.values(this.state.mobile) : {},
-      ...(this.state.view === 'home' ? this.calendar.homeValues() : {}),
+      ...(this.state.view === 'home' ? { ...this.calendar.homeValues(), ...(!this.state.mobile ? { homeChat: this.homeChat.values(), crumbRoot: '디미와 대화' } : {}) } : {}),
       isMap, navMap: tab + (isMap || fromMap ? ' on' : ''), goMap: () => this.go('map'), placeMap: this.mapValues ?? {},
       ...(active || fromMap ? { navLib: 'nav-item' } : {}),
       ...(isCalendar ? { crumbRoot: '캘린더', hasCrumbLeaf: false, tabTitle: '캘린더' } : {}),

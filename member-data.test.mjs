@@ -14,6 +14,8 @@ const ROWS = {
     sources: [], dm_status: 'sent', dm_sent_at: null, restaurants: [place(1, '가상 국수집'), place(2, '가상 만두집')] },
   6: { id: 6, created_at: '2026-10-30T00:00:00Z', status: 'done', topic: null, claim: '뉴스 주장', verdict: 'supported', reason: '근거가 있어요.',
     sources: [], dm_status: 'sent', dm_sent_at: null },
+  8: { id: 8, created_at: '2026-10-30T00:00:00Z', status: 'done', topic: 'beauty', claim: '가상 토너',
+    reason: JSON.stringify({beauty:{version:1,sub:'product',title:'가상 토너',intro:'수분 토너',bFacts:[],points:[],links:[]}}), sources:[], dm_status:'sent',dm_sent_at:null },
 };
 
 /** A tiny PostgREST stand-in: the member sees rows 5 and 6 (row 7 belongs to someone else). */
@@ -204,4 +206,12 @@ test('reminder options: refused until the feature is on; then canonical, KST-sch
   const fallback = await call(broken.calendar, { url: '/api/calendar?from=2026-11-01&to=2026-11-30' });
   assert.equal(fallback.status, 200, 'the schedule list never fails because of the window lookup');
   assert.equal(fallback.body.dm_eligibility, null);
+});
+
+test('taste API accepts an owned beauty result, but calendar still rejects beauty', async()=>{
+  const {taste,calendar,db}=setup();
+  assert.equal((await call(taste,{method:'PUT',url:'/api/taste?id=fc8'})).status,200);
+  assert.equal(db.taste.length,1);
+  assert.equal((await create(calendar,{content_id:'fc8',kind:'visit',date:'2026-11-07',time:null})).status,422);
+  assert.equal(db.events.length,0);
 });
