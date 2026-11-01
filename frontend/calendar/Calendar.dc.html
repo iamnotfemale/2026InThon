@@ -54,10 +54,10 @@
 .calendar-page .chip:disabled{opacity:.4;cursor:not-allowed}
 .calendar-page .dot{width:7px;height:7px;border-radius:50%;flex:none;display:inline-block}
 .calendar-page .t-recipe{background:#F97316}
-.calendar-page .t-exhibit{background:#A855F7}
-.calendar-page .t-contest{background:#22C55E}
+.calendar-page .t-exhibit{background:#22C55E}
+.calendar-page .t-contest{background:#8B5CF6}
 .calendar-page .t-restaurant{background:#14B8A6}
-.calendar-page .t-space{background:#EC4899}
+.calendar-page .t-space{background:#84CC16}
 .calendar-page .t-news{background:#3B82F6}
 .calendar-page .cal{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
 .calendar-page .cal-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border);background:var(--bg)}
@@ -153,8 +153,8 @@
 /* 일정 추가 목록의 작은 orb는 정지 상태로 둔다: 대시보드 전역 .orb 애니메이션(border-radius·blur)이 항목 수만큼 매 프레임 다시 그려져 스크롤이 끊긴다 */
 .calendar-page .opt .orb,.calendar-page .opt .orb::before,.calendar-page .opt .orb::after{animation:none;will-change:auto}
 .calendar-page .o-recipe::before{background:conic-gradient(from 20deg,#FDBA74,#FB7185,#FDE68A,#F97316,#FDBA74)}
-.calendar-page .o-exhibit::before{background:conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
-.calendar-page .o-contest::before{background:conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
+.calendar-page .o-exhibit::before{background:conic-gradient(from 200deg,#86EFAC,#6EE7B7,#22C55E,#DCFCE7,#86EFAC)}
+.calendar-page .o-contest::before{background:conic-gradient(from 300deg,#A78BFA,#DDD6FE,#8B5CF6,#BAE6FD,#A78BFA)}
 .calendar-page .mini{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .calendar-page .mini span.h{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}
 .calendar-page .md{height:34px;border:0;border-radius:9px;background:transparent;font-size:13px;cursor:pointer;transition:background .15s ease,transform .15s ease}
@@ -683,7 +683,7 @@ class Component extends DCLogic {
       next: () => { if (s.view === 'month') { const d = this.parse(s.cursor); d.setMonth(d.getMonth() + 1); this.setState({ cursor: this.key(d) }); } else { const k = this.add(s.sel, 7); this.setState({ sel: k, cursor: k.slice(0, 7) + '-01' }); } },
       goToday: () => this.setState({ sel: today, cursor: today.slice(0,7) + '-01' }),
       openAddSel: () => this.openModal({ date: s.sel < today ? today : s.sel }),
-      filters: [['all', '전체', null, events.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space]].map(([k, label, dot, count]) => {
+      filters: [['all', '전체', null, events.length], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['space', '취향공간', 'dot t-space', counts.space], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['contest', '공모전·대외활동', 'dot t-contest', counts.contest], ['recipe', '레시피', 'dot t-recipe', counts.recipe]].map(([k, label, dot, count]) => {
         const on = k === 'all' ? allOn : (!allOn && s.filter[k]);
         return { label, dot, hasDot: !!dot, count, cls: on ? 'on' : '', pressed: on ? 'true' : 'false',
           toggle: () => this.setState({ filter: Object.fromEntries(Object.keys(C.KINDS).map(type => [type, k === 'all' || type === k])) }) };

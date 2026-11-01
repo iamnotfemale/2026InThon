@@ -28,6 +28,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .scroll::-webkit-scrollbar{display:none}
 .hscroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 20px;margin:0 -20px}
 .hscroll::-webkit-scrollbar{display:none}
+.hscroll .chip-group{flex:none;align-self:center;margin-left:6px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:var(--surface);font-size:15px;font-weight:500;color:var(--text);text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .15s ease,transform .12s ease,border-color .15s ease}
 .btn:active{transform:scale(.97);background:var(--surface-2)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
@@ -49,16 +50,16 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 .s-proc::before{width:9px;height:9px;background:none;border:1.5px solid var(--c);border-top-color:transparent;animation:spin .8s linear infinite}
 .tag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;flex:none;display:block}
-.t-recipe{background:#F97316}.t-news{background:#3B82F6}.t-exhibit{background:#A855F7}.t-contest{background:#22C55E}.t-restaurant{background:#14B8A6}.t-space{background:#EC4899}.t-unknown{background:#A3A3A3}
+.t-recipe{background:#F97316}.t-news{background:#3B82F6}.t-exhibit{background:#22C55E}.t-contest{background:#8B5CF6}.t-restaurant{background:#14B8A6}.t-space{background:#84CC16}.t-unknown{background:#A3A3A3}
 .orb{position:relative;display:block;border-radius:50%;overflow:hidden;flex:none;isolation:isolate;animation:blob 9s ease-in-out infinite}
 .orb::before{content:'';position:absolute;inset:-40%;filter:blur(10px);animation:swirl 13s ease-in-out infinite}
 .orb::after{content:'';position:absolute;inset:-12%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.7),rgba(255,255,255,0) 46%)}
 .o-recipe::before{background:radial-gradient(circle at 28% 32%,#FDE68A 0,transparent 38%),radial-gradient(circle at 72% 64%,#FB7185 0,transparent 42%),conic-gradient(from 20deg,#FDBA74,#FB7185,#FDE68A,#F97316,#FDBA74)}
 .o-news::before{background:radial-gradient(circle at 30% 30%,#BAE6FD 0,transparent 38%),radial-gradient(circle at 70% 62%,#6366F1 0,transparent 42%),conic-gradient(from 90deg,#93C5FD,#6366F1,#BAE6FD,#3B82F6,#93C5FD)}
-.o-exhibit::before{background:radial-gradient(circle at 30% 30%,#FBCFE8 0,transparent 38%),radial-gradient(circle at 70% 64%,#A78BFA 0,transparent 42%),conic-gradient(from 200deg,#C4B5FD,#F0ABFC,#A78BFA,#FBCFE8,#C4B5FD)}
-.o-contest::before{background:radial-gradient(circle at 30% 30%,#FDE047 0,transparent 38%),radial-gradient(circle at 70% 62%,#34D399 0,transparent 42%),conic-gradient(from 300deg,#86EFAC,#FDE047,#34D399,#A7F3D0,#86EFAC)}
+.o-exhibit::before{background:radial-gradient(circle at 30% 30%,#DCFCE7 0,transparent 38%),radial-gradient(circle at 70% 64%,#22C55E 0,transparent 42%),conic-gradient(from 200deg,#86EFAC,#6EE7B7,#22C55E,#DCFCE7,#86EFAC)}
+.o-contest::before{background:radial-gradient(circle at 30% 30%,#DDD6FE 0,transparent 38%),radial-gradient(circle at 70% 62%,#8B5CF6 0,transparent 42%),conic-gradient(from 300deg,#A78BFA,#DDD6FE,#8B5CF6,#BAE6FD,#A78BFA)}
 .o-restaurant::before{background:radial-gradient(circle at 30% 30%,#CCFBF1 0,transparent 38%),radial-gradient(circle at 70% 62%,#14B8A6 0,transparent 42%),conic-gradient(from 140deg,#5EEAD4,#FDE68A,#14B8A6,#99F6E4,#5EEAD4)}
-.o-space::before{background:radial-gradient(circle at 30% 30%,#FCE7F3 0,transparent 38%),radial-gradient(circle at 70% 62%,#EC4899 0,transparent 42%),conic-gradient(from 60deg,#F9A8D4,#FDBA74,#EC4899,#FBCFE8,#F9A8D4)}
+.o-space::before{background:radial-gradient(circle at 30% 30%,#ECFCCB 0,transparent 38%),radial-gradient(circle at 70% 62%,#84CC16 0,transparent 42%),conic-gradient(from 60deg,#BEF264,#FDE68A,#84CC16,#D9F99D,#BEF264)}
 .o-unknown::before{background:radial-gradient(circle at 30% 30%,#F5F5F5 0,transparent 40%),radial-gradient(circle at 70% 64%,#A3A3A3 0,transparent 42%),conic-gradient(from 0deg,#E5E5E5,#BDBDBD,#F5F5F5,#A3A3A3,#E5E5E5)}
 .o-news{animation-duration:11s;animation-delay:-3s}.o-exhibit{animation-duration:10s;animation-delay:-6s;animation-direction:reverse}.o-contest{animation-duration:8s;animation-delay:-2s}.o-restaurant{animation-duration:9.5s;animation-delay:-4s}.o-space{animation-duration:10.5s;animation-delay:-5s;animation-direction:reverse}
 .orb.fast{animation-duration:2.6s}.orb.fast::before{animation-duration:3.2s}
@@ -349,6 +350,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
         <sc-if value="{{isLive}}"><span class="screen-reader-only" role="status">{{searchStatus}}</span></sc-if>
         <div class="hscroll" role="group" aria-label="유형 필터">
           <sc-for list="{{typeChips}}" as="t" hint-placeholder-count="5">
+            <sc-if value="{{t.groupStart}}" hint-placeholder-val="{{ false }}"><span class="chip-group" aria-hidden="true">{{t.group}}</span></sc-if>
             <button type="button" class="{{t.cls}}" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}">
               <sc-if value="{{t.hasDot}}" hint-placeholder-val="{{ false }}"><span class="{{t.dot}}"></span></sc-if>{{t.label}}<span class="n">{{t.count}}</span>
             </button>
@@ -1185,7 +1187,7 @@ class Component extends DCLogic {
       sort: s.sortNew ? 'new' : 'old', onSort: e => this.setState({ sortNew: e.target.value === 'new' }),
       favChipCls: 'chip' + (s.favOnly ? ' on' : ''), favOnlyPressed: s.favOnly ? 'true' : 'false', toggleFavOnly: () => this.setState({ favOnly: !s.favOnly }),
       query: s.query, onQuery: e => this.setState({ query: e.target.value }),
-      typeChips: [['all', '전체', null, items.length], ['recipe', '레시피', 'dot t-recipe', counts.recipe], ['news', '뉴스·정보', 'dot t-news', counts.news], ['exhibit', '전시·팝업', 'dot t-exhibit', counts.exhibit], ['contest', '공모전', 'dot t-contest', counts.contest], ['restaurant', '맛집', 'dot t-restaurant', counts.restaurant], ['space', '취향공간', 'dot t-space', counts.space], ['beauty', '미용', 'dot t-beauty', counts.beauty]].map(([k, label, dot, count]) => ({ label, dot, hasDot: !!dot, count, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
+      typeChips: [['all', '전체', null, items.length, false, '']].concat([['가볼 곳', [['exhibit', '전시·팝업'], ['space', '취향공간'], ['restaurant', '맛집']]], ['챙길 정보', [['news', '뉴스·정보'], ['contest', '공모전']]], ['생활', [['recipe', '레시피'], ['beauty', '미용']]]].flatMap(([group, list]) => list.map(([k, label], i) => [k, label, 'dot t-' + k, counts[k], i === 0, group]))).map(([k, label, dot, count, groupStart, group]) => ({ label, dot, hasDot: !!dot, count, group, groupStart, cls: 'chip' + (s.typeF === k ? ' on' : ''), pressed: s.typeF === k ? 'true' : 'false', pick: () => this.setState({ typeF: k }) })),
       statusChips: [['all', '전체 상태'], ['processing', '처리 중'], ['done', '정리 완료'], ['check', '확인 필요'], ['failed', '처리하지 못함']].map(([k, label]) => ({ label, cls: 'chip' + (s.statusF === k ? ' on' : ''), pressed: s.statusF === k ? 'true' : 'false', pick: () => this.setState({ statusF: k }) })),
       libItems: lib, libCount: lib.length, libHasItems: lib.length > 0, libEmpty: lib.length === 0, isFiltered,
       emptyTitle: q ? '검색 결과가 없어요.' : '선택한 조건에 맞는 콘텐츠가 없어요.', emptyDesc: q ? '검색어를 바꾸거나 지워 보세요.' : '필터를 바꾸거나 초기화해 보세요.',
@@ -1199,7 +1201,7 @@ class Component extends DCLogic {
       removeTasteCard: () => { this.setState({ tasteRemoved: true }); this.toast('취향 표현을 삭제했어요. 모은 콘텐츠는 그대로예요.'); },
       hasDetail: !!raw, d, closeDetail: () => { clearInterval(this._ct); this.setState({ detailId: null, cook: null, share: null }); },
       srcOpen: s.srcOpen, srcExpanded: s.srcOpen ? 'true' : 'false', srcChevStyle: s.srcOpen ? 'transform: rotate(180deg); transition: transform .25s ease' : 'transition: transform .25s ease', toggleSrc: () => this.setState({ srcOpen: !s.srcOpen }),
-      retypeOpts: [['recipe', '레시피', '재료·분량, 조리 순서'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['restaurant', '맛집', '위치·메뉴·가격'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
+      retypeOpts: [['exhibit', '전시·팝업', '장소·일정·예약 정보'], ['space', '취향공간', '위치·운영 시간·이용 정보'], ['restaurant', '맛집', '위치·메뉴·가격'], ['news', '뉴스·정보 확인', '주장 단위 사실 확인'], ['contest', '공모전·대외활동', '지원 조건·마감·제출물'], ['recipe', '레시피', '재료·분량, 조리 순서'], ['beauty', '미용', '시술·제품 정보, 가격, 예약·구매 링크']].map(([k, label, desc]) => ({ label, desc, dot: 'dot t-' + k, checked: s.retype === k ? 'true' : 'false', cls: 'radio-card' + (s.retype === k ? ' on' : ''), pick: () => this.setState({ retype: k }) })),
       retypeDisabled: !s.retype,
       requestProcess: () => { if (!raw || !s.retype) return; const lbl = { recipe: '레시피', news: '뉴스·정보 확인', exhibit: '전시·팝업', contest: '공모전·대외활동', restaurant: '맛집', space: '취향공간', beauty: '미용' }[s.retype]; this.setState({ over: Object.assign({}, s.over, { [raw.id]: { status: 'processing', dm: 'waiting', key: lbl + '(으)로 정리하고 있어요', procType: lbl } }) }); this.toast(lbl + '(으)로 정리를 요청했어요'); },
       startCook: () => this.cookGo('prep', 0, 'fwd'), closeCook: () => { clearInterval(this._ct); this.setState({ cook: null, timer: null }); },

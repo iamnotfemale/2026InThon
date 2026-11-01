@@ -237,7 +237,7 @@ test('restaurant and space visits save, reload, filter and open the exact conten
     { ...recipe, type: 'news', id: 'fc16' },
   ];
   let v = calendar.values(); await settle(); v = calendar.values();
-  assert.deepEqual(v.filters.map(f => f.label), ['전체', '레시피', '전시·팝업', '공모전·대외활동', '맛집', '취향공간']);
+  assert.deepEqual(v.filters.map(f => f.label), ['전체', '전시·팝업', '취향공간', '맛집', '공모전·대외활동', '레시피']);
   v.openAddSel(); calendar.values().contentOpts[0].pick();
   assert.equal(calendar.model.state.modal.kind, 'visit');
   calendar.model.setDraft({ date: '2026-11-07', time: '12:00' }); calendar.values().save(); await settle();
@@ -248,16 +248,16 @@ test('restaurant and space visits save, reload, filter and open the exact conten
   assert.equal(v.contentOpts.length, 0);
   assert.equal(reloaded.model.consts().CONTENT.fc16, undefined);
   assert.equal(reloaded.model.consts().CONTENT.fc15.from, undefined);
-  assert.equal(v.filters[0].count, 2); assert.equal(v.filters[4].count, 1); assert.equal(v.filters[5].count, 1);
+  assert.equal(v.filters[0].count, 2); assert.equal(v.filters[3].count, 1); assert.equal(v.filters[2].count, 1);
   reloaded.model.setState({ sel: '2026-11-07' });
-  reloaded.values().filters[4].toggle();
+  reloaded.values().filters[3].toggle();
   assert.deepEqual(reloaded.values().selEvents.map(e => e.title), ['두 번째 맛집']);
   reloaded.values().selEvents[0].view();
   assert.equal(reloaded.values().cvType, '맛집');
   assert.deepEqual(reloaded.values().cvFacts.map(f => f.k).filter(k => ['가격대', '운영', '휴무', '예약'].includes(k)), []);
   reloaded.values().openFullContent();
   assert.equal(messages.at(-1), 'fc12-2');
-  reloaded.values().filters[5].toggle();
+  reloaded.values().filters[2].toggle();
   assert.deepEqual(reloaded.values().selEvents.map(e => e.title), ['서점']);
   assert.equal(reloaded.values().selEvents[0].timeLabel, '종일');
   reloaded.values().filters[0].toggle();
