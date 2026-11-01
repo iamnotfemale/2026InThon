@@ -114,7 +114,26 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 @keyframes squish{0%{transform:scale(1)}30%{transform:scale(1.1,.88)}60%{transform:scale(.95,1.06)}100%{transform:scale(1)}}
 @keyframes gdraw{from{stroke-dashoffset:368}to{stroke-dashoffset:0}}
 @keyframes swing{from{transform:rotate(-135deg)}}
-@media (min-width:861px){.sidebar{position:sticky;top:0;height:100vh;align-self:flex-start;overflow-y:auto}}
+@media (min-width:861px){
+.sidebar{position:sticky;top:0;height:100dvh;align-self:flex-start;overflow:hidden}
+.sidebar> *{flex-shrink:0}
+.sidebar .sidebar-search{height:38px;min-height:38px;margin-bottom:4px}
+.sidebar-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.sidebar-types-label{padding:14px 10px 6px}
+.sidebar-footer{display:flex;flex-direction:column;gap:4px;padding-top:8px}
+.sidebar-footer .card-flat{padding:10px;display:flex;flex-direction:column;gap:6px}
+.sidebar-footer>.nav-item{height:44px;flex-shrink:0}
+@media(max-height:800px){
+.sidebar{padding-block:10px!important;gap:2px!important}
+.sidebar-brand{padding-bottom:6px!important}
+.sidebar-scroll .nav-item{height:28px;font-size:13px}
+.sidebar-types-label{padding-block:8px 4px}
+.sidebar-scroll .side-type-groups{gap:4px}
+.sidebar-scroll .side-group-label{line-height:14px;padding-block:2px}
+.sidebar-footer{padding-top:6px}
+.sidebar-footer .card-flat{padding:8px;gap:4px}
+}
+}
 .ic-ok{color:#16A34A}.ic-no{color:#DC2626}.ic-na{color:var(--muted)}
 .ltag{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;white-space:nowrap}
 .ltag.dashed{border-style:dashed;font-weight:400;color:var(--text-2)}
@@ -392,15 +411,16 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 
 <!-- ============ SIDEBAR ============ -->
 <aside class="sidebar" style="flex: 1 1 248px; max-width: 256px; display: flex; flex-direction: column; gap: 4px; padding: 14px 12px">
-  <div style="display: flex; align-items: center; gap: 10px; padding: 4px 6px 12px">
+  <div class="sidebar-brand" style="display: flex; align-items: center; gap: 10px; padding: 4px 6px 12px">
     <span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: grid; place-content: center">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--accent-fg)" stroke-width="2.4" stroke-linecap="round"><path d="M7 5v14M12 8v8M17 5v14"/></svg>
     </span>
     <span style="font-weight: 600; font-size: 14.5px; letter-spacing: -0.02em">서비스명</span>
   </div>
-  <button type="button" class="btn" aria-label="보낸 콘텐츠에서 검색" onClick="{{goSearch}}" style="justify-content: flex-start; width: 100%; height: 34px; color: var(--muted); font-weight: 400; margin-bottom: 10px">
+  <button type="button" class="btn sidebar-search" aria-label="보낸 콘텐츠에서 검색" onClick="{{goSearch}}" style="justify-content: flex-start; width: 100%; color: var(--muted); font-weight: 400">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
   </button>
+  <div class="sidebar-scroll">
   <nav aria-label="주 메뉴" style="display: flex; flex-direction: column; gap: 2px">
     <button type="button" class="{{navHome}}" onClick="{{goHome}}">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
@@ -419,7 +439,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <button type="button" class="{{navCalendar}}" onClick="{{goCalendar}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>캘린더</span></button>
     <button type="button" class="{{navMap}}" onClick="{{goMap}}"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>지도</span></button>
   </nav>
-  <div class="label" style="padding: 18px 10px 6px">유형</div>
+  <div class="label sidebar-types-label">유형</div>
   <div class="side-type-groups">
     <sc-for list="{{sideGroups}}" as="g" hint-placeholder-count="3">
       <div class="side-type-group" role="group" aria-label="{{g.name}}">
@@ -434,8 +454,9 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
       </div>
     </sc-for>
   </div>
-  <div style="flex: 1; min-height: 24px"></div>
-  <div class="card-flat" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px">
+  </div>
+  <div class="sidebar-footer">
+  <div class="card-flat">
     <sc-if value="{{connected}}" hint-placeholder-val="{{ true }}">
       <div style="display: flex; align-items: center; gap: 8px">
         <span class="live"></span>
@@ -460,6 +481,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" style="margin-left: auto"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
     <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">설정</span>
   </button>
+  </div>
 </aside>
 
 <!-- ============ MAIN ============ -->

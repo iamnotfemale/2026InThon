@@ -102,7 +102,26 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
 @keyframes squish{0%{transform:scale(1)}30%{transform:scale(1.1,.88)}60%{transform:scale(.95,1.06)}100%{transform:scale(1)}}
 @keyframes gdraw{from{stroke-dashoffset:368}to{stroke-dashoffset:0}}
 @keyframes swing{from{transform:rotate(-135deg)}}
-@media (min-width:861px){.sidebar{position:sticky;top:0;height:100vh;align-self:flex-start;overflow-y:auto}}
+@media (min-width:861px){
+.sidebar{position:sticky;top:0;height:100dvh;align-self:flex-start;overflow:hidden}
+.sidebar> *{flex-shrink:0}
+.sidebar .sidebar-search{height:38px;min-height:38px;margin-bottom:4px}
+.sidebar-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.sidebar-types-label{padding:14px 10px 6px}
+.sidebar-footer{display:flex;flex-direction:column;gap:4px;padding-top:8px}
+.sidebar-footer .card-flat{padding:10px;display:flex;flex-direction:column;gap:6px}
+.sidebar-footer>.nav-item{height:44px;flex-shrink:0}
+@media(max-height:800px){
+.sidebar{padding-block:10px!important;gap:2px!important}
+.sidebar-brand{padding-bottom:6px!important}
+.sidebar-scroll .nav-item{height:28px;font-size:13px}
+.sidebar-types-label{padding-block:8px 4px}
+.sidebar-scroll .side-type-groups{gap:4px}
+.sidebar-scroll .side-group-label{line-height:14px;padding-block:2px}
+.sidebar-footer{padding-top:6px}
+.sidebar-footer .card-flat{padding:8px;gap:4px}
+}
+}
 .ic-ok{color:#16A34A}.ic-no{color:#DC2626}.ic-na{color:var(--muted)}
 .ltag{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-weight:500;white-space:nowrap}
 .ltag.dashed{border-style:dashed;font-weight:400;color:var(--text-2)}
