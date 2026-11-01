@@ -234,6 +234,8 @@ export function createServers({ config, persist, record, apiFetch = fetch, now =
             messages = [...(collection && Array.isArray(result.intro) ? result.intro : []),
               ...savedIds.map(([id, part]) => resultLinkMessage(config.publicUrl, id, part))];
           }
+          // A closing line that belongs to every delivery mode (e.g. "made from the shared card only").
+          if (typeof result.notice === 'string' && result.notice) messages = [...messages, result.notice];
           try {
             for (const text of messages) await send(text);
             timing.result_sent_ms = elapsed();

@@ -232,6 +232,9 @@ export function describeMessage(message) {
   return { text, items };
 }
 
+/** Coverage note for a shared post read from its webhook attachment alone (one image, not the whole post). */
+export const SHARED_IMAGE_NOTE = '공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함';
+
 export async function gatherInput(message, { fetchMedia, readVideo, requireAllMedia, signal, includeVideo = false }) {
   const { text, items } = describeMessage(message);
   const images = []; const videos = []; const notes = []; const transcripts = [];
@@ -254,7 +257,7 @@ export async function gatherInput(message, { fetchMedia, readVideo, requireAllMe
     if (imageType && images.length < MAX_IMAGES && b.length <= MAX_IMAGE_BYTES) {
       images.push({ mediaType: imageType, data: b.toString('base64') });
       // A JPEG ig_post attachment alone does not establish coverage of all slides or video.
-      if (item.type === 'ig_post') notes.push('공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함');
+      if (item.type === 'ig_post') notes.push(SHARED_IMAGE_NOTE);
     } else if (media.contentType.startsWith('image/') && !imageType) {
       if (requireAllMedia) throw new Error('원본 이미지 형식을 확인하지 못해 분석을 중단했어요.');
       notes.push(`${item.type} 첨부의 이미지 형식을 확인하지 못함`);

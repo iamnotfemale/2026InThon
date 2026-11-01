@@ -152,3 +152,88 @@ test('unsafe direct URLs, wrong source and mixed manifests never bypass full-med
     await assert.rejects(prepare(url), /Invalid/);
   }
 });
+
+const cdnImage = 'https://scontent-ssn1-1.cdninstagram.com/v/t51/card.jpg?sig=1';
+const jpegBytes = () => Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+const sharedPost = (payload = {}) => ({ attachments: [{ type: 'ig_post',
+  payload: { ig_post_media_id: '1234567890', title: '레시피 캡션: 면 1인분, 간장 1큰술', url: cdnImage, ...payload } }] });
+const noLink = { resolveSource: async () => ({ status: 'needs_source_url' }), prepare: () => assert.fail('no source download') };
+
+test('a shared post without its address is analysed from the card (caption + its one CDN image) with the closing notice', async () => {
+  const fetched = [];
+  const check = createMediaFactChecker({ ...noLink,
+    fetchSharedImage: async (url, maxBytes) => { fetched.push([url, maxBytes]); return { url, contentType: 'image/jpeg', body: jpegBytes() }; },
+    check: async (message, options) => {
+      assert.equal(options.requireAllMedia, true);
+      assert.deepEqual(message.attachments, [{ type: 'ig_post', payload: { url: cdnImage, title: '레시피 캡션: 면 1인분, 간장 1큰술' } }],
+        'only the card image and caption, not the opaque media ID');
+      const media = await options.fetchMedia(cdnImage, 1000);
+      assert.equal(media.body[0], 0xff);
+      await assert.rejects(options.fetchMedia('https://scontent.cdninstagram.com/other.jpg', 1000), /Unexpected/);
+      return { status: 'done', action: 'recipe', recipe: { title: '간장 국수' },
+        messages: ['간장 국수\n\n확인할 부분\n• 공유 첨부로 받은 이미지만 확인했으며, 게시물의 전체 이미지·영상은 확인하지 못함'] };
+    } });
+  const result = await check(sharedPost());
+  assert.equal(result.status, 'done'); assert.equal(result.recipe.title, '간장 국수');
+  assert.deepEqual(result.messages, ['간장 국수'], 'the technical coverage note is not repeated in the DM');
+  assert.equal(result.notice, '공유 카드로 받은 이미지와 캡션만 보고 정리했어요. 게시물 링크(‘링크 복사’)를 보내주시면 모든 이미지를 확인해 더 정확히 정리할게요.');
+  assert.deepEqual(result.media, { status: 'attachment_only', sourceVia: 'webhook_attachment', totalItems: null, images: 1, videos: 0 });
+  assert.equal(result.media.sourceUrl, undefined, 'no original address is invented');
+  assert.deepEqual(fetched, [[cdnImage, 1000]]);
+});
+
+test('without a usable image the caption alone is analysed; a non-CDN url is never fetched', async () => {
+  for (const payload of [{ url: 'https://evil.example/x.jpg' }, { url: undefined }]) {
+    const check = createMediaFactChecker({ ...noLink, fetchSharedImage: () => assert.fail('no fetch'),
+      check: async message => {
+        assert.deepEqual(message.attachments[0].payload, { title: '레시피 캡션: 면 1인분, 간장 1큰술' });
+        return { status: 'done', messages: ['캡션으로 정리'] };
+      } });
+    const result = await check(sharedPost(payload));
+    assert.equal(result.media.images, 0); assert.match(result.notice, /이미지와 캡션만/);
+  }
+  // A redirect away from Meta's CDN is refused like any other unexpected host.
+  const redirected = createMediaFactChecker({ ...noLink,
+    fetchSharedImage: async () => ({ url: 'https://evil.example/x.jpg', contentType: 'image/jpeg', body: jpegBytes() }),
+    check: async (message, options) => { await options.fetchMedia(cdnImage, 1000); return { status: 'done', messages: ['x'] }; } });
+  const refused = await redirected(sharedPost());
+  assert.equal(refused.needsSourceUrl, true); assert.match(refused.messages[0], /링크 복사/);
+});
+
+test('if the card alone is not enough, or the analysis fails, the user is asked for the link once', async () => {
+  for (const outcome of [{ status: 'no_input', messages: ['원본 이미지를 읽지 못했어요'] }, { status: 'not_checkable', messages: ['미용 정보를 찾지 못했어요'] },
+    { status: 'failed', messages: ['실패'] }, new Error('model down')]) {
+    const check = createMediaFactChecker({ ...noLink,
+      fetchSharedImage: async url => ({ url, contentType: 'image/jpeg', body: jpegBytes() }),
+      check: async () => { if (outcome instanceof Error) throw outcome; return outcome; } });
+    const result = await check(sharedPost());
+    assert.equal(result.status, 'no_input'); assert.equal(result.needsSourceUrl, true); assert.equal(result.notice, undefined);
+    assert.deepEqual(result.messages, ['공유 카드로 받은 이미지와 캡션만으로는 정리하지 못했어요. Instagram에서 ‘링크 복사’한 게시물 주소를 이 DM에 보내주시면 모든 이미지를 확인해 다시 정리할게요.']);
+  }
+  // Nothing to read at all (no image, no caption): straight to the link request, without calling the AI.
+  const empty = createMediaFactChecker({ ...noLink, check: () => assert.fail('no AI') });
+  assert.match((await empty(sharedPost({ url: undefined, title: '  ' }))).messages[0], /전체 원본 주소를 받지 못했어요/);
+});
+
+test('the closing notice reaches the user in full, link-only and collection deliveries, after the result', async () => {
+  const { createServers, IG_ID } = await import('./server.mjs');
+  const { Readable } = await import('node:stream');
+  for (const [mode, result, expected] of [
+    ['full', { kind: 'content', status: 'done', messages: ['정리 결과'], notice: '마무리' }, ['정리 결과', '마무리']],
+    ['summary', { kind: 'content', status: 'done', messages: ['정리 결과'], notice: '마무리' }, [/items\/fc7/, '마무리']],
+    ['full', { kind: 'content', status: 'done', messages: ['정리 결과'] }, ['정리 결과']],
+  ]) {
+    const sent = []; const secret = 'webhook-secret';
+    const servers = createServers({ config: { accessToken: 'token', userId: IG_ID, webhookSecret: secret, publicUrl: 'https://dimi.example' },
+      persist: () => {}, record: async () => {}, respondToMessage: async () => result, getDeliveryMode: async () => mode,
+      saveFactCheck: async () => ({ id: 7 }), markFactCheckSent: async () => {},
+      apiFetch: async (_url, init) => { const body = JSON.parse(init.body); if (body.message) sent.push(body.message.text); return Response.json({ message_id: 'm' }); } });
+    const raw = JSON.stringify({ object: 'instagram', entry: [{ id: IG_ID, messaging: [{ sender: { id: '555' }, recipient: { id: IG_ID },
+      timestamp: Date.now(), message: { mid: 'mid-' + mode + expected.length, quick_reply: { payload: 'x' }, text: '레시피' } }] }] });
+    const req = Object.assign(Readable.from([Buffer.from(raw)]), { method: 'POST', url: '/webhooks/instagram',
+      headers: { 'x-hub-signature-256': 'sha256=' + createHmac('sha256', secret).update(raw).digest('hex') } });
+    await servers.publicServer.listeners('request')[0](req, { headersSent: false, writeHead() { this.headersSent = true; }, end() {} });
+    assert.equal(sent.length, expected.length, mode);
+    expected.forEach((want, i) => (want instanceof RegExp ? assert.match(sent[i], want) : assert.equal(sent[i], want)));
+  }
+});

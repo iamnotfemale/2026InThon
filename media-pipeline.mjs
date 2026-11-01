@@ -1,9 +1,26 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { get, list, del } from '@vercel/blob';
 import { createSourceResolver, canonicalInstagramUrl } from './instagram-source.mjs';
-import { safeFetch } from './factcheck.mjs';
+import { safeFetch, SHARED_IMAGE_NOTE } from './factcheck.mjs';
 
 const failed = (reason, text) => ({ status: 'no_input', media: { status: reason }, messages: [text] });
+const LINK_REQUEST = '공유된 게시물의 전체 원본 주소를 받지 못했어요. Instagram에서 ‘링크 복사’한 주소를 이 DM에 보내주세요. 링크를 받으면 이미지·영상을 다시 확인할게요.';
+const PARTIAL_FAILED = '공유 카드로 받은 이미지와 캡션만으로는 정리하지 못했어요. Instagram에서 ‘링크 복사’한 게시물 주소를 이 DM에 보내주시면 모든 이미지를 확인해 다시 정리할게요.';
+/** Closing line of every result made without the post's address. */
+export const ATTACHMENT_ONLY_NOTICE = '공유 카드로 받은 이미지와 캡션만 보고 정리했어요. 게시물 링크(‘링크 복사’)를 보내주시면 모든 이미지를 확인해 더 정확히 정리할게요.';
+
+/**
+ * The closing notice already says the result covers only the shared card, so the technical coverage note is
+ * removed from the DM text (it stays in the stored result's checks): as its own message, a bullet, or a scope item.
+ */
+export function withoutCoverageNote(messages) {
+  return messages.map(text => text
+    .replace(new RegExp(`, ${SHARED_IMAGE_NOTE}`, 'g'), '')
+    .split('\n').filter(line => line.replace(/^\s*[•*-]\s*/, '').trim() !== SHARED_IMAGE_NOTE).join('\n')
+    // A "확인할 부분" heading left with no items goes too.
+    .replace(/(^|\n)확인할 부분(?=\n\n|\n?$)/g, '')
+    .replace(/\n{3,}/g, '\n\n').trim()).filter(Boolean);
+}
 
 const metaCdn = value => {
   try {
@@ -15,6 +32,7 @@ const metaCdn = value => {
 
 export function createMediaFactChecker({ check, resolveSource, prepare,
   fetchSharedVideo = url => safeFetch(url, { maxBytes: 20 * 1024 * 1024, timeout: 20000 }),
+  fetchSharedImage = (url, maxBytes) => safeFetch(url, { maxBytes, timeout: 20000 }),
   onCleanupError = () => console.warn('Media cleanup deferred'),
   logTiming = data => console.info('MEDIA_TIMING', JSON.stringify(data)) }) {
   return async message => {
@@ -47,8 +65,35 @@ export function createMediaFactChecker({ check, resolveSource, prepare,
       const source = await time('resolve_ms', () => resolveSource(message));
       if (source.status === 'not_needed') return await time('analysis_ms', () => check(message));
       if (source.status === 'ambiguous') return failed('ambiguous', '게시물 링크를 한 번에 하나씩 보내주세요.');
-      if (source.status === 'needs_source_url') return { ...failed(source.status,
-        '공유된 게시물의 전체 원본 주소를 받지 못했어요. Instagram에서 ‘링크 복사’한 주소를 이 DM에 보내주세요. 링크를 받으면 이미지·영상을 다시 확인할게요.'), needsSourceUrl: true };
+      if (source.status === 'needs_source_url') {
+        // A shared image post without its address: work from what the webhook gave (caption + the card's one image).
+        // Reels are excluded: a cover image never stands in for the video.
+        const shared = attachment?.type === 'ig_post' ? attachment.payload ?? {} : null;
+        const imageUrl = metaCdn(shared?.url) ? shared.url : null;
+        const caption = typeof shared?.title === 'string' ? shared.title : '';
+        if (shared && (imageUrl || caption.trim())) {
+          let result;
+          try {
+            result = await time('analysis_ms', () => check({ ...message, attachments: [{ type: 'ig_post',
+              payload: { ...(imageUrl ? { url: imageUrl } : {}), title: caption } }] }, {
+              requireAllMedia: true, signal: AbortSignal.timeout(150000),
+              // Only the card's own image, and only from Meta's CDN (also after redirects).
+              fetchMedia: async (url, maxBytes) => {
+                if (!imageUrl || url !== imageUrl) throw new Error('Unexpected media URL');
+                const media = await fetchSharedImage(url, maxBytes);
+                if (!metaCdn(media.url)) throw new Error('Unexpected media host');
+                return media;
+              } }));
+          } catch { result = null; }
+          const media = { status: 'attachment_only', sourceVia: 'webhook_attachment', totalItems: null, images: imageUrl ? 1 : 0, videos: 0 };
+          if (result?.status === 'done') {
+            return { ...result, messages: withoutCoverageNote(result.messages ?? []),
+              ...(Array.isArray(result.intro) ? { intro: withoutCoverageNote(result.intro) } : {}), notice: ATTACHMENT_ONLY_NOTICE, media };
+          }
+          return { ...failed(source.status, PARTIAL_FAILED), needsSourceUrl: true };
+        }
+        return { ...failed(source.status, LINK_REQUEST), needsSourceUrl: true };
+      }
       let lease;
       try { lease = await time('prepare_ms', () => prepare(source.url)); }
       catch { return failed('download_failed', '원본 미디어를 모두 내려받지 못했어요. 공개 게시물인지 확인해 주세요. 한 번에 최대 10개 미디어, 영상은 개당 20MB까지 처리해요.'); }
