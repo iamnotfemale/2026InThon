@@ -599,9 +599,7 @@ a{color:var(--text)}a:hover{color:var(--text-2)}
           <sc-if value="{{d.isExhibit}}" hint-placeholder-val="{{ false }}">
             <p style="font-size: 15.5px; line-height: 1.65; color: var(--text-2)">{{d.intro}}</p>
             <section class="card" style="overflow: hidden">
-              <div class="info"><span class="k">기간</span><span class="v">{{d.period}}</span></div>
-              <div class="info"><span class="k">운영 시간</span><span class="v">{{d.hours}}</span></div>
-              <div class="info"><span class="k">휴무일</span><span class="{{d.closedCls}}">{{d.closed}}</span></div>
+              <div class="info"><span class="k">개최 기간</span><span class="v">{{d.period}}</span></div>
               <div class="info"><span class="k">입장료</span><span class="v">{{d.fee}}</span></div>
             </section>
             <section class="card" style="overflow: hidden">
