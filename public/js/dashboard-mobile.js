@@ -38,6 +38,18 @@ export function createMobileDashboard(app) {
     const s = app.state; const live = s.mode === 'live';
     const v = mobile.renderVals();
     Object.assign(v, app.pageValues?.());
+    if (v.isHome) {
+      const chat = app.homeChat.values();
+      v.homeChat = { ...chat, showHome: chat.empty && !chat.showSug,
+        mobileGreeting: (live && s.name ? s.name + '님, ' : '') + '뭘 다시',
+        ph: chat.chatting ? '디미에게 더 물어보기' : '디미에게 물어보세요',
+        goLibrary: () => app.go('library'), goCalendar: () => app.go('calendar'),
+        nextSchedule: (v.schedule || []).slice(0, 1), hasNextSchedule: !!v.schedule?.length };
+      v.mobileChatting = chat.chatting;
+    }
+    v.goHome = () => app.go('home', { homeChatActive: true });
+    v.chatStart = () => app.go('home', { homeChatActive: false });
+    v.newChat = () => { app.homeChat.reset(); app.go('home', { homeChatActive: false }); };
     applyTasteOrbitValues(v, s, app);
     v.tasteFilter = v.tasteTabs.find(tab => tab.pressed === 'true')?.value || 'all';
     v.filterTaste = event => app.setState({ tasteTab: event.currentTarget.value, tasteSel: null });

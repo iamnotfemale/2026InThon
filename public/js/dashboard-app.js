@@ -84,7 +84,7 @@ class DashboardApp extends DashboardModel {
         event.preventDefault(); items[next]?.focus(); return;
       }
       if (event.key === 'Escape') {
-        if (!this.state.mobile && this.state.view === 'home' && this.homeChat.escape()) return;
+        if (this.state.view === 'home' && this.homeChat.escape()) return;
         if (this.state.view === 'calendar' && (this.calendar.model.state.modal || this.calendar.model.state.viewItem)) this.calendar.close();
         else if (this.state.cook) this.renderVals().closeCook();
         else if (this.state.mobile && ['detail', 'settings'].includes(this.state.view)) this.go(this.state.from || 'library', { liveGuide: false });

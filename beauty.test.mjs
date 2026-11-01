@@ -16,7 +16,7 @@ const stored=sample=>({id:31,created_at:'2026-11-01T01:00:00Z',status:'done',top
   reason:JSON.stringify({beauty:{version:1,...sample,sponsored:sample.sub==='product'},sourceUrl:'https://www.instagram.com/p/Example/'})});
 
 test('beauty details render through both layouts and join taste while keeping calendar categories separate',()=>{
-  const app=new DashboardModel({theme:'light'});
+  const app=new DashboardModel({theme:'light'}); app.homeChat={values:()=>({})};
   app.setState=patch=>Object.assign(app.state,patch); app.toast=()=>{};
   const mobile=createMobileDashboard(app);
   const items=samples.map(sample=>factcheckToItem(stored(sample)));
@@ -38,7 +38,7 @@ test('beauty details render through both layouts and join taste while keeping ca
 });
 
 test('beauty summary shows at most four facts, omits booking method and preserves the stored facts and links',()=>{
-  const app=new DashboardModel({theme:'light'});app.setState=p=>Object.assign(app.state,p);app.toast=()=>{};
+  const app=new DashboardModel({theme:'light'}); app.homeChat={values:()=>({})};app.setState=p=>Object.assign(app.state,p);app.toast=()=>{};
   const sample={...samples[0],bFacts:[['스타일','레이어드'],['예약 방법','DM'],['가격','미기재'],['기장','중장발'],['시술','펌'],['기타','추가 정보']]};
   app._data={...app.data(),ITEMS:[sample]};app.state.view='detail';app.state.detailId=sample.id;
   for(const v of [app.renderVals(),createMobileDashboard(app)()]){

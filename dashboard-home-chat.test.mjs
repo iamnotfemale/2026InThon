@@ -29,7 +29,7 @@ test('home typing is local; owned child cards open the exact full result, withou
   assert.deepEqual(chat.values().sug.map(item=>item.id),['fc2-2']);assert.equal(calls.length,0);
   chat.values().sug[0].open();let v=chat.values();assert.equal(v.drawerOpen,true);assert.equal(v.d.hasOrigin,false);
   v.d.openFull();assert.deepEqual(calls,[['open','fc2-2']]);
-  assert.equal(chat.escape(),true);assert.equal(chat.values().drawerOpen,false);
+  assert.equal(chat.values().drawerOpen,false);assert.equal(chat.escape(),false);
   chat.values().recent.find(item=>item.id==='fc7').open();assert.equal(chat.values().d.hasOrigin,false);
 });
 test('free text calls chat once and filters unknown/failed IDs without forcing keyword categories',async()=>{

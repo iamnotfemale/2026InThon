@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import DashboardModel from './public/js/dashboard-model.js';
 import { createMobileDashboard } from './public/js/dashboard-mobile.js';
+import { createHomeChat } from './public/js/dashboard-home-chat.js';
 
 function fixture() {
   const app = new DashboardModel({ theme: 'light' });
   app.setState = update => Object.assign(app.state, typeof update === 'function' ? update(app.state) : update);
   app.state.mode = 'live';
   app.pageValues = () => ({ schedule: [], hasSchedule: false });
+  app.homeChat = createHomeChat(app, { pause: async () => {} });
   const calls = [];
   app.toast = () => {};
   for (const method of ['changeDelivery', 'removeItem', 'enterLive', 'loadLive', 'openBotDm', 'checkLink', 'copy', 'signOut']) {
@@ -16,6 +18,27 @@ function fixture() {
   }
   return {app, values:createMobileDashboard(app), calls};
 }
+
+test('mobile home shares real chat, typing suggestions, history and the first saved schedule', async () => {
+  const {app, values} = fixture();
+  app.state.view = 'home'; app.state.name = '사용자'; app.state.homeChatActive = false;
+  app.pageValues = () => ({ schedule: [{title:'내 일정',open:()=>{}},{title:'다음 일정'}] });
+  app.chatRequest = async body => { assert.equal(body.query, '안녕'); return {reply:'안녕, 디미예요!',ids:[]}; };
+  let v = values();
+  assert.equal(v.homeChat.showHome,true);
+  assert.equal(v.homeChat.mobileGreeting,'사용자님, 뭘 다시');
+  assert.equal(v.homeChat.nextSchedule.length,1);
+  v.homeChat.onChange({target:{value:'안녕'}});
+  assert.equal(values().homeChat.showSug,true);
+  assert.equal(values().homeChat.showHome,false);
+  await values().homeChat.submit({preventDefault(){}});
+  v=values(); assert.equal(v.mobileChatting,true);
+  assert.equal(v.homeChat.msgs.at(-1).text,'안녕, 디미예요!');
+  v.goLibrary(); values().goHome();
+  assert.equal(values().homeChat.msgs.length,2);
+  values().chatStart(); assert.equal(values().homeChat.showHome,true);
+  values().newChat(); assert.equal(values().homeChat.msgs.length,0);
+});
 
 test('mobile uses the current account and existing routes, never the prototype identity', () => {
   const {app, values} = fixture();

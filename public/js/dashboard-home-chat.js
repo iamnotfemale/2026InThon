@@ -148,7 +148,7 @@ export function createHomeChat(app, { now = () => Date.now(), pause = ms => new 
         noticeAction: () => app.state.libError ? app.loadLive() : app.state.connected ? app.openBotDm() : app.showLinkGuide(),
         scrollRef: element => { scroll = element; }, drawerOpen: !!selected, closeDrawer: () => { selectedId = null; refresh(); },
         d: selected ? { ...decorate(selected), summary: selected.summary || selected.intro || '', facts,
-          primary: '전체 정리 보기', openFull: () => app.openDetail(selected.id), hasOrigin, origin: hasOrigin ? source : undefined } : {},
+          primary: '전체 정리 보기', openFull: () => { selectedId = null; app.openDetail(selected.id); }, hasOrigin, origin: hasOrigin ? source : undefined } : {},
       };
     },
   };
