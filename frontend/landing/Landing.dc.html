@@ -119,6 +119,14 @@ a{color:#0A0A0A}a:hover{color:#404040}
 @keyframes squish{0%{transform:scale(1)}30%{transform:scale(1.08,.9)}60%{transform:scale(.96,1.05)}100%{transform:scale(1)}}
 @media (max-width:860px){.hide-sm{display:none !important}.hero-chars{display:none}}
 @media (prefers-reduced-motion:reduce){.lp *,.lp *::before,.lp *::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+
+.lp .dashboard-preview{display:block;width:100%;height:auto;aspect-ratio:36/25;object-fit:contain;background:var(--bg)}
+@media(min-width:1100px){.lp #features>.wrap{grid-auto-rows:1fr}}
+.lp #features .bento{min-height:350px}.lp #features .bento .vis{margin-top:auto;min-height:170px}
+.lp .trust-ic.trust-lock{color:#C45A11;background:linear-gradient(135deg,#FFF2D7,#FFD4BF)}
+.lp .trust-ic.trust-dm{color:#2563EB;background:linear-gradient(135deg,#DBEAFE,#E0D7FF)}
+.lp .trust-ic.trust-share{color:#7E22CE;background:linear-gradient(135deg,#F3E8FF,#FBCFE8)}
+@media(max-width:600px){.lp #features .bento{min-height:330px}.lp #features .bento .vis{min-height:150px}.lp .hero-product .frame{margin-inline:12px!important}}
 </style>
 </helmet>
 <div class="lp">
@@ -157,7 +165,7 @@ a{color:#0A0A0A}a:hover{color:#404040}
     </div>
 
     <div class="wrap" style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 26px">
-      <span class="kicker enter"><i></i>인스타그램 DM으로 쓰는 콘텐츠 도우미</span>
+      <span class="kicker enter"><i></i>인스타그램 DM으로 쓰는 콘텐츠 비서</span>
       <h1 class="h-xl enter d1" aria-label="당신의 가장 가까운 비서 디미"><span class="tagline-lead">당신의 가장 가까운 비서</span><br><span class="hero-name" aria-hidden="true"><span class="hero-handle">@dimi_in</span><span class="hero-dimi"><span>디</span><span>미</span></span></span></h1>
       <p class="lead enter d2" style="max-width: 640px">릴스와 게시물을 DM으로 보내세요.<br>레시피는 정리하고, 뉴스는 확인하고, 전시와 공모전은 필요한 정보를 모아드려요.</p>
       <div class="enter d3" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding-top: 6px">
@@ -185,54 +193,9 @@ a{color:#0A0A0A}a:hover{color:#404040}
             <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
             <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
             <span style="width: 10px; height: 10px; border-radius: 50%; background: #E5E5E5"></span>
-            <span class="hide-sm" style="margin: 0 auto; font-family:inherit;font-variant-numeric:tabular-nums; font-size: 11.5px; color: #8A8A8A">서비스명.app/home</span>
+            <span class="hide-sm" style="margin: 0 auto; font-family:inherit;font-variant-numeric:tabular-nums; font-size: 11.5px; color: #8A8A8A">inthon.yeoziphab.com/dashboard</span>
           </div>
-          <div style="display: flex; min-height: 440px">
-            <div class="hide-sm" style="width: 200px; flex: none; border-right: 1px solid var(--border); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; background: #FAFAFA; text-align: left">
-              <div style="display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px">
-                <span style="width: 20px; height: 20px; border-radius: 6px; background: #0A0A0A"></span>
-                <span style="font-size: 13px; font-weight: 700">서비스명</span>
-              </div>
-              <span class="mini-nav on">홈</span>
-              <span class="mini-nav">내 콘텐츠<span style="margin-left: auto; font-family:inherit;font-variant-numeric:tabular-nums; font-size: 11px; color: #8A8A8A">11</span></span>
-              <span class="mini-nav">내 취향<span style="margin-left: auto; font-family:inherit;font-variant-numeric:tabular-nums; font-size: 11px; color: #8A8A8A">3</span></span>
-              <span style="font-size: 11px; color: #8A8A8A; padding: 14px 10px 6px">유형</span>
-              <span class="mini-nav"><span class="dot" style="background: #F97316"></span>레시피</span>
-              <span class="mini-nav"><span class="dot" style="background: #3B82F6"></span>뉴스·정보</span>
-              <span class="mini-nav"><span class="dot" style="background: #22C55E"></span>전시·팝업</span>
-              <span class="mini-nav"><span class="dot" style="background: #8B5CF6"></span>공모전·대외활동</span>
-            </div>
-            <div style="flex: 1; min-width: 0; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; text-align: left">
-              <span style="font-size: 20px; font-weight: 600; letter-spacing: -0.03em">안녕하세요, 지민님</span>
-              <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px">
-                <img src="./assets/643336e9e4b4897d48e1aefd9715f721.png" alt="" style="width: 40px">
-                <span style="display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0">
-                  <span style="font-size: 11.5px; color: #15803D; display: inline-flex; align-items: center; gap: 6px"><span class="dot" style="background: #16A34A"></span>@jimin.daily 연결됨</span>
-                  <span style="font-size: 13px; font-weight: 500">보던 게시물·릴스를 @inthon2team에 공유하세요</span>
-                </span>
-                <span class="hide-sm" style="height: 28px; padding: 0 12px; border-radius: 8px; background: #0A0A0A; color: #FFFFFF; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center">Instagram에서 보내기</span>
-              </div>
-              <span style="font-size: 13px; font-weight: 600">최근 정리된 콘텐츠</span>
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px">
-                <div class="mini-card">
-                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-recipe" style="width: 44px; height: 44px"></span></div>
-                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #F97316"></span>레시피</span><span style="font-size: 12.5px; font-weight: 500">15분 매콤 두부면</span><span style="font-size: 11px; color: #8A8A8A">조리 15분 · 재료 5개</span></div>
-                </div>
-                <div class="mini-card">
-                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-news" style="width: 44px; height: 44px"></span></div>
-                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #3B82F6"></span>뉴스·정보</span><span style="font-size: 12.5px; font-weight: 500">청년 교통비 지원 주장</span><span style="font-size: 11px; color: #8A8A8A">판단 · 오해의 소지</span></div>
-                </div>
-                <div class="mini-card">
-                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-exhibit" style="width: 44px; height: 44px"></span></div>
-                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #22C55E"></span>전시·팝업</span><span style="font-size: 12.5px; font-weight: 500">빛의 방 — 가상 전시</span><span style="font-size: 11px; color: #8A8A8A">10.10 – 12.20</span></div>
-                </div>
-                <div class="mini-card">
-                  <div style="height: 74px; display: grid; place-content: center; background: var(--surface-2); border-bottom: 1px solid var(--border)"><span class="orb inline o-contest" style="width: 44px; height: 44px"></span></div>
-                  <div style="padding: 9px 11px 11px; display: flex; flex-direction: column; gap: 4px"><span class="tag"><span class="dot" style="background: #8B5CF6"></span>공모전</span><span style="font-size: 12.5px; font-weight: 500">생활 아이디어 공모전</span><span style="font-size: 11px; color: #8A8A8A">마감 11.14 · D-14</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <img class="dashboard-preview" src="/assets/dashboard-v2-preview.png" alt="디미와 대화하며 보낸 콘텐츠를 검색하는 대시보드 예시" width="1440" height="1000">
         </div>
       </div>
     </div>
@@ -257,7 +220,6 @@ a{color:#0A0A0A}a:hover{color:#404040}
         <span class="orb o-recipe" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
         <span class="eyebrow">01 · 레시피</span>
         <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">빨리 지나간 레시피도<br>한 단계씩 따라 하기</h3>
-        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">재료·분량과 조리 순서를 정리하고, 조리 모드에서 타이머와 함께 안내해요.</p>
         <div class="vis">
           <div class="tl-row"><span class="tl-dot done"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; color: var(--muted)">두부면을 찬물에 헹궈 물기를 빼요.</span><span style="font-size: 12px; color: #8A8A8A">두부면</span></span></div>
           <div class="tl-row"><span class="tl-dot cur"></span><span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-size: 14px; font-weight: 600">팬에 대파를 볶아 파기름을 내요.</span><span style="font-size: 12px; color: #8A8A8A">중불 · 2분 · 대파</span></span><span class="chip">02:00</span></div>
@@ -269,7 +231,6 @@ a{color:#0A0A0A}a:hover{color:#404040}
         <span class="orb o-news" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
         <span class="eyebrow">02 · 뉴스·정보</span>
         <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">사실인지,<br>근거와 함께 확인하기</h3>
-        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">주장 하나를 골라 판단하고, 원본과 같은 점·다른 점과 출처를 함께 보여줘요. 근거가 부족하면 판단을 유보해요.</p>
         <div class="vis" style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap">
           <div style="position: relative; width: 150px; height: 130px; flex: none">
             <svg viewBox="0 0 200 172" width="150" height="129" aria-hidden="true">
@@ -292,7 +253,6 @@ a{color:#0A0A0A}a:hover{color:#404040}
         <span class="orb o-exhibit" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
         <span class="eyebrow">03 · 전시·팝업</span>
         <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">가는 데 필요한 것만<br>한 장에</h3>
-        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">기간·운영 시간·장소·비용과 공식 예약 링크까지. 예약은 공식 페이지에서 직접 해요.</p>
         <div class="vis" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 0; overflow: hidden">
           <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border)"><span style="font-size: 11.5px; color: #8A8A8A">개최 기간</span><span style="font-size: 14px; font-weight: 500">10.10 – 12.20</span></div>
           <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--border)"><span style="font-size: 11.5px; color: #8A8A8A">운영 시간</span><span style="font-size: 14px; font-weight: 500">화–일 10:00 – 19:00</span></div>
@@ -305,7 +265,6 @@ a{color:#0A0A0A}a:hover{color:#404040}
         <span class="orb o-contest" aria-hidden="true" style="width: 54px; height: 54px; right: 26px; top: 26px"></span>
         <span class="eyebrow">04 · 공모전·대외활동</span>
         <h3 style="font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.3">마감과 준비물부터<br>먼저 보이게</h3>
-        <p style="font-size: 15px; color: var(--muted); line-height: 1.7">지원 조건·마감 일시·제출물·절차를 정리하고 공식 공고로 바로 연결해요.</p>
         <div class="vis" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap">
           <div style="display: flex; flex-direction: column; gap: 2px; padding-right: 20px; border-right: 1px solid var(--border)">
             <span style="font-size: 11.5px; color: #8A8A8A">접수 마감</span>
@@ -371,17 +330,17 @@ a{color:#0A0A0A}a:hover{color:#404040}
       </div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
         <div class="trust">
-          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+          <span class="trust-ic trust-lock"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
           <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">비밀번호를 묻지 않아요</span>
           <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">연결 코드를 DM으로 보내는 방식으로만 계정을 확인해요.</span>
         </div>
         <div class="trust">
-          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4z"></path><path d="M22 2 11 13"></path></svg></span>
+          <span class="trust-ic trust-dm"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4z"></path><path d="M22 2 11 13"></path></svg></span>
           <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">보낸 콘텐츠만 처리해요</span>
           <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">다른 대화나 저장함, 시청 기록은 가져오지 않아요.</span>
         </div>
         <div class="trust">
-          <span class="trust-ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg></span>
+          <span class="trust-ic trust-share"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg></span>
           <span style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em">공유는 내가 정할 때만</span>
           <span style="font-size: 14.5px; color: var(--muted); line-height: 1.65">결과는 기본적으로 나만 봐요. 공유 링크는 직접 만들고 언제든 종료할 수 있어요.</span>
         </div>
@@ -398,20 +357,20 @@ a{color:#0A0A0A}a:hover{color:#404040}
       </div>
       <div style="flex: 999 1 560px; border-bottom: 1px solid var(--border)">
         <details class="faq" open="open">
-          <summary>Instagram 계정을 연결하면 무엇을 볼 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
-          <p>어느 계정에서 보낸 콘텐츠인지 확인하는 데만 쓰여요. 봇이 내 계정으로 게시하거나 다른 대화를 읽지 않아요.</p>
+          <summary>디미를 통해 무엇을 할 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>Instagram에서 발견한 레시피, 뉴스, 전시·팝업, 공모전, 맛집·공간, 미용 정보를 종류에 맞게 정리해요. 레시피는 재료와 순서로, 뉴스는 근거와 출처로, 일정과 장소는 확인한 날짜·위치·링크로 모아드려요.</p>
         </details>
         <details class="faq">
-          <summary>팩트체크 결과는 어떻게 정해지나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
-          <p>게시물 전체가 아니라 주장 하나를 골라 판단해요. 근거 자료와 확인 시점을 함께 보여주고, 근거가 부족하면 결론 대신 ‘판단 유보’로 알려드려요.</p>
+          <summary>Instagram 계정을 연결하면 무엇을 할 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>내가 DM으로 보낸 콘텐츠와 정리 결과를 대시보드에서 다시 보고 검색할 수 있어요. 마음에 든 콘텐츠는 내 취향에 모으고, 필요한 일정은 캘린더에 등록할 수 있어요. 연결 코드는 보낸 계정을 확인하는 데만 쓰며, 다른 대화나 저장함을 읽지 않아요.</p>
+        </details>
+        <details class="faq">
+          <summary>DM으로 보내기만 하면 되나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
+          <p>@dimi_in 대화창에 게시물이나 릴스를 공유하고, 디미가 보여주는 버튼에서 원하는 정리 방식을 골라주세요. 결과는 DM으로 받아볼 수 있고, 계정을 연결하면 대시보드에서도 확인할 수 있어요. 비공개 게시물이나 원본을 확인할 수 없는 콘텐츠는 정리가 어려울 수 있어요.</p>
         </details>
         <details class="faq">
           <summary>예약이나 지원도 대신 해주나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
-          <p>아니요. 확인된 공식 예약·신청 페이지로 이동하는 것까지 도와드려요. 실제 예약과 지원은 공식 페이지에서 직접 진행해요.</p>
-        </details>
-        <details class="faq">
-          <summary>DM으로 결과를 다 받을 수 있나요?<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></summary>
-          <p>설정에서 ‘핵심 요약과 링크’ 또는 ‘DM에서 전체 보기’를 고를 수 있어요. 어떤 방식이든 자세한 결과는 내 페이지에 남아요.</p>
+          <p>예약이나 지원을 대신 완료하지는 않아요. 콘텐츠에서 확인한 예약·신청 링크를 안내해드리며, 실제 예약과 지원은 해당 공식 페이지에서 직접 진행해 주세요.</p>
         </details>
       </div>
     </div>

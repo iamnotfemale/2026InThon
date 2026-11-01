@@ -125,7 +125,7 @@ export function createHomeChat(app, { now = () => Date.now() } = {}) {
         submit: event => { event.preventDefault(); return ask(query); }, askNow: () => ask(query), reset,
         quick: [['이번 주 보낸 것', 'all', '이번 주 보낸 것 보여줘'], ['매콤한 레시피', 'recipe', '매콤한 레시피 찾아줘'],
           ['마감 임박 공모전', 'contest', '마감 임박 공모전'], ['가볼 만한 전시', 'exhibit', '전시 보여줘'],
-          ['팩트체크한 뉴스', 'news', '팩트체크한 뉴스 보여줘'], ['내 취향 모음', 'beauty', '내 취향 모음']]
+          ['팩트체크한 뉴스', 'news', '팩트체크한 뉴스 보여줘'], ['내 취향 모음', 'all', '내 취향 모음']]
           .map(([label, type, q]) => ({ label, dot: 'dot t-' + type, pick: () => ask(q) })),
         showSug: !messages.length && !!query.trim(), sug: suggestion,
         sugLabel: suggestion.length ? '바로 찾기' : '다른 말로 찾아볼까요?', sugCount: suggestion.length ? `${suggestion.length}개` : '',

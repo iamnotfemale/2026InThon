@@ -110,10 +110,10 @@ test('policy pages exist, are linked from landing and signup, and follow the sit
   for (const [page, title] of [['public/terms.html', '이용약관'], ['public/privacy.html', '개인정보처리방침']]) {
     const html = readFileSync(page, 'utf8');
     assert.ok(html.includes(`<h1 class="h-lg">${title}</h1>`), title);
-    for (const text of ['시행일 2026년 11월 1일', 'R을가져가', 'contact@yeoziphab.com', '/css/landing.css', '/css/brand.css', '/css/policy.css']) {
+    for (const text of ['시행일 2026년 11월 1일', '티미', 'contact@yeoziphab.com', '/css/landing.css', '/css/brand.css', '/css/policy.css']) {
       assert.ok(html.includes(text), `${page}: ${text}`);
     }
-    assert.doesNotMatch(html, /<script/i); assert.doesNotMatch(html, /서비스명|inthon2team|jimin/);
+    assert.doesNotMatch(html, /<script/i); assert.doesNotMatch(html, /서비스명|inthon2team|jimin|R을가져가/);
   }
   const privacy = readFileSync('public/privacy.html', 'utf8');
   for (const required of ['처리 목적', '처리하는 개인정보 항목', '보유 기간', '파기', '제3자 제공', '위탁', '국외 이전', '만 14세 미만',

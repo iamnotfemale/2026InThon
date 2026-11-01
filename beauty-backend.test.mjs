@@ -172,12 +172,12 @@ test('signed share → beauty choice → staged media → analysis → stored re
   assert.ok(sent.some(body => body.recipient.id === '123' && body.message.text?.includes('45,000원부터')));
   const item = factcheckToItem(rows[0]); assert.equal(item.type, 'beauty'); assert.equal(item.origin, sourceUrl);
   assert.equal(indexFromRow(rows[0]).category, 'beauty'); assert.deepEqual(inferInterests([rows[0], { ...rows[0], id: 99 }]), []);
-  assert.equal(TASTE_TYPES.includes('beauty'), false);
+  assert.equal(TASTE_TYPES.includes('beauty'), true);
   assert.equal(scheduleProblem(calendarContent(item), { kind: 'visit', date: '2026-11-02', time: null }), 'content');
   const app = new DashboardModel({ theme: 'light' }); app.allItems = () => [item];
   Object.assign(app.state, { view: 'detail', detailId: item.id, mode: 'live' });
   for (const values of [app.renderVals(), createMobileDashboard(app)()]) {
-    assert.equal(values.d.isBeauty, true); assert.equal(values.d.tasteable, false);
+    assert.equal(values.d.isBeauty, true); assert.equal(values.d.tasteable, true);
     assert.equal(values.d.bLinks[0].url, booking);
   }
   await deliver('click-done', { quick_reply: { payload: button.payload } });
